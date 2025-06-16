@@ -1,0 +1,1599 @@
+/* ========================
+   1. ベーススタイル
+   ======================== */
+* {
+    font-family: Arial, sans-serif !important;
+}
+
+body, body * {
+    font-family: Arial, sans-serif !important;
+}
+
+input, select, textarea, button {
+    font-family: Arial, sans-serif !important;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+    margin: 0;
+    padding: 10px;
+}
+
+h1 {
+    font-size: 20px;
+    text-align: center;
+    margin: 0 0 10px 0;
+    color: #333;
+}
+
+/* ========================
+   2. ナビゲーションメニュー
+   ======================== */
+.top-navigation {
+    display: none; /* デスクトップでは非表示 */
+    position: fixed;
+    top: 0;
+    right: 0;
+    z-index: 1000;
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-radius: 0 0 0 10px;
+}
+
+.nav-toggle {
+    display: none;
+    padding: 15px;
+    cursor: pointer;
+    font-size: 18px;
+    background-color: #007bff;
+    color: white;
+    border-radius: 0 0 0 10px;
+}
+
+.nav-menu {
+    display: flex;
+    background-color: white;
+}
+
+.nav-menu a {
+    display: block;
+    padding: 15px 20px;
+    text-decoration: none;
+    color: #333;
+    border-left: 1px solid #eee;
+    transition: background-color 0.3s;
+}
+
+.nav-menu a:hover {
+    background-color: #f8f9fa;
+    color: #007bff;
+}
+
+/* ========================
+   2.1 モバイル専用ボタン群
+   ======================== */
+.mobile-button-group {
+    display: none; /* デスクトップでは非表示 */
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 999;
+    background-color: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    height: 50px;
+    padding: 0;
+}
+
+.mobile-swap-button {
+    position: absolute;
+    top: 5px;
+    left: 10px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #007bff;
+    color: white;
+    border: 3px solid white;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    font-family: Arial, sans-serif !important;
+    line-height: 1;
+    text-align: center;
+    vertical-align: middle;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.mobile-swap-button:hover {
+    background-color: #0056b3;
+    transform: rotate(180deg);
+    transform-origin: center;
+}
+
+.mobile-damage-calc-button {
+    position: absolute;
+    top: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 20px;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 14px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    width: 200px;
+}
+
+.mobile-damage-calc-button:hover {
+    background-color: #0056b3;
+    transform: translateX(-50%) scale(1.05);
+}
+
+/* ========================
+   3. メインレイアウト
+   ======================== */
+.battle-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+    position: relative;
+}
+
+.section {
+    background-color: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    flex: 1;
+    min-width: 470px;
+    max-width: 450px;
+    box-sizing: border-box;
+}
+
+.section h2 {
+    text-align: center;
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 1.3rem;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 10px;
+}
+
+.section h3 {
+    font-size: 1rem;
+    color: #555;
+    margin: 15px 0 8px 0;
+}
+
+.results-section {
+    max-width: 400px;
+}
+
+/* ========================
+   4. フォーム要素
+   ======================== */
+input[type="text"],
+input[type="number"],
+select {
+    margin-left: 1px;
+    padding: 6px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    flex: 1;
+}
+
+button {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-weight: bold;
+    width: 100%;
+}
+
+button:hover {
+    background-color: #218838;
+}
+
+/* ========================
+   5. 入力行とステータス行
+   ======================== */
+.input-row {
+    display: flex;
+    align-items: center;
+    margin: 12px 0 8px 0;
+}
+
+.input-row:has(#attackMove) {
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+.inline-label {
+    display: inline-block;
+    width: 80px;
+    margin-right: 5px;
+    font-size: 14px;
+}
+
+.stat-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    gap: 3px;
+    flex-wrap: nowrap;
+}
+
+.stat-label {
+    width: 20px;
+    font-weight: bold;
+    flex-shrink: 0;
+    margin-right: 0;
+    font-size: 14px;
+}
+
+.stat-input {
+    width: 65px !important;
+    min-width: 65px !important;
+    max-width: 65px !important;
+    padding: 4px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 13px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+}
+
+.iv-input {
+    width: 40px !important;
+    padding: 4px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.ev-input {
+    width: 40px;
+    padding: 4px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.stat-separator {
+    color: #666;
+    font-weight: bold;
+    flex-shrink: 0;
+    margin: 0 2px;
+}
+
+#defenderIvHP, #defenderEvHP,
+#defenderIvB, #defenderEvB,
+#defenderIvD, #defenderEvD {
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
+    box-sizing: border-box !important;
+    flex-shrink: 0 !important;
+}
+
+#defenderRealHP, #defenderDetailRealHP,
+#defenderRealB, #defenderDetailRealB,
+#defenderRealD, #defenderDetailRealD {
+    width: 60px !important;
+}
+
+.input-with-buttons {
+    display: flex !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+    gap: 2px;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+/* ========================
+   6. 現在HP入力欄（修正版）
+   ======================== */
+.current-hp-label {
+    margin-left: 5px;
+    margin-right: 3px;
+    font-size: 11px;
+    color: #666;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+.current-hp-input {
+    width: 45px;
+    padding: 4px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+/* ========================
+   7. みがわり仮定チェックボックス
+   ======================== */
+.substitute-section {
+    margin: 15px 0 10px 0;
+    padding: 8px;
+    background-color: #f0f8ff;
+    border: 1px solid #add8e6;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.substitute-checkbox {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #0066cc;
+    cursor: pointer;
+}
+
+.substitute-checkbox input[type="checkbox"] {
+    margin: 0;
+    cursor: pointer;
+}
+
+.substitute-checkbox:has(input:checked) {
+    color: #004499;
+}
+
+/* ========================
+   8. クイックボタン（修正版）
+   ======================== */
+.iv-quick-btn,
+.ev-quick-btn {
+    padding: 0;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    background-color: #f8f9fa;
+    color: #000;
+    border-radius: 4px;
+    height: 30px;
+    min-width: 35px !important;
+    max-width: 35px !important;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    box-sizing: border-box;
+    margin: 0;
+    font-size: 12px;
+}
+
+.iv-quick-btn:hover,
+.ev-quick-btn:hover {
+    background-color: #e9ecef;
+}
+
+.detail-stat-row .iv-quick-btn {
+    padding: 0;
+    min-width: 50px !important;
+    max-width: 50px !important;
+    margin: 0;
+    font-size: 12px;
+}
+
+.detail-stat-row .ev-quick-btn {
+    padding: 0;
+    min-width: 50px !important;
+    max-width: 50px !important;
+    margin: 0;
+    font-size: 12px;
+}
+
+/* ========================
+   9. 性格補正ボタン（修正版）
+   ======================== */
+.nature-btn {
+    padding: 0;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    background-color: #f8f9fa;
+    color: #000;
+    border-radius: 4px;
+    min-width: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 30px;
+    box-sizing: border-box;
+    margin: 0;
+}
+
+.nature-btn.selected {
+    background-color: #007bff;
+    color: white;
+    border-color: #0056b3;
+}
+
+.nature-btn:hover {
+    background-color: #e9ecef;
+}
+
+.nature-btn.selected:hover {
+    background-color: #0056b3;
+}
+
+/* ========================
+   10. 詳細設定（修正版）
+   ======================== */
+.detail-settings {
+    margin-top: 15px;
+    margin-bottom: 15px;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.detail-header {
+    cursor: pointer;
+    font-weight: bold;
+    color: #007bff;
+    margin-bottom: 10px;
+}
+
+.detail-header:hover {
+    color: #0056b3;
+}
+
+.detail-content {
+    margin-top: 10px;
+    width:100%;
+}
+
+.detail-stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 3px;
+    gap: 3px;
+    width:100%;
+    height: 32px;
+    flex-wrap: nowrap;
+}
+
+.detail-stat-row .stat-label {
+    width: 15px;
+    font-weight: bold;
+    text-align: right;
+    flex-shrink: 0;
+    font-size: 13px;
+}
+
+.detail-stat-row .stat-input {
+    width: 65px !important;
+    min-width: 65px !important;
+    max-width: 65px !important;
+    height: 30px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    font-size: 12px;
+}
+
+.detail-stat-row .iv-input {
+    width: 40px !important;
+    max-width: 40px !important;
+    height: 15px;
+    flex-shrink: 0;
+    font-size: 13px;
+}
+
+.detail-stat-row .ev-input {
+    width: 35px !important;
+    max-width: 35px !important;
+    height: 15px;
+    flex-shrink: 0;
+    font-size: 13px;
+}
+
+/* ========================
+   11. 性格チェックボックス
+   ======================== */
+.nature-plus-minus-heading {
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.nature-plus-minus-heading span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 25px;
+    height: 25px;
+    font-weight: bold;
+    font-size: 12px;
+}
+
+.nature-plus-minus-heading span:first-child {
+    background-color: #ff97c2;
+}
+
+.nature-plus-minus-heading span:last-child {
+    background-color: #8eb8ff;
+}
+
+.nature-checkbox-container {
+    display: flex;
+    gap: 2px;
+    margin-left: 0;
+    flex-shrink: 0;
+}
+
+.nature-checkbox-container span {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 25px;
+    height: 25px;
+    position: relative;
+}
+
+.nature-checkbox-container span:first-child {
+    background-color: #ffbeda;
+}
+
+.nature-checkbox-container span:last-child {
+    background-color: #bad3ff;
+}
+
+.nature-checkbox-container input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    cursor: pointer;
+}
+
+.nature-plus-checkbox {
+    accent-color: #ff1493;
+}
+
+.nature-minus-checkbox {
+    accent-color: #4169e1;
+}
+
+/* HPの性格チェックボックス（無効化） */
+.nature-plus-minus {
+    display: flex;
+    gap: 2px;
+    margin-left: 4px;
+    flex-shrink: 0;
+}
+
+.nature-plus-minus input[type="checkbox"] {
+    width: 12px;
+    height: 12px;
+    margin: 0;
+    cursor: pointer;
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+.nature-plus-minus label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    font-weight: bold;
+    font-size: 10px;
+    margin: 0;
+    cursor: default;
+    opacity: 0.3;
+    margin-left: 2px;
+}
+
+.nature-plus-minus label:first-child {
+    background-color: #ffbeda;
+}
+
+.nature-plus-minus label:last-child {
+    background-color: #bad3ff;
+}
+
+/* ========================
+   12. 戦闘条件・防御側条件
+   ======================== */
+.battle-conditions,
+.defense-conditions {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+}
+
+.checkbox-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+}
+
+.checkbox-group input[type="checkbox"] {
+    margin-right: 5px;
+}
+
+/* ランク補正 */
+.rank-correction {
+    margin: 10px 0;
+}
+
+.rank-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.rank-label {
+    width: 80px;
+    margin-right: 10px;
+    font-size: 14px;
+}
+
+.rank-select {
+    width: 60px;
+}
+
+/* 状態異常設定 */
+.status-conditions {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+}
+
+.status-conditions .input-row {
+    margin-bottom: 8px;
+}
+
+.status-conditions .input-row:last-child {
+    margin-bottom: 0;
+}
+
+.status-conditions select {
+    width: 100px;
+    padding: 4px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+/* 定数ダメージ設定 */
+.status-damage-section {
+    margin: 0;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+}
+
+.status-damage-section h4 {
+    margin: 0 0 6px 0;
+    font-size: 13px;
+    color: #333;
+    text-align: left;
+}
+
+.status-damage-section .input-row {
+    display: flex;
+    align-items: center;
+    margin: 10px;
+}
+
+.status-damage-section .inline-label {
+    width: 70px;
+    margin-right: 6px;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.status-damage-section select,
+.status-damage-section input[type="number"] {
+    flex: 1;
+    padding: 3px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 13px;
+    height: 24px;
+}
+
+.status-damage-section input[type="number"] {
+    width: 60px;
+    flex: none;
+}
+
+.damage-calc-button {
+    background-color: #007bff;
+    margin-top: 5px;
+    margin-bottom: 0;
+}
+
+.damage-calc-button:hover {
+    background-color: #0056b3;
+}
+
+/* ========================
+   13. 特性設定
+   ======================== */
+.ability-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.ability-checkbox {
+    display: flex;
+    align-items: center;
+    padding: 6px 12px;
+    background-color: white;
+    border: 2px solid #dee2e6;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 13px;
+}
+
+.ability-checkbox:hover {
+    border-color: #007bff;
+    background-color: #e7f3ff;
+}
+
+.ability-checkbox input[type="checkbox"] {
+    margin-right: 6px;
+    cursor: pointer;
+}
+
+.ability-checkbox input[type="checkbox"]:checked + span {
+    color: #007bff;
+    font-weight: bold;
+}
+
+.ability-checkbox:has(input:checked) {
+    background-color: #e7f3ff;
+    border-color: #007bff;
+}
+
+.attackerAbilityContainer,
+.defenderAbilityContainer {
+    display: none;
+}
+
+/* ========================
+   14. 複数ターン技設定
+   ======================== */
+.multi-turn-settings {
+    margin: 15px 0;
+}
+
+.multi-turn-header {
+    cursor: pointer;
+    font-weight: bold;
+    color: #007bff;
+    font-size: 13px;
+    padding: 5px 0;
+}
+
+.multi-turn-header:hover {
+    color: #0056b3;
+}
+
+.multi-turn-content {
+    margin-top: 8px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+}
+
+.multi-turn-content .input-row {
+    margin-bottom: 6px;
+}
+
+.multi-turn-content .input-row:last-child {
+    margin-bottom: 0;
+}
+
+.add-move-button {
+    background-color: #f8f9fa;
+    color: #007bff;
+    border: 1px solid #007bff;
+    border-radius: 4px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 8px;
+    width: auto;
+    display: block;
+}
+
+.add-move-button:hover {
+    background-color: #007bff;
+    color: white;
+}
+
+.multi-turn-move-row {
+    margin-bottom: 6px;
+}
+
+#multiTurnMovesContainer {
+    margin-top: 8px;
+}
+
+/* ========================
+   15. ポケモン情報・入れ替えボタン（修正版）
+   ======================== */
+.pokemon-info {
+    font-size: 11px;
+    color: #666;
+    margin: 2px 0 5px 85px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.swap-button-container {
+    position: absolute;
+    top: 10px;
+    left: 31.1%;
+    z-index: 100;
+    pointer-events: auto;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+}
+
+.swap-button {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #007bff;
+    color: white;
+    border: 3px solid white;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    font-family: Arial, sans-serif !important;
+    line-height: 1;
+    text-align: center;
+    vertical-align: middle;
+    margin: 0;
+    padding: 0;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+
+.swap-button:hover {
+    background-color: #0056b3;
+    transform: rotate(180deg);
+    transform-origin: center;
+}
+
+.swap-button:focus {
+    outline: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), 0 0 0 3px rgba(0, 123, 255, 0.3);
+}
+
+/* ========================
+   16. ドロップダウン
+   ======================== */
+.pokemon-dropdown {
+    position: absolute;
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+}
+
+.dropdown-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+}
+
+.dropdown-item:hover {
+    background-color: #f0f0f0;
+}
+
+/* ========================
+   17. 結果表示
+   ======================== */
+.damage-result {
+    background-color: #f0f8ff;
+    border: 1px solid #add8e6;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.damage-result h3 {
+    margin: 0 0 15px 0;
+    color: #0066cc;
+    text-align: center;
+    border-bottom: 1px solid #add8e6;
+    padding-bottom: 8px;
+}
+
+.result-info {
+    margin: 10px 0 15px 0;
+    font-size: 13px;
+    background-color: rgba(255, 255, 255, 0.7);
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.result-info p {
+    margin: 3px 0;
+}
+
+.result-info2 {
+    margin: 10px 0 15px 0;
+    font-size: 13px;
+    border-radius: 5px;
+}
+
+.result-info2 p {
+    margin: 3px 0;
+}
+
+.damage-info {
+    text-align: center;
+    margin: 15px 0;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.damage-info p {
+    margin: 6px 0;
+    padding: 2px 0;
+}
+
+.move-sequence {
+    margin: 10px 0;
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    font-size: 12px;
+}
+
+.move-sequence div {
+    border-left: 3px solid #007bff;
+    padding-left: 8px;
+    margin: 3px 0;
+}
+
+/* ========================
+   18. 瀕死率詳細表示 - 最適化版
+   ======================== */
+.ko-rate-section {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+}
+
+.ko-rate-section h4 {
+    margin: 0 0 10px 0;
+    font-size: 14px;
+    font-weight: bold;
+    color: #495057;
+    text-align: center;
+}
+
+.ko-rate-row {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 12px;
+    font-size: 13px;
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 8px;
+}
+
+.ko-rate-row:last-child {
+    margin-bottom: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.ko-rate-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    padding: 0 20px;
+}
+
+.ko-turn {
+    font-weight: bold;
+    color: #007bff;
+    font-size: 13px;
+    flex-shrink: 0;
+    text-align: center;
+    min-width: 80px;
+}
+
+.ko-basic {
+    font-weight: bold;
+    color: #28a745;
+    font-size: 12px;
+    text-align: center;
+    flex-shrink: 0;
+    padding: 2px 8px;
+    border-radius: 4px;
+    min-width: 60px;
+}
+
+.ko-basis {
+    font-size: 11px;
+    color: #666;
+    line-height: 1.4;
+    margin-bottom: 4px;
+    text-align: center;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    padding: 0 10px;
+}
+
+.hp-range-row {
+    font-size: 11px;
+    color: #6c757d;
+    margin-top: 2px;
+    text-align: center;
+}
+
+.hp-range-text {
+    background-color: rgba(108, 117, 125, 0.1);
+    padding: 3px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    max-width: 90%;
+    text-align: center;
+}
+
+.ko-with-items {
+    font-size: 11px;
+    color: #6c757d;
+    font-style: italic;
+    margin-top: 2px;
+    text-align: center;
+}
+
+.calculation-conditions {
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 11px;
+    color: #666;
+}
+
+.item-info {
+    background-color: #fff9c4;
+    border: 1px solid #ffd54f;
+    border-radius: 4px;
+    padding: 5px;
+    font-weight: bold;
+    color: #f57f17;
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 12px;
+}
+
+.weather-info {
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: #17a2b8;
+}
+
+.ability-info {
+    text-align: center;
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: #dc3545;
+}
+
+.expected-turns {
+    color: #fd7e14;
+    font-weight: bold;
+}
+
+.accuracy-info {
+    color: #6f42c1;
+    font-weight: bold;
+}
+
+/* ========================
+   19. ツール情報
+   ======================== */
+.tool-info {
+    margin-top: 20px;
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.tips-title {
+    font-weight: bold;
+    margin-bottom: 8px;
+    color: #007bff;
+    font-size: 16px;
+}
+
+.tips-content {
+    font-size: 14px;
+    color: #555;
+}
+
+.tips-content p {
+    margin: 5px 0;
+}
+
+/* ========================
+   20. アイテム効果・警告表示
+   ======================== */
+.item-warning {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+    padding: 8px;
+    border-radius: 4px;
+    margin: 10px 0;
+    font-size: 12px;
+    text-align: center;
+}
+
+.multi-turn-info {
+    background-color: #e3f2fd;
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #bbdefb;
+}
+
+.multi-turn-note {
+    background-color: #fff3e0;
+    padding: 6px;
+    border-radius: 4px;
+    border: 1px solid #ffcc02;
+    line-height: 1.3;
+}
+
+.multi-turn-hint {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 5px;
+    padding: 8px;
+}
+
+/* ========================
+   21. めざパ・合計努力値表示
+   ======================== */
+.detail-summary {
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 1px solid #e9ecef;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    font-size: 12px;
+}
+
+.hidden-power-info,
+.total-ev-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.hidden-power-info span:first-child,
+.total-ev-info span:first-child {
+    color: #666;
+    font-weight: normal;
+}
+
+.hidden-power-info span:last-child {
+    font-weight: bold;
+    color: #007bff;
+    padding: 2px 6px;
+    background-color: #e7f3ff;
+    border-radius: 4px;
+    border: 1px solid #b3d9ff;
+}
+
+.total-ev-info span:last-child {
+    font-weight: bold;
+    color: #333;
+    padding: 2px 6px;
+    background-color: #ffffff;
+    border-radius: 4px;
+    border: 1px solid #ddd;
+    min-width: 40px;
+    text-align: center;
+}
+
+.total-ev-info span:last-child.ev-over {
+    color: #dc3545;
+    background-color: #fff5f5;
+    border-color: #f8d7da;
+}
+
+/* ========================
+   22. レスポンシブデザイン
+   ======================== */
+@media (max-width: 1200px) {
+    .battle-container {
+        flex-wrap: wrap;
+    }
+    
+    .section {
+        min-width: 300px;
+        margin-bottom: 20px;
+    }
+    
+    .swap-button-container {
+        top: 10px;
+        left: 10px;
+    }
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+        padding-top: 60px;
+    }
+    
+    .mobile-button-group {
+        display: block;
+    }
+
+    /* ナビゲーションのモバイル対応 */
+    .top-navigation {
+        display: block; /* モバイルでのみ表示 */
+    }
+    
+    .nav-toggle {
+        display: block;
+    }
+    
+    .nav-menu {
+        display: none;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background-color: white;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        border-radius: 0 0 10px 10px;
+        flex-direction: column;
+        min-width: 150px;
+    }
+    
+    .nav-menu.active {
+        display: flex;
+    }
+    
+    .nav-menu a {
+        border-left: none;
+        border-bottom: 1px solid #eee;
+        padding: 12px 20px;
+    }
+    
+    .nav-menu a:last-child {
+        border-bottom: none;
+    }
+    
+    .battle-container {
+        flex-direction: column;
+    }
+    
+    .section {
+        min-width: 100%;
+        max-width: 100%;
+    }
+    
+    /* ポケモン情報の改行制御 */
+    .pokemon-info {
+        font-size: 12px;
+        margin: 2px 0 5px 0px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: calc(100% - 80px);
+    }
+    
+    /* ステータス行のレスポンシブ改善 */
+    .stat-row {
+        gap: 2px;
+    }
+    
+    .stat-input {
+        width: 60px !important;
+        min-width: 60px !important;
+        max-width: 60px !important;
+        font-size: 12px;
+    }
+    
+    .iv-input, .ev-input {
+        width: 35px !important;
+        font-size: 12px;
+    }
+    
+    .iv-quick-btn, .ev-quick-btn {
+        min-width: 20px !important;
+        max-width: 20px !important;
+        height: 20px;
+        font-size: 10px;
+    }
+    
+    .nature-btn {
+        min-width: 24px;
+        height: 34px;
+        font-size: 10px;
+    }
+    
+    /* 現在HP入力欄のモバイル調整 */
+    .current-hp-label {
+        font-size: 10px;
+        width: 36px;
+        margin-left: 3px;
+        margin-right: 2px;
+    }
+    
+    .current-hp-input {
+        width: 40px;
+        font-size: 12px;
+    }
+    
+    /* 詳細設定のモバイル調整 */
+    .detail-stat-row {
+        gap: 1px;
+    }
+    
+    .detail-stat-row .stat-input {
+        width: 60px !important;
+        min-width: 60px !important;
+        max-width: 60px !important;
+    }
+    
+    .detail-stat-row .iv-input {
+        width: 40px !important;
+        min-width: 40px !important;
+        max-width: 40px !important;
+    }
+    
+    .detail-stat-row .ev-input {
+        width: 45px !important;
+        min-width: 45px !important;
+        max-width: 45px !important;
+    }
+    
+    .detail-stat-row .iv-quick-btn,
+    .detail-stat-row .ev-quick-btn {
+        min-width: 35px !important;
+        max-width: 35px !important;
+        height: 29px;
+        margin-right: 1px;
+        font-size: 12px;
+    }
+    
+    .nature-checkbox-container span {
+        width: 26px;
+        height: 22px;
+    }
+    
+    .nature-checkbox-container input[type="checkbox"] {
+        width: 12px;
+        height: 12px;
+    }
+    
+    .nature-plus-minus-heading span {
+        width: 26px;
+        height: 25px;
+        font-size: 10px;
+    }
+    
+    /* 攻守交代ボタンのモバイル調整 */
+    .swap-button {
+        width: 35px;
+        height: 35px;
+        font-size: 16px;
+    }
+    
+    /* インラインラベルのモバイル調整 */
+    .inline-label {
+        width: 70px;
+        font-size: 11px;
+    }
+    
+    /* 瀕死率詳細のレスポンシブ */
+    .ko-rate-row {
+        margin-bottom: 10px;
+        padding-bottom: 6px;
+    }
+    
+    .ko-rate-header {
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: 0 10px;
+    }
+    
+    .ko-turn {
+        min-width: auto;
+        width: auto;
+        text-align: center;
+        font-size: 13px;
+    }
+    
+    .ko-basic {
+        font-size: 11px;
+        margin-top: 2px;
+        text-align: center;
+        min-width: 50px;
+    }
+    
+    .ko-basis {
+        font-size: 10px;
+        margin-bottom: 4px;
+        padding: 0 5px;
+    }
+    
+    .hp-range-text {
+        font-size: 10px;
+        padding: 2px 6px;
+        max-width: 95%;
+    }
+    
+    .damage-info {
+        font-size: 13px;
+    }
+    
+    .result-info {
+        font-size: 12px;
+    }
+    
+    /* めざパ・合計努力値のモバイル対応 */
+    .detail-summary {
+        flex-direction: column;
+        gap: 6px;
+        align-items: center;
+    }
+    
+    .hidden-power-info,
+    .total-ev-info {
+        justify-content: center;
+    }
+}
+
+/* 極小画面対応 */
+@media (max-width: 480px) {
+    .stat-row {
+        gap: 1px;
+        margin-left:-16px;
+    }
+    
+    .stat-input {
+        width: 60px !important;
+        min-width: 60px !important;
+        max-width: 60px !important;
+    }
+    
+    .iv-input, .ev-input {
+        width: 45px !important;
+    }
+    
+    .iv-quick-btn, .ev-quick-btn {
+        min-width: 30px !important;
+        max-width: 30px !important;
+        height: 33px;
+        font-size: 12px;
+    }
+    
+    .nature-btn {
+        min-width: 22px;
+        height: 28px;
+        font-size: 10px;
+    }
+    
+    .current-hp-input {
+        width: 50px;
+    }
+    
+    .pokemon-info {
+        font-size: 11px;
+        margin: 1px 0 3px 0px;
+    }
+
+    #defenderIvHP {
+    width: 50px !important;
+    min-width: 50px !important;
+    max-width: 50px !important;
+    }
+
+    .stat-label {
+        font-size:10px;
+        margin-right: -10px;
+    }
+
+    input[type="text"]{
+        width: 10px;
+    }
+    .swap-button-container {
+        display: none;
+    }
+}
+
+@media (max-width: 360px) {
+    .current-hp-label {
+        height:37px;
+        width: 14px;
+        writing-mode: vertical-rl;
+        text-orientation: upright;  
+        margin-left: 9px;
+        margin-right: -4px; 
+    }
+}
