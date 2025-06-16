@@ -1375,11 +1375,15 @@ input[type="number"]::-webkit-inner-spin-button {
         min-width: 60px !important;
         max-width: 60px !important;
         font-size: 12px;
+        -webkit-appearance: number-input !important;
+        appearance: auto !important;
     }
     
     .iv-input, .ev-input {
         width: 35px !important;
         font-size: 12px;
+        -webkit-appearance: number-input !important;
+        appearance: auto !important;
     }
     
     .iv-quick-btn, .ev-quick-btn {
