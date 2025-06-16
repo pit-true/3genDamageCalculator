@@ -5016,6 +5016,8 @@ function calculateRandText(displayMinDamage, displayMaxDamage, defenderHP, curre
 }
 
 // 固定回数連続技の乱数計算
+// calculateRandText関数の修正版（script.js内の該当部分を置き換え）
+
 function calculateRandText(displayMinDamage, displayMaxDamage, defenderHP, currentMove) {
     if (displayMinDamage === 0 && displayMaxDamage === 0) {
         return { hits: 0, percent: "0.0", randLevel: "" };
@@ -5055,10 +5057,11 @@ function calculateRandText(displayMinDamage, displayMaxDamage, defenderHP, curre
         }
     }
     
-    // 通常技の処理（既存のcalculateRandTextロジック）
+    // 通常技の処理
     const effectiveMinDamage = displayMinDamage;
     const effectiveMaxDamage = displayMaxDamage;
     
+    // ★修正: 確定1発判定を最初に行う
     if (effectiveMinDamage >= targetHP) {
         return {
             hits: 1,
@@ -5071,7 +5074,7 @@ function calculateRandText(displayMinDamage, displayMaxDamage, defenderHP, curre
         };
     }
     
-    // 通常技の乱数計算（既存ロジック）
+    // 必要打数計算
     const minHits = effectiveMaxDamage > 0 ? Math.ceil(targetHP / effectiveMaxDamage) : Infinity;
     const maxHits = effectiveMinDamage > 0 ? Math.ceil(targetHP / effectiveMinDamage) : Infinity;
     
@@ -5079,6 +5082,20 @@ function calculateRandText(displayMinDamage, displayMaxDamage, defenderHP, curre
         return { hits: 0, percent: "0.0", randLevel: "不可", isSubstitute: isSubstitute, targetHP: targetHP };
     }
     
+    // ★修正: 確定n発判定を追加
+    if (minHits === maxHits) {
+        return {
+            hits: minHits,
+            percent: null,
+            randLevel: "確定",
+            effectiveMinDamage: effectiveMinDamage,
+            effectiveMaxDamage: effectiveMaxDamage,
+            isSubstitute: isSubstitute,
+            targetHP: targetHP
+        };
+    }
+    
+    // ここから乱数計算
     let knockoutPercent = 0;
     
     if (minHits === 1) {
@@ -5105,6 +5122,7 @@ function calculateRandText(displayMinDamage, displayMaxDamage, defenderHP, curre
         
         knockoutPercent = (successfulOutcomes / totalOutcomes) * 100;
     } else {
+        // 3発以上の場合の近似計算
         const avgDamage = (effectiveMinDamage + effectiveMaxDamage) / 2;
         const totalDamageNeeded = targetHP;
         const minTotalDamage = effectiveMinDamage * minHits;
@@ -5125,36 +5143,31 @@ function calculateRandText(displayMinDamage, displayMaxDamage, defenderHP, curre
     
     let randLevelText = "";
     
-    if (effectiveMinDamage >= targetHP) {
-        randLevelText = "確定";
-        knockoutPercent = 100.0;
+    if (knockoutPercent >= 93.75) {
+        randLevelText = "超高乱数";
+    } else if (knockoutPercent >= 75.0) {
+        randLevelText = "高乱数";
+    } else if (knockoutPercent >= 62.5) {
+        randLevelText = "中高乱数";
+    } else if (knockoutPercent >= 37.5) {
+        randLevelText = "中乱数";
+    } else if (knockoutPercent >= 25.0) {
+        randLevelText = "中低乱数";
+    } else if (knockoutPercent > 6.3) {
+        randLevelText = "低乱数";
+    } else if (knockoutPercent > 0) {
+        randLevelText = "超低乱数";
     } else {
-        if (knockoutPercent >= 93.75) {
-            randLevelText = "超高乱数";
-        } else if (knockoutPercent >= 75.0) {
-            randLevelText = "高乱数";
-        } else if (knockoutPercent >= 62.5) {
-            randLevelText = "中高乱数";
-        } else if (knockoutPercent >= 37.5) {
-            randLevelText = "中乱数";
-        } else if (knockoutPercent >= 25.0) {
-            randLevelText = "中低乱数";
-        } else if (knockoutPercent > 6.3) {
-            randLevelText = "低乱数";
-        } else if (knockoutPercent > 0) {
-            randLevelText = "超低乱数";
-        } else {
-            const requiredHits = Math.ceil(targetHP / effectiveMinDamage/2);
-            return {
-                hits: requiredHits,
-                percent: null,
-                randLevel: "確定",
-                effectiveMinDamage: effectiveMinDamage,
-                effectiveMaxDamage: effectiveMaxDamage,
-                isSubstitute: isSubstitute,
-                targetHP: targetHP
-            };
-        }
+        const requiredHits = Math.ceil(targetHP / effectiveMinDamage);
+        return {
+            hits: requiredHits,
+            percent: null,
+            randLevel: "確定",
+            effectiveMinDamage: effectiveMinDamage,
+            effectiveMaxDamage: effectiveMaxDamage,
+            isSubstitute: isSubstitute,
+            targetHP: targetHP
+        };
     }
     
     return {
@@ -5167,6 +5180,7 @@ function calculateRandText(displayMinDamage, displayMaxDamage, defenderHP, curre
         targetHP: targetHP
     };
 }
+
 // 固定回数連続技の乱数計算(急所、命中考慮）
 function calculateFixedMultiHitRandText(displayMinDamage, displayMaxDamage, targetHP, hitCount, isSubstitute) {
     console.log(`固定${hitCount}回攻撃の乱数計算: ダメージ${displayMinDamage}~${displayMaxDamage}, 対象HP${targetHP}`);
