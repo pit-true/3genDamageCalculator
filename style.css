@@ -275,7 +275,7 @@ button:hover {
 }
 
 .ev-input {
-    width: 40px;
+    width: 45px;
     padding: 4px;
     border: 1px solid #ccc;
     border-radius: 4px;
@@ -518,8 +518,8 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 .detail-stat-row .ev-input {
-    width: 35px !important;
-    max-width: 35px !important;
+    width: 45px !important;
+    max-width: 45px !important;
     height: 15px;
     flex-shrink: 0;
     font-size: 13px;
@@ -1574,9 +1574,16 @@ input[type="number"]::-webkit-inner-spin-button {
     max-width: 50px !important;
     }
 
-    .stat-label {
+    .stat-row .stat-label {
         font-size:10px;
         margin-right: -10px;
+        margin-left: -3px;
+    }
+
+    .detail-stat-row .stat-label {
+        font-size:10px;
+        margin-right: 0;
+        margin-left: -15px;
     }
 
     input[type="text"]{
