@@ -89,6 +89,7 @@ document.addEventListener('DOMContentLoaded', function() {
     updateDetailSummary('attacker');
     updateDetailSummary('defender');
     setupHPSyncListeners();
+    initializeMobileControls();
     // ナビゲーションメニューの動作
     const navToggle = document.querySelector('.nav-toggle');
     const navMenu = document.querySelector('.nav-menu');
@@ -106,6 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+    
 });
 
 // データ読み込み
@@ -427,6 +429,7 @@ function handleAutoSettingChange() {
     const curseSelect = document.getElementById('curseSelect');
     const nightmareSelect = document.getElementById('nightmareSelect');
     const leechSeedSelect = document.getElementById('leechSeedSelect');
+    const leechSeed2Select = document.getElementById('leechSeed2Select');
     
     const paralysisValue = paralysisSelect ? paralysisSelect.value : 'none';
     const confusionValue = confusionSelect ? confusionSelect.value : 'none';
@@ -438,15 +441,16 @@ function handleAutoSettingChange() {
     const curseValue = curseSelect ? curseSelect.value : 'none';
     const nightmareValue = nightmareSelect ? nightmareSelect.value : 'none';
     const leechSeedValue = leechSeedSelect ? leechSeedSelect.value : 'none';
-    
+    const leechSeed2Value = leechSeed2Select ? leechSeed2Select.value : 'none';
+
     const hasActionRestriction = (paralysisValue !== 'none' && paralysisValue !== '') || 
                                (confusionValue !== 'none' && confusionValue !== '');
     const hasConstantDamage = statusDamageValue !== 'none' || spikesLevel > 0 ||
                            (weather === 'sandstorm' || weather === 'hail') ||
                            (curseValue !== 'none' && curseValue !== '') ||
                            (nightmareValue !== 'none' && nightmareValue !== '') ||
-                           (leechSeedValue !== 'none' && leechSeedValue !== '');
-   
+                           (leechSeedValue !== 'none' && leechSeedValue !== '') ||
+                           (leechSeed2Value !== 'none' && leechSeed2Value !== '');
    // 自動設定がすべてなくなり、かつユーザー入力の技もない場合は配列をクリア
    if (!hasActionRestriction && !hasConstantDamage && !hasUserInputMoves) {
        // 1ターン目以外をクリア
@@ -2179,7 +2183,6 @@ function setupHPSyncListeners() {
             // input, change, blur イベントで監視
             ['input', 'change', 'blur'].forEach(eventType => {
                 input.addEventListener(eventType, function() {
-                    console.log(`HP関連変更検知: ${inputId} = ${this.value}`);
                     // 少し遅延させて確実に計算後に同期
                     setTimeout(() => {
                         syncCurrentHPWithMaxHP();
@@ -2314,11 +2317,55 @@ function handleEVInput(event) {
     const input = event.target;
     let value = parseInt(input.value) || 0;
     
-    // 4の倍数に調整
-    value = Math.round(value / 4) * 4;
+    // サイドとステータスを判定して個体値対応の調整
+    const inputId = input.id;
+    const side = inputId.includes('attacker') ? 'attacker' : 'defender';
+    let stat;
+    if (inputId.includes('HP') || inputId.includes('Hp')) stat = 'hp';
+    else if (inputId.includes('A')) stat = 'a';
+    else if (inputId.includes('B')) stat = 'b';
+    else if (inputId.includes('C')) stat = 'c';
+    else if (inputId.includes('D')) stat = 'd';
+    else if (inputId.includes('S')) stat = 's';
     
-    // 範囲制限
-    value = Math.max(0, Math.min(252, value));
+    if (stat && side) {
+        const pokemon = side === 'attacker' ? attackerPokemon : defenderPokemon;
+        const currentIV = pokemon.ivValues[stat];
+        
+        if (currentIV === 31) {
+            // 個体値31：8n-4パターンに調整
+            if (value === 0) {
+                // 0はそのまま
+            } else if (value <= 4) {
+                value = 4;
+            } else {
+                // 最も近い8n-4値に調整
+                const base = Math.round((value + 4) / 8);
+                value = Math.max(4, Math.min(252, base * 8 - 4));
+            }
+            value = Math.max(0, Math.min(252, value));
+        } else if (currentIV === 30) {
+            // 個体値30：8nパターンに調整
+            if (value === 0) {
+                // 0はそのまま
+            } else if (value <= 8) {
+                value = 8;
+            } else {
+                // 最も近い8n値に調整
+                const base = Math.round(value / 8);
+                value = Math.max(8, Math.min(248, base * 8));
+            }
+            value = Math.max(0, Math.min(248, value));
+        } else {
+            // その他：4の倍数に調整
+            value = Math.round(value / 4) * 4;
+            value = Math.max(0, Math.min(252, value));
+        }
+    } else {
+        // 判定できない場合は4の倍数に調整
+        value = Math.round(value / 4) * 4;
+        value = Math.max(0, Math.min(252, value));
+    }
     
     input.value = value;
     
@@ -2330,19 +2377,18 @@ function handleEVInput(event) {
     }
     
     // 同期処理
-    const side = input.id.includes('attacker') ? 'attacker' : 'defender';
-    const stat = input.id.match(/Ev([A-Z]+)/)[1].toLowerCase();
-    
-    // 詳細設定の入力欄の場合はメインと同期
-    if (input.closest('.detail-stat-row')) {
-        syncMainEV(side, stat);
-    } else {
-        // メインの入力欄の場合は詳細設定と同期
-        syncDetailEV(side, stat);
+    if (stat && side) {
+        // 詳細設定の入力欄の場合はメインと同期
+        if (input.closest('.detail-stat-row')) {
+            syncMainEV(side, stat);
+        } else {
+            // メインの入力欄の場合は詳細設定と同期
+            syncDetailEV(side, stat);
+        }
+        
+        // ステータス更新
+        updateStats(side);
     }
-    
-    // ステータス更新
-    updateStats(side);
 }
 
 function updateAllButtons() {
@@ -4196,7 +4242,7 @@ function calculateTotalConstantDamage(maxHP, pokemonTypes, turn) {
             totalDamage += calculateLeechSeedDamage(maxHP);
         }
     }
-    
+
     return totalDamage;
 }
 
@@ -4212,6 +4258,11 @@ function calculateNightmareDamage(maxHP) {
 
 // やどりぎダメージ計算（最大HPの1/8）
 function calculateLeechSeedDamage(maxHP) {
+    return Math.floor(maxHP / 8);
+}
+
+// やどりぎ回復量計算（最大HPの1/8回復）
+function calculateLeechSeed2HealAmount(maxHP) {
     return Math.floor(maxHP / 8);
 }
 
@@ -4255,13 +4306,16 @@ function calculateDamage(attack, defense, level, power, category, moveType, atta
   if (attackerPokemon.item) {
       const item = attackerPokemon.item;
       if (item.timing === "attackMod") {
-          let modifier = category === "Physical" ? (item.a || 1.0) : (item.c || 1.0);
+          const modifier = category === "Physical" ? (item.a || 1.0) : (item.c || 1.0);
           finalAttack = Math.floor(finalAttack * modifier);
-          modifier = category === "Physical" ? (item.b || 1.0) : (item.d || 1.0);
-          finalDefense = Math.floor(finalAttack * modifier);
       }
   }
-
+  if (defenderPokemon.item) {
+      const item = defenderPokemon.item;
+      const modifier = category === "Physical" ? (item.b || 1.0) : (item.d || 1.0);
+      finalDefense = Math.floor(finalAttack * modifier);
+  }
+          
   // 4. 特性 (実数値補正系)
   const isGuts = document.getElementById('gutsCheck').checked;
   // あついしぼう
@@ -4757,6 +4811,13 @@ function createHPBar(minDamage, maxDamage, totalHP, keepDamage = false) {
         damageDetails.push(`やどりぎ -${leechSeedDamage}`);
     }
     
+    // やどりぎ回復
+    const leechSeed2Select = document.getElementById('leechSeed2Select');
+    if (leechSeed2Select && leechSeed2Select.value !== 'none') {
+        const leechSeed2HealAmount = calculateLeechSeed2HealAmount(totalHP);
+        damageDetails.push(`やどりぎ回復 +${leechSeed2HealAmount}`);
+    }
+
     // 天候ダメージ
     const weather = document.getElementById('weatherSelect').value;
     const weatherDamage = calculateWeatherDamage(totalHP, defenderPokemon.types, weather);
@@ -4814,15 +4875,8 @@ function createHPBar(minDamage, maxDamage, totalHP, keepDamage = false) {
     }
     
     function generateDotMarkers() {
-        let markers = '';
-        const dotWidth = 100 / maxDots;
-        
-        for (let i = 1; i < maxDots; i++) {
-            const position = i * dotWidth;
-            markers += `<div style="height: 100%; width: 1px; background-color: rgba(0,0,0,0.2); position: absolute; left: ${position}%; top: 0; z-index: 20;"></div>`;
-        }
-        
-        return markers;
+    // CSSの::beforeで描画するため、この関数は空にする
+    return '';
     }
     
     let hpBarHtml = '';
@@ -4830,9 +4884,8 @@ function createHPBar(minDamage, maxDamage, totalHP, keepDamage = false) {
     if (remainHPAfterMaxDamage == remainHPAfterMinDamage) {
         hpBarHtml = `
         <div style="margin: 10px 0; width: 100%; position: relative;">
-          <div style="height: 15px; width: 100%; background-color: #506858; border-radius: 5px; position: relative; overflow: hidden;">
+          <div class="hp-bar-container">
             ${generateLayers()}
-            ${generateDotMarkers()}
           </div>
           <div style="text-align: center; margin-top: 3px; font-size: 0.85em; color: #777;">
             <div>HP: ${remainHPAfterMaxDamage}/${totalHP} (${remainMaxPercent}%)${healInfo}</div>
@@ -6064,36 +6117,70 @@ function createHPBar(minDamage, maxDamage, totalHP, keepDamage = false) {
     let effectiveMinDamage = displayMinDamage;
     let effectiveMaxDamage = displayMaxDamage;
     
+    // やどりぎ回復量を計算
+    let leechSeedHeal = 0;
+    const leechSeed2Select = document.getElementById('leechSeed2Select');
+    if (leechSeed2Select && leechSeed2Select.value !== 'none') {
+        leechSeedHeal = calculateLeechSeed2HealAmount(totalHP);
+    }
+    
     if (defenderItem && !isSubstitute) { // みがわりの場合はアイテム効果なし
         if (defenderItem.name === 'オボンのみ') {
             // HP50%以下で30回復
             const halfHP = totalHP / 2;
             if (totalHP - effectiveMinDamage <= halfHP) {
-                healInfo = ' (オボンのみ発動後)';
-                effectiveMinDamage = Math.max(0, effectiveMinDamage - 30);
-                effectiveMaxDamage = Math.max(0, effectiveMaxDamage - 30);
+                const totalHealAmount = 30 + leechSeedHeal;
+                healInfo = leechSeedHeal > 0 ? 
+                    `<br>(オボンのみ+やどりぎ回復 +${totalHealAmount})` : 
+                    '<br>(オボンのみ発動後)';
+                effectiveMinDamage = Math.max(0, effectiveMinDamage - totalHealAmount);
+                effectiveMaxDamage = Math.max(0, effectiveMaxDamage - totalHealAmount);
+            } else if (leechSeedHeal > 0) {
+                healInfo = `<br>(やどりぎ回復 +${leechSeedHeal})`;
+                effectiveMinDamage = Math.max(0, effectiveMinDamage - leechSeedHeal);
+                effectiveMaxDamage = Math.max(0, effectiveMaxDamage - leechSeedHeal);
             }
         } else if (isFigyBerry(defenderItem.name)) {
             // HP50%以下で最大HPの1/8回復
             const halfHP = totalHP / 2;
-            const healAmount = Math.floor(totalHP / 8);
+            const berryHealAmount = Math.floor(totalHP / 8);
             if (totalHP - effectiveMinDamage <= halfHP) {
-                healInfo = ` (${defenderItem.name}発動後)`;
-                effectiveMinDamage = Math.max(0, effectiveMinDamage - healAmount);
-                effectiveMaxDamage = Math.max(0, effectiveMaxDamage - healAmount);
+                const totalHealAmount = berryHealAmount + leechSeedHeal;
+                healInfo = leechSeedHeal > 0 ? 
+                    `<br>(${defenderItem.name}+やどりぎ回復 +${totalHealAmount})` : 
+                    `<br>(${defenderItem.name}発動後)`;
+                effectiveMinDamage = Math.max(0, effectiveMinDamage - totalHealAmount);
+                effectiveMaxDamage = Math.max(0, effectiveMaxDamage - totalHealAmount);
+            } else if (leechSeedHeal > 0) {
+                healInfo = `<br>(やどりぎ回復 +${leechSeedHeal})`;
+                effectiveMinDamage = Math.max(0, effectiveMinDamage - leechSeedHeal);
+                effectiveMaxDamage = Math.max(0, effectiveMaxDamage - leechSeedHeal);
             }
         } else if (defenderItem.name === 'たべのこし') {
             // 毎ターン1/16回復
-            const healAmount = Math.floor(totalHP / 16);
-            healInfo = ' (たべのこし考慮)';
-            effectiveMinDamage = Math.max(0, effectiveMinDamage - healAmount);
-            effectiveMaxDamage = Math.max(0, effectiveMaxDamage - healAmount);
+            const leftoversHealAmount = Math.floor(totalHP / 16);
+            const totalHealAmount = leftoversHealAmount + leechSeedHeal;
+            healInfo = leechSeedHeal > 0 ? 
+                `<br>(たべのこし+やどりぎ回復 +${totalHealAmount})` : 
+                '<br>(たべのこし考慮)';
+            effectiveMinDamage = Math.max(0, effectiveMinDamage - totalHealAmount);
+            effectiveMaxDamage = Math.max(0, effectiveMaxDamage - totalHealAmount);
+        } else if (leechSeedHeal > 0) {
+            // やどりぎ回復のみ
+            healInfo = `<br>(やどりぎ回復 +${leechSeedHeal})`;
+            effectiveMinDamage = Math.max(0, effectiveMinDamage - leechSeedHeal);
+            effectiveMaxDamage = Math.max(0, effectiveMaxDamage - leechSeedHeal);
         }
+    } else if (leechSeedHeal > 0 && !isSubstitute) {
+        // アイテムなし、やどりぎ回復のみ
+        healInfo = `<br>(やどりぎ回復 +${leechSeedHeal})`;
+        effectiveMinDamage = Math.max(0, effectiveMinDamage - leechSeedHeal);
+        effectiveMaxDamage = Math.max(0, effectiveMaxDamage - leechSeedHeal);
     }
     
     // 定数ダメージの詳細情報を生成
     let constantDamageInfo = '';
-    if (constantDamage > 0) {
+    if (constantDamage > 0 || leechSeedHeal > 0) {
         const damageDetails = [];
         
         // 状態異常ダメージ
@@ -6196,11 +6283,11 @@ function createHPBar(minDamage, maxDamage, totalHP, keepDamage = false) {
     
     function generateDotMarkers() {
         let markers = '';
-        const dotWidth = 100 / maxDots;
         
+        // より精密なドット区切り線の計算
         for (let i = 1; i < maxDots; i++) {
-            const position = i * dotWidth;
-            markers += `<div style="height: 100%; width: 1px; background-color: rgba(0,0,0,0.2); position: absolute; left: ${position}%; top: 0; z-index: 20;"></div>`;
+            const position = (i / maxDots) * 100;
+            markers += `<div class="dot-marker" style="height: 100%; width: 1px; background-color: rgba(0,0,0,0.2); position: absolute; left: calc(${position}% - 0.5px); top: 0; z-index: 20;"></div>`;
         }
         
         return markers;
@@ -6298,7 +6385,6 @@ function addMultiTurnMove() {
 
 // 複数ターン技設定をクリア
 function clearMultiTurnMoves() {
-    console.log('clearMultiTurnMoves called');
     
     // 配列をクリア
     multiTurnMoves = [null, null, null, null, null];
@@ -6315,7 +6401,6 @@ function clearMultiTurnMoves() {
         addButton.style.display = 'block';
     }
     
-    console.log('複数ターン技設定をクリアしました');
 }
 
 // 複数ターン技の選択
@@ -6440,6 +6525,7 @@ function calculateMultiTurnKORate(defenderHP, turns = 4) {
 }
 
 // 複数ターン基本瀕死率計算
+// 複数ターン基本瀕死率計算
 function calculateMultiTurnBasicKORateUnified(defenderHP, maxTurns) {
     const results = Array(maxTurns).fill(0);
     const calculationBasis = Array(maxTurns).fill(null);
@@ -6492,20 +6578,44 @@ function calculateMultiTurnBasicKORateUnified(defenderHP, maxTurns) {
                 statusEffects.push('ひかりのこな（命中率0.9倍）');
             }
             
-            // 表示用ダメージ範囲を設定
+            // 表示用ダメージ範囲を設定（やどりぎ回復考慮）
             let displayDamageRange;
             if (move.class === 'multi_hit') {
                 // 連続技の場合は統合版を使用
                 const singleMin = moveDataList[turn].minDamage;
                 const singleMax = moveDataList[turn].maxDamage;
                 const constantDamage = calculateTotalConstantDamage(defenderHP, defenderPokemon.types, turn + 1);
-                const displayRange = multiHitCalculator.getDisplayDamageRange(singleMin, singleMax, constantDamage);
+                
+                // やどりぎ回復量を計算
+                let healAmount = 0;
+                const leechSeed2Select = document.getElementById('leechSeed2Select');
+                if (leechSeed2Select) {
+                    const leechSeed2StartTurn = parseInt(leechSeed2Select.value);
+                    if (!isNaN(leechSeed2StartTurn) && turn + 1 >= leechSeed2StartTurn) {
+                        healAmount = calculateLeechSeed2HealAmount(defenderHP);
+                    }
+                }
+                
+                const netConstantEffect = constantDamage - healAmount;
+                const displayRange = multiHitCalculator.getDisplayDamageRange(singleMin, singleMax, netConstantEffect);
                 displayDamageRange = displayRange.text;
             } else {
                 // 通常技の場合
                 const constantDamage = calculateTotalConstantDamage(defenderHP, defenderPokemon.types, turn + 1);
-                const minWithConstant = moveDataList[turn].minDamage + constantDamage;
-                const maxWithConstant = moveDataList[turn].maxDamage + constantDamage;
+                
+                // やどりぎ回復量を計算
+                let healAmount = 0;
+                const leechSeed2Select = document.getElementById('leechSeed2Select');
+                if (leechSeed2Select) {
+                    const leechSeed2StartTurn = parseInt(leechSeed2Select.value);
+                    if (!isNaN(leechSeed2StartTurn) && turn + 1 >= leechSeed2StartTurn) {
+                        healAmount = calculateLeechSeed2HealAmount(defenderHP);
+                    }
+                }
+                
+                const netConstantEffect = constantDamage - healAmount;
+                const minWithConstant = moveDataList[turn].minDamage + netConstantEffect;
+                const maxWithConstant = moveDataList[turn].maxDamage + netConstantEffect;
                 displayDamageRange = `${minWithConstant}~${maxWithConstant}`;
             }
             
@@ -6532,18 +6642,35 @@ function calculateMultiTurnBasicKORateUnified(defenderHP, maxTurns) {
         }
     }
     
+    // ★重要: やどりぎ回復がある場合は必ずcalculateKORateWithConstantDamageを使用
+    const leechSeed2Select = document.getElementById('leechSeed2Select');
+    const hasLeechSeedHeal = leechSeed2Select && leechSeed2Select.value !== 'none';
+    
     if (hasAnyMultiHit) {
         console.log('=== 連続技混在: 統合計算開始 ===');
         console.log('連続技があるターン:', Array.from(multiHitTurns).map(t => t + 1));
         
-        // 統合された混合計算を実行（個別の連続技処理はここでは行わない）
-        calculateMixedKORateProbability(defenderHP, moveDataList, 0, 0, 1.0, results);
+        if (hasLeechSeedHeal) {
+            // やどりぎ回復がある場合は回復対応の計算を使用
+            calculateKORateWithConstantDamage(defenderHP, defenderHP, moveDataList, 0, 1.0, results, null);
+        } else {
+            // 統合された混合計算を実行
+            calculateMixedKORateProbability(defenderHP, moveDataList, 0, 0, 1.0, results);
+        }
         
         console.log('=== 連続技混在: 統合計算完了 ===');
     } else {
-        console.log('=== 通常技のみ: 既存計算開始 ===');
-        calculateKORateProbability(defenderHP, moveDataList, 0, 0, 1.0, results);
-        console.log('=== 通常技のみ: 既存計算完了 ===');
+        console.log('=== 通常技のみ: 計算開始 ===');
+        
+        if (hasLeechSeedHeal) {
+            // やどりぎ回復がある場合は回復対応の計算を使用
+            calculateKORateWithConstantDamage(defenderHP, defenderHP, moveDataList, 0, 1.0, results, null);
+        } else {
+            // 従来の計算
+            calculateKORateProbability(defenderHP, moveDataList, 0, 0, 1.0, results);
+        }
+        
+        console.log('=== 通常技のみ: 計算完了 ===');
     }
     
     console.log('統合版最終瀕死率:', results.map((rate, i) => `${i+1}T: ${(rate * 100).toFixed(3)}%`));
@@ -7168,18 +7295,37 @@ function calculateKORateWithConstantDamage(currentHP, maxHP, moveDataList, turnI
     
     const moveData = moveDataList[turnIndex];
     if (!moveData) {
-        // ターン終了時の定数ダメージ処理
+        // ターン終了時の処理
         const constantDamage = calculateTotalConstantDamage(maxHP, defenderPokemon.types, turnIndex + 1);
-        const finalHP = Math.max(0, currentHP - constantDamage);
+        
+        // やどりぎ回復を追加
+        let healAmount = 0;
+        const leechSeed2Select = document.getElementById('leechSeed2Select');
+        if (leechSeed2Select) {
+            const leechSeed2StartTurn = parseInt(leechSeed2Select.value);
+            if (!isNaN(leechSeed2StartTurn) && turnIndex + 1 >= leechSeed2StartTurn) {
+                healAmount = calculateLeechSeed2HealAmount(maxHP);
+            }
+        }
+        
+        // 正味ダメージ = 定数ダメージ - 回復量
+        const netDamage = constantDamage - healAmount;
+        let finalHP = currentHP - netDamage;
+        
+        // 回復で最大HPを超えないように制限
+        if (healAmount > 0) {
+            finalHP = Math.min(finalHP, maxHP);
+        }
+        finalHP = Math.max(0, finalHP);
         
         if (hpInfo) {
             hpInfo[turnIndex] = {
                 beforeHeal: currentHP,
                 afterHeal: finalHP,
-                healAmount: 0,
+                healAmount: healAmount,
                 constantDamage: constantDamage,
-                netHealing: -constantDamage,
-                healType: '定数ダメージのみ',
+                netHealing: healAmount - constantDamage,
+                healType: healAmount > 0 ? 'やどりぎ回復' : '定数ダメージのみ',
                 maxHP: maxHP
             };
         }
@@ -7187,20 +7333,61 @@ function calculateKORateWithConstantDamage(currentHP, maxHP, moveDataList, turnI
         calculateKORateWithConstantDamage(finalHP, maxHP, moveDataList, turnIndex + 1, currentProbability, results, hpInfo);
         return;
     }
-    
+
     // 技が外れた場合
     const missProbability = 1 - moveData.accuracy;
     if (missProbability > 0) {
         const constantDamage = calculateTotalConstantDamage(maxHP, defenderPokemon.types, turnIndex + 1);
-        const finalHP = Math.max(0, currentHP - constantDamage);
+        
+        // やどりぎ回復を追加
+        let healAmount = 0;
+        const leechSeed2Select = document.getElementById('leechSeed2Select');
+        if (leechSeed2Select) {
+            const leechSeed2StartTurn = parseInt(leechSeed2Select.value);
+            if (!isNaN(leechSeed2StartTurn) && turnIndex + 1 >= leechSeed2StartTurn) {
+                healAmount = calculateLeechSeed2HealAmount(maxHP);
+            }
+        }
+        
+        const netDamage = constantDamage - healAmount;
+        let finalHP = currentHP - netDamage;
+        if (healAmount > 0) {
+            finalHP = Math.min(finalHP, maxHP);
+        }
+        finalHP = Math.max(0, finalHP);
+        
         calculateKORateWithConstantDamage(finalHP, maxHP, moveDataList, turnIndex + 1, currentProbability * missProbability, results, hpInfo);
     }
     
     // 瀕死率計算
     processKORateCalculation(currentHP, maxHP, moveData, turnIndex, currentProbability, results, hpInfo, 
         (remainingHP, prob) => {
+            if (remainingHP <= 0) {
+                for (let i = turnIndex; i < results.length; i++) {
+                    results[i] += prob;
+                }
+                return;
+            }
+            
             const constantDamage = calculateTotalConstantDamage(maxHP, defenderPokemon.types, turnIndex + 1);
-            const finalHP = Math.max(0, remainingHP - constantDamage);
+            
+            // やどりぎ回復を追加
+            let healAmount = 0;
+            const leechSeed2Select = document.getElementById('leechSeed2Select');
+            if (leechSeed2Select) {
+                const leechSeed2StartTurn = parseInt(leechSeed2Select.value);
+                if (!isNaN(leechSeed2StartTurn) && turnIndex + 1 >= leechSeed2StartTurn) {
+                    healAmount = calculateLeechSeed2HealAmount(maxHP);
+                }
+            }
+            
+            const netDamage = constantDamage - healAmount;
+            let finalHP = remainingHP - netDamage;
+            if (healAmount > 0) {
+                finalHP = Math.min(finalHP, maxHP);
+            }
+            finalHP = Math.max(0, finalHP);
+            
             calculateKORateWithConstantDamage(finalHP, maxHP, moveDataList, turnIndex + 1, prob, results, hpInfo);
         }
     );
@@ -7224,21 +7411,37 @@ function calculateKORateWithLeftovers(currentHP, maxHP, moveDataList, turnIndex,
         // ターン終了時の処理
         let healAmount = Math.floor(maxHP / 16); // たべのこし回復
         
+        // やどりぎ回復を追加
+        const leechSeed2Select = document.getElementById('leechSeed2Select');
+        if (leechSeed2Select) {
+            const leechSeed2StartTurn = parseInt(leechSeed2Select.value);
+            if (!isNaN(leechSeed2StartTurn) && turnIndex + 1 >= leechSeed2StartTurn) {
+                healAmount += calculateLeechSeed2HealAmount(maxHP);
+            }
+        }
+        
         // 定数ダメージを計算
         const constantDamage = calculateTotalConstantDamage(maxHP, defenderPokemon.types, turnIndex + 1);
         
         // 回復量から定数ダメージを差し引き
         const netHealing = healAmount - constantDamage;
-        const finalHP = Math.max(0, Math.min(currentHP + netHealing, maxHP));
+        let finalHP = currentHP + netHealing;
+        finalHP = Math.max(0, Math.min(finalHP, maxHP)); // 0以上、最大HP以下に制限
         
         if (hpInfo) {
+            const healTypes = [];
+            if (Math.floor(maxHP / 16) > 0) healTypes.push('たべのこし');
+            if (leechSeed2Select && leechSeed2Select.value !== 'none' && turnIndex + 1 >= parseInt(leechSeed2Select.value)) {
+                healTypes.push('やどりぎ回復');
+            }
+            
             hpInfo[turnIndex] = {
                 beforeHeal: currentHP,
                 afterHeal: finalHP,
                 healAmount: healAmount,
                 constantDamage: constantDamage,
                 netHealing: netHealing,
-                healType: 'たべのこし',
+                healType: healTypes.length > 0 ? healTypes.join('+') : '定数ダメージのみ',
                 maxHP: maxHP
             };
         }
@@ -7250,10 +7453,22 @@ function calculateKORateWithLeftovers(currentHP, maxHP, moveDataList, turnIndex,
     // 技が外れた場合
     const missProbability = 1 - moveData.accuracy;
     if (missProbability > 0) {
-        let healAmount = Math.floor(maxHP / 16);
+        let healAmount = Math.floor(maxHP / 16); // たべのこし回復
+        
+        // やどりぎ回復を追加
+        const leechSeed2Select = document.getElementById('leechSeed2Select');
+        if (leechSeed2Select) {
+            const leechSeed2StartTurn = parseInt(leechSeed2Select.value);
+            if (!isNaN(leechSeed2StartTurn) && turnIndex + 1 >= leechSeed2StartTurn) {
+                healAmount += calculateLeechSeed2HealAmount(maxHP);
+            }
+        }
+        
         const constantDamage = calculateTotalConstantDamage(maxHP, defenderPokemon.types, turnIndex + 1);
         const netHealing = healAmount - constantDamage;
-        const finalHP = Math.max(0, Math.min(currentHP + netHealing, maxHP));
+        let finalHP = currentHP + netHealing;
+        finalHP = Math.max(0, Math.min(finalHP, maxHP));
+        
         calculateKORateWithLeftovers(finalHP, maxHP, moveDataList, turnIndex + 1, currentProbability * missProbability, results, hpInfo, berryUsed);
     }
     
@@ -7268,10 +7483,22 @@ function calculateKORateWithLeftovers(currentHP, maxHP, moveDataList, turnIndex,
                 return;
             }
             
-            let healAmount = Math.floor(maxHP / 16);
+            let healAmount = Math.floor(maxHP / 16); // たべのこし回復
+            
+            // やどりぎ回復を追加
+            const leechSeed2Select = document.getElementById('leechSeed2Select');
+            if (leechSeed2Select) {
+                const leechSeed2StartTurn = parseInt(leechSeed2Select.value);
+                if (!isNaN(leechSeed2StartTurn) && turnIndex + 1 >= leechSeed2StartTurn) {
+                    healAmount += calculateLeechSeed2HealAmount(maxHP);
+                }
+            }
+            
             const constantDamage = calculateTotalConstantDamage(maxHP, defenderPokemon.types, turnIndex + 1);
             const netHealing = healAmount - constantDamage;
-            const finalHP = Math.max(0, Math.min(remainingHP + netHealing, maxHP));
+            let finalHP = remainingHP + netHealing;
+            finalHP = Math.max(0, Math.min(finalHP, maxHP));
+            
             calculateKORateWithLeftovers(finalHP, maxHP, moveDataList, turnIndex + 1, prob, results, hpInfo, berryUsed);
         }
     );
@@ -8205,6 +8432,16 @@ function generateEnhancedMultiTurnKORateHTML(koRates, actualTurns, moveInfo, eva
                         }
                     }
                     
+                    // やどりぎダメージ
+                    const leechSeed2Select = document.getElementById('leechSeed2Select');
+                    if (leechSeed2Select && leechSeed2Select.value !== 'none') {
+                        const leechSeed2StartTurn = parseInt(leechSeed2Select.value);
+                        if (!isNaN(leechSeed2StartTurn) && turn + 1 >= leechSeed2StartTurn) {
+                            const leechSeed2HealAmount = calculateLeechSeed2HealAmount(hpRange.maxHP || defenderPokemon.maxHP);
+                            damageDetails.push(`やどりぎ回復 +${leechSeed2HealAmount}`);
+                        }
+                    }
+
                     // 天候ダメージ
                     const weather = document.getElementById('weatherSelect').value;
                     const weatherDamage = calculateWeatherDamage(hpRange.maxHP || defenderPokemon.maxHP, defenderPokemon.types, weather);
@@ -8386,24 +8623,31 @@ function getConstantDamageNames() {
         names.push('まきびし');
     }
     
-    // ★新規追加: のろいダメージ
+    // のろいダメージ
     const curseSelect = document.getElementById('curseSelect');
     if (curseSelect && curseSelect.value !== 'none') {
         names.push('のろい');
     }
     
-    // ★新規追加: あくむダメージ
+    // あくむダメージ
     const nightmareSelect = document.getElementById('nightmareSelect');
     if (nightmareSelect && nightmareSelect.value !== 'none') {
         names.push('あくむ');
     }
     
-    // ★新規追加: やどりぎダメージ
+    // やどりぎダメージ
     const leechSeedSelect = document.getElementById('leechSeedSelect');
     if (leechSeedSelect && leechSeedSelect.value !== 'none') {
         names.push('やどりぎ');
     }
-    
+
+    // やどりぎ回復
+    const leechSeed2Select = document.getElementById('leechSeed2Select');
+    if (leechSeed2Select && leechSeed2Select.value !== 'none') {
+        const leechSeed2HealAmount = calculateLeechSeed2HealAmount(totalHP);
+        damageDetails.push(`やどりぎ回復 +${leechSeed2HealAmount}`);
+    }
+
     // 天候ダメージ
     const weather = document.getElementById('weatherSelect').value;
     if (weather === 'sandstorm' || weather === 'hail') {
@@ -8511,6 +8755,15 @@ function getConstantDamageNamesForTurn(turnNumber) {
         const leechSeedStartTurn = parseInt(leechSeedSelect.value);
         if (!isNaN(leechSeedStartTurn) && turnNumber >= leechSeedStartTurn) {
             names.push('やどりぎ');
+        }
+    }
+    
+    // やどりぎ回復（指定ターン以降）
+    const leechSeed2Select = document.getElementById('leechSeed2Select');
+    if (leechSeed2Select) {
+        const leechSeed2StartTurn = parseInt(leechSeed2Select.value);
+        if (!isNaN(leechSeed2StartTurn) && turnNumber >= leechSeed2StartTurn) {
+            names.push('やどりぎ回復');
         }
     }
     
@@ -8869,4 +9122,846 @@ function setupMultiTurnMoveListeners() {
    for (let i = 2; i <= 4; i++) {
        setupMultiTurnMoveDropdown(`multiTurnMove${i}`, i - 1);
    }
+}
+
+// ========================
+// モバイル数値コントロール機能（新規追加）
+// ========================
+
+// モバイルコントロールバーの状態管理
+let mobileControlState = {
+    activeInput: null,
+    fieldInfo: null,
+    isActive: false
+};
+
+/**
+ * モバイルコントロール機能の初期化（DOMContentLoaded内で呼び出し）
+ */
+function initializeMobileControls() {
+    // 数値入力欄にイベントリスナーを設定
+    setupMobileInputListeners();
+    
+    // コントロールバーのイベントリスナーを設定
+    setupMobileControlListeners();
+}
+
+/**
+ * 数値入力欄のイベントリスナーを設定
+ */
+function setupMobileInputListeners() {
+    // 対象となる数値入力欄を特定
+    const targetInputs = [
+        // 攻撃側実数値
+        'attackerRealA', 'attackerRealC',
+        'attackerDetailRealHP', 'attackerDetailRealA', 'attackerDetailRealB', 
+        'attackerDetailRealC', 'attackerDetailRealD', 'attackerDetailRealS',
+        
+        // 防御側実数値
+        'defenderRealHP', 'defenderRealB', 'defenderRealD', 'defenderCurrentHP',
+        'defenderDetailRealHP', 'defenderDetailRealA', 'defenderDetailRealB',
+        'defenderDetailRealC', 'defenderDetailRealD', 'defenderDetailRealS',
+        
+        // 攻撃側個体値
+        'attackerIvA', 'attackerIvC',
+        'attackerDetailIvHP', 'attackerDetailIvA', 'attackerDetailIvB',
+        'attackerDetailIvC', 'attackerDetailIvD', 'attackerDetailIvS',
+        
+        // 防御側個体値
+        'defenderIvHP', 'defenderIvB', 'defenderIvD',
+        'defenderDetailIvHP', 'defenderDetailIvA', 'defenderDetailIvB',
+        'defenderDetailIvC', 'defenderDetailIvD', 'defenderDetailIvS',
+        
+        // 攻撃側努力値
+        'attackerEvA', 'attackerEvC',
+        'attackerDetailEvHP', 'attackerDetailEvA', 'attackerDetailEvB',
+        'attackerDetailEvC', 'attackerDetailEvD', 'attackerDetailEvS',
+        
+        // 防御側努力値
+        'defenderEvHP', 'defenderEvB', 'defenderEvD',
+        'defenderDetailEvHP', 'defenderDetailEvA', 'defenderDetailEvB',
+        'defenderDetailEvC', 'defenderDetailEvD', 'defenderDetailEvS'
+    ];
+    
+    targetInputs.forEach(inputId => {
+        const input = document.getElementById(inputId);
+        if (input) {
+            // フォーカス時
+            input.addEventListener('focus', function() {
+                activateMobileControl(this);
+            });
+            
+            // 値変更時
+            input.addEventListener('input', function() {
+                if (mobileControlState.activeInput === this) {
+                    updateMobileControlValue();
+                }
+            });
+        }
+    });
+    
+    // 他の場所をタップした時の処理
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.mobile-control-bar') && 
+            !e.target.matches('input[type="number"]')) {
+            deactivateMobileControl();
+        }
+    });
+}
+
+/**
+ * コントロールバーのイベントリスナーを設定
+ */
+function setupMobileControlListeners() {
+    const minusBtn = document.getElementById('mobileMinus');
+    const plusBtn = document.getElementById('mobilePlus');
+    const slider = document.getElementById('mobileSlider');
+    
+    if (!minusBtn || !plusBtn || !slider) return;
+    
+    // マイナスボタン
+    minusBtn.addEventListener('click', function() {
+        adjustMobileValue(-1);
+    });
+    
+    // プラスボタン
+    plusBtn.addEventListener('click', function() {
+        adjustMobileValue(1);
+    });
+    
+    // スライダー
+    slider.addEventListener('input', function() {
+        updateValueFromSlider();
+    });
+    
+    // 長押し対応
+    setupLongPressListeners(minusBtn, -1);
+    setupLongPressListeners(plusBtn, 1);
+}
+
+/**
+ * 長押し機能の設定
+ */
+function setupLongPressListeners(button, direction) {
+    let longPressTimer;
+    let longPressInterval;
+    
+    const startLongPress = () => {
+        longPressTimer = setTimeout(() => {
+            longPressInterval = setInterval(() => {
+                adjustMobileValue(direction);
+            }, 100);
+        }, 500);
+    };
+    
+    const stopLongPress = () => {
+        clearTimeout(longPressTimer);
+        clearInterval(longPressInterval);
+    };
+    
+    button.addEventListener('mousedown', startLongPress);
+    button.addEventListener('mouseup', stopLongPress);
+    button.addEventListener('mouseleave', stopLongPress);
+    button.addEventListener('touchstart', startLongPress);
+    button.addEventListener('touchend', stopLongPress);
+}
+
+/**
+ * モバイルコントロールをアクティブ化
+ */
+function activateMobileControl(input) {
+    
+    // 前のアクティブ入力のハイライトを削除
+    if (mobileControlState.activeInput) {
+        mobileControlState.activeInput.classList.remove('mobile-active-input');
+    }
+    
+    mobileControlState.activeInput = input;
+    mobileControlState.fieldInfo = getFieldInfo(input);
+    mobileControlState.isActive = true;
+    
+    // 新しいアクティブ入力にハイライトを追加
+    input.classList.add('mobile-active-input');
+    
+    // コントロールバーを更新
+    updateMobileControlBar();
+    
+    // コントロールバーを表示
+    const controlBar = document.getElementById('mobileControlBar');
+    
+    if (controlBar) {
+        controlBar.style.display = 'flex';
+    }
+}
+
+/**
+ * モバイルコントロールを非アクティブ化
+ */
+function deactivateMobileControl() {
+    if (mobileControlState.activeInput) {
+        mobileControlState.activeInput.classList.remove('mobile-active-input');
+    }
+    
+    mobileControlState.activeInput = null;
+    mobileControlState.fieldInfo = null;
+    mobileControlState.isActive = false;
+    
+    // コントロールバーを非表示
+    const controlBar = document.getElementById('mobileControlBar');
+    if (controlBar) {
+        controlBar.style.display = 'none';
+    }
+}
+
+/**
+ * デバッグ用：モバイルコントロールの状態確認
+ */
+function debugMobileControl() {
+
+    // 対象入力欄の存在確認
+    const testInputs = ['attackerRealA', 'defenderRealHP', 'attackerIvA'];
+    testInputs.forEach(id => {
+        const input = document.getElementById(id);
+        console.log(`Input ${id}:`, input ? 'exists' : 'not found');
+    });
+}
+
+/**
+ * 強制的にモバイルコントロールを表示（テスト用）
+ */
+function forceShowMobileControl() {
+    const controlBar = document.getElementById('mobileControlBar');
+    if (controlBar) {
+        controlBar.style.display = 'flex';
+    }
+}
+
+/**
+ * 入力欄の情報を取得
+ */
+function getFieldInfo(input) {
+    const id = input.id;
+    let type, stat, side, displayName, min, max, step;
+    
+    // 入力欄のタイプを判定
+    if (id.includes('Real')) {
+        type = 'real';
+        min = parseInt(input.getAttribute('min')) || 1;
+        max = parseInt(input.getAttribute('max')) || 999;
+        step = 1;
+    } else if (id.includes('Iv')) {
+        type = 'iv';
+        min = 0;
+        max = 31;
+        step = 1;
+    } else if (id.includes('Ev')) {
+        type = 'ev';
+        min = 0;
+        max = 252;
+        
+        // 努力値のステップを個体値に応じて決定
+        const side = id.includes('attacker') ? 'attacker' : 'defender';
+        let stat;
+        if (id.includes('HP') || id.includes('Hp')) stat = 'hp';
+        else if (id.includes('A')) stat = 'a';
+        else if (id.includes('B')) stat = 'b';
+        else if (id.includes('C')) stat = 'c';
+        else if (id.includes('D')) stat = 'd';
+        else if (id.includes('S')) stat = 's';
+        
+        if (stat && side) {
+            const pokemon = side === 'attacker' ? attackerPokemon : defenderPokemon;
+            const currentIV = pokemon.ivValues[stat];
+
+            if (currentIV === 31) {
+                step = 4; // 個体値31の場合：8n-4ずつ（4, 12, 20, 28, ...）
+                max = 252;
+            } else if (currentIV === 30) {
+                step = 8; // 個体値30の場合：8nずつ（8, 16, 24, 32, ...）
+                max = 248;
+            } else {
+                step = 4; // その他は従来通り
+            }
+        } else {
+            step = 4;
+        }
+    } else if (id === 'defenderCurrentHP') {
+        type = 'currentHP';
+        min = 1;
+        max = parseInt(input.getAttribute('max')) || 999;
+        step = 1;
+    }
+    
+    // サイドとステータスを判定
+    if (id.includes('attacker')) {
+        side = '攻撃側';
+    } else if (id.includes('defender')) {
+        side = '防御側';
+    }
+    
+    // ステータスを判定
+    if (id.includes('HP') || id.includes('Hp')) {
+        stat = 'H';
+    } else if (id.includes('A')) {
+        stat = 'A';
+    } else if (id.includes('B')) {
+        stat = 'B';
+    } else if (id.includes('C')) {
+        stat = 'C';
+    } else if (id.includes('D')) {
+        stat = 'D';
+    } else if (id.includes('S')) {
+        stat = 'S';
+    }
+    
+    // 表示名を生成
+    if (type === 'currentHP') {
+        displayName = '現在HP';
+    } else {
+        const typeNames = {
+            'real': '実数値',
+            'iv': '個体値',
+            'ev': '努力値'
+        };
+        displayName = `${side}${stat}${typeNames[type]}`;
+    }
+    
+    return { type, stat, side, displayName, min, max, step };
+}
+
+/**
+ * コントロールバーの表示を更新
+ */
+function updateMobileControlBar() {
+    if (!mobileControlState.isActive || !mobileControlState.activeInput) return;
+    
+    const input = mobileControlState.activeInput;
+    const fieldInfo = mobileControlState.fieldInfo;
+    const currentValue = parseInt(input.value) || fieldInfo.min;
+    
+    // フィールド名と現在値を更新
+    const fieldNameEl = document.getElementById('mobileFieldName');
+    const currentValueEl = document.getElementById('mobileCurrentValue');
+    if (fieldNameEl) fieldNameEl.textContent = fieldInfo.displayName;
+    if (currentValueEl) currentValueEl.textContent = currentValue;
+    
+    // スライダーの設定を更新
+    const slider = document.getElementById('mobileSlider');
+    if (slider) {
+        slider.min = fieldInfo.min;
+        slider.max = fieldInfo.max;
+        slider.step = fieldInfo.step;
+        slider.value = currentValue;
+    }
+    
+    // ラベルを更新
+    const minLabel = document.getElementById('mobileMinLabel');
+    const maxLabel = document.getElementById('mobileMaxLabel');
+    if (minLabel) minLabel.textContent = fieldInfo.min;
+    if (maxLabel) maxLabel.textContent = fieldInfo.max;
+}
+
+/**
+ * 値を調整
+ */
+function adjustMobileValue(direction) {
+    if (!mobileControlState.isActive || !mobileControlState.activeInput) return;
+    
+    const input = mobileControlState.activeInput;
+    const fieldInfo = mobileControlState.fieldInfo;
+    const currentValue = parseInt(input.value) || fieldInfo.min;
+    
+    let newValue;
+    
+    if (fieldInfo.type === 'ev') {
+        // 努力値の場合は特殊な調整
+        newValue = adjustEVValue(input, currentValue, direction);
+    } else {
+        // その他は通常の調整
+        newValue = currentValue + (direction * fieldInfo.step);
+        newValue = Math.max(fieldInfo.min, Math.min(fieldInfo.max, newValue));
+    }
+    
+    // 実数値入力欄の場合は既存のスピンボタン機能を再現
+    if (fieldInfo.type === 'real') {
+        handleRealStatChangeFromMobile(input, newValue, direction);
+    } else {
+        // 個体値・努力値の場合は直接設定
+        setValueAndTriggerEvents(input, newValue);
+    }
+    
+    // コントロールバーを更新
+    updateMobileControlValue();
+}
+
+/**
+ * スライダーから値を更新
+ */
+function updateValueFromSlider() {
+    if (!mobileControlState.isActive || !mobileControlState.activeInput) return;
+    
+    const slider = document.getElementById('mobileSlider');
+    const input = mobileControlState.activeInput;
+    let newValue = parseInt(slider.value);
+    const currentValue = parseInt(input.value) || 0;
+    
+    // 値が変更された場合のみ処理
+    if (newValue === currentValue) return;
+    
+    // 努力値の場合は特殊な調整
+    if (mobileControlState.fieldInfo.type === 'ev') {
+        newValue = adjustEVValueToNearest(input, newValue);
+    }
+    
+    // 実数値入力欄の場合は既存のスピンボタン機能を再現
+    if (mobileControlState.fieldInfo.type === 'real') {
+        handleRealStatChangeFromMobile(input, newValue, newValue > currentValue ? 1 : -1);
+    } else {
+        // 個体値・努力値の場合は直接設定
+        setValueAndTriggerEvents(input, newValue);
+    }
+    
+    // 現在値表示を更新
+    document.getElementById('mobileCurrentValue').textContent = newValue;
+}
+
+/**
+ * 努力値を最も近い有効値に調整
+ */
+function adjustEVValueToNearest(input, targetValue) {
+    const inputId = input.id;
+    
+    // サイドとステータスを判定
+    const side = inputId.includes('attacker') ? 'attacker' : 'defender';
+    let stat;
+    if (inputId.includes('HP') || inputId.includes('Hp')) stat = 'hp';
+    else if (inputId.includes('A')) stat = 'a';
+    else if (inputId.includes('B')) stat = 'b';
+    else if (inputId.includes('C')) stat = 'c';
+    else if (inputId.includes('D')) stat = 'd';
+    else if (inputId.includes('S')) stat = 's';
+    
+    if (!stat || !side) {
+        // 判定できない場合は4の倍数に調整
+        return Math.floor(targetValue / 4) * 4;
+    }
+    
+    const pokemon = side === 'attacker' ? attackerPokemon : defenderPokemon;
+    const currentIV = pokemon.ivValues[stat];
+    
+    if (currentIV === 31) {
+        // 個体値31：8n-4パターンの最も近い値
+        if (targetValue <= 2) return 0;
+        if (targetValue <= 8) return 4;
+        
+        // 8n-4の値を計算
+        const base = Math.round((targetValue + 4) / 8);
+        const candidate = Math.max(0, Math.min(252, base * 8 - 4));
+        
+        // 0との距離も考慮
+        if (Math.abs(targetValue - 0) < Math.abs(targetValue - candidate)) {
+            return 0;
+        }
+        return candidate;
+        
+    } else if (currentIV === 30) {
+        // 個体値30：8nパターンの最も近い値
+        if (targetValue <= 4) return 0;
+        
+        const base = Math.round(targetValue / 8);
+        const candidate = Math.max(0, Math.min(248, base * 8));
+        
+        // 0との距離も考慮
+        if (Math.abs(targetValue - 0) < Math.abs(targetValue - candidate)) {
+            return 0;
+        }
+        return candidate;
+        
+    } else {
+        // その他：4の倍数に調整
+        return Math.floor(targetValue / 4) * 4;
+    }
+}
+
+/**
+ * 努力値の特殊調整（個体値に応じたステップ）
+ */
+function adjustEVValue(input, currentValue, direction) {
+    const inputId = input.id;
+    
+    // サイドとステータスを判定
+    const side = inputId.includes('attacker') ? 'attacker' : 'defender';
+    let stat;
+    if (inputId.includes('HP') || inputId.includes('Hp')) stat = 'hp';
+    else if (inputId.includes('A')) stat = 'a';
+    else if (inputId.includes('B')) stat = 'b';
+    else if (inputId.includes('C')) stat = 'c';
+    else if (inputId.includes('D')) stat = 'd';
+    else if (inputId.includes('S')) stat = 's';
+    
+    if (!stat || !side) {
+        // 判定できない場合は通常の4ずつ
+        return Math.max(0, Math.min(252, currentValue + (direction * 4)));
+    }
+    
+    const pokemon = side === 'attacker' ? attackerPokemon : defenderPokemon;
+    const currentIV = pokemon.ivValues[stat];
+    
+    let newValue, min, max;
+    
+    if (currentIV === 31) {
+        // 個体値31：8n-4パターン（0, 4, 12, 20, 28, ...）
+        min = 0;
+        max = 252;
+        
+        if (direction > 0) {
+            // 上げる場合
+            if (currentValue === 0) {
+                newValue = 4; // 0 → 4
+            } else {
+                // 現在値から次の8n-4値を計算
+                const currentBase = Math.floor((currentValue + 4) / 8);
+                const nextBase = currentBase + 1;
+                newValue = Math.min(252, nextBase * 8 - 4);
+            }
+        } else {
+            // 下げる場合 - ここが修正点
+            if (currentValue === 4) {
+                newValue = 0; // 4 → 0
+            } else if (currentValue === 0) {
+                newValue = 0; // 0のまま（これ以上下げられない）
+            } else {
+                // 現在値から前の8n-4値を計算
+                const currentBase = Math.floor((currentValue + 4) / 8);
+                const prevBase = currentBase - 1;
+                newValue = Math.max(0, prevBase > 0 ? prevBase * 8 - 4 : 0);
+            }
+        }
+    } else if (currentIV === 30) {
+        // 個体値30：8nパターン（0, 8, 16, 24, 32, ...）
+        min = 0;
+        max = 248;
+        
+        if (direction > 0) {
+            // 上げる場合
+            if (currentValue === 0) {
+                newValue = 8; // 0 → 8
+            } else {
+                const currentBase = Math.floor(currentValue / 8);
+                const nextBase = currentBase + 1;
+                newValue = Math.min(248, nextBase * 8);
+            }
+        } else {
+            // 下げる場合
+            if (currentValue === 8) {
+                newValue = 0; // 8 → 0
+            } else if (currentValue === 0) {
+                newValue = 0; // 0のまま
+            } else {
+                const currentBase = Math.floor(currentValue / 8);
+                const prevBase = currentBase - 1;
+                newValue = Math.max(0, prevBase * 8);
+            }
+        }
+    } else {
+        // その他：通常の4ずつ
+        newValue = currentValue + (direction * 4);
+        newValue = Math.max(0, Math.min(252, newValue));
+    }
+    
+    return newValue;
+}
+
+/**
+ * 値を調整（既存関数の置き換え）
+ */
+function adjustMobileValue(direction) {
+    if (!mobileControlState.isActive || !mobileControlState.activeInput) return;
+    
+    const input = mobileControlState.activeInput;
+    const fieldInfo = mobileControlState.fieldInfo;
+    const currentValue = parseInt(input.value) || fieldInfo.min;
+    const step = fieldInfo.step;
+    
+    let newValue = currentValue + (direction * step);
+    newValue = Math.max(fieldInfo.min, Math.min(fieldInfo.max, newValue));
+    
+    // 実数値入力欄の場合は既存のスピンボタン機能を再現
+    if (fieldInfo.type === 'real') {
+        handleRealStatChangeFromMobile(input, newValue, direction);
+    } else {
+        // 個体値・努力値の場合は直接設定
+        setValueAndTriggerEvents(input, newValue);
+    }
+    
+    // コントロールバーを更新
+    updateMobileControlValue();
+}
+
+
+/**
+ * モバイルコントロールの値表示を更新
+ */
+function updateMobileControlValue() {
+    if (!mobileControlState.isActive || !mobileControlState.activeInput) return;
+    
+    const input = mobileControlState.activeInput;
+    const currentValue = parseInt(input.value) || 0;
+    
+    const currentValueEl = document.getElementById('mobileCurrentValue');
+    const slider = document.getElementById('mobileSlider');
+    
+    if (currentValueEl) currentValueEl.textContent = currentValue;
+    if (slider) slider.value = currentValue;
+}
+
+/**
+ * 実数値変更時の処理（スピンボタン機能の再現）
+ */
+function handleRealStatChangeFromMobile(input, targetValue, direction) {
+    const inputId = input.id;
+    let side, stat;
+    
+    // サイドとステータスを判定
+    if (inputId.includes('attacker')) {
+        side = 'attacker';
+    } else if (inputId.includes('defender')) {
+        side = 'defender';
+    }
+    
+    if (inputId.includes('HP') || inputId.includes('Hp')) {
+        stat = 'hp';
+    } else if (inputId.includes('A')) {
+        stat = 'a';
+    } else if (inputId.includes('B')) {
+        stat = 'b';
+    } else if (inputId.includes('C')) {
+        stat = 'c';
+    } else if (inputId.includes('D')) {
+        stat = 'd';
+    } else if (inputId.includes('S')) {
+        stat = 's';
+    }
+    
+    if (!side || !stat) {
+        // 現在HPなど特殊な場合は直接設定
+        setValueAndTriggerEvents(input, targetValue);
+        return;
+    }
+    
+    // 既存のスピンボタン処理を利用
+    const pokemon = side === 'attacker' ? attackerPokemon : defenderPokemon;
+    const currentRealStat = calculateCurrentStat(pokemon, stat);
+    const limits = calculateStatLimits(pokemon.baseStats[stat], pokemon.level, stat === 'hp');
+    
+    // 制限チェック
+    if (targetValue < limits.min || targetValue > limits.max) {
+        setValueAndTriggerEvents(input, Math.max(limits.min, Math.min(limits.max, targetValue)));
+        return;
+    }
+    
+    // 個体値1→0の特殊処理
+    if (targetValue < currentRealStat && pokemon.ivValues[stat] === 1 && direction < 0) {
+        const statWith0IV = calculateStatWithParams(
+            pokemon.baseStats[stat], 
+            pokemon.level, 
+            0, 
+            pokemon.evValues[stat], 
+            pokemon.natureModifiers[stat], 
+            stat === 'hp'
+        );
+        
+        if (statWith0IV <= targetValue) {
+            pokemon.ivValues[stat] = 0;
+            updateIVEVInputs(side, stat, 0, pokemon.evValues[stat]);
+            updateStats(side);
+            return;
+        }
+    }
+    
+    // 個体値優先の最適化処理
+    const result = findOptimalStatsIVFirst(pokemon, stat, targetValue, direction);
+    if (result && isValidResult(result, targetValue, pokemon.baseStats[stat], pokemon.level, stat === 'hp')) {
+        applyOptimizationResult(pokemon, side, stat, result);
+    } else {
+        // 最適化に失敗した場合は直接設定
+        setValueAndTriggerEvents(input, targetValue);
+    }
+}
+
+/**
+ * 個体値優先の最適化処理（モバイル用）
+ */
+function findOptimalStatsIVFirst(pokemon, stat, targetValue, direction) {
+    const baseStat = pokemon.baseStats[stat];
+    const level = pokemon.level;
+    const currentIV = pokemon.ivValues[stat];
+    const currentEV = pokemon.evValues[stat];
+    const currentNature = pokemon.natureModifiers[stat] || 1.0;
+    const isHP = stat === 'hp';
+    
+    // 実数値を上げる場合（direction > 0）
+    if (direction > 0) {
+        return optimizeForIncrease(baseStat, level, isHP, currentIV, currentEV, currentNature, targetValue, stat);
+    }
+    // 実数値を下げる場合（direction < 0）
+    else if (direction < 0) {
+        return optimizeForDecrease(baseStat, level, isHP, currentIV, currentEV, currentNature, targetValue, stat);
+    }
+    // 方向が不明な場合は従来の処理
+    else {
+        return findOptimalStats(pokemon, stat, targetValue, baseStat, level);
+    }
+}
+/**
+ * 実数値を上げる場合の最適化（個体値優先）
+ */
+function optimizeForIncrease(baseStat, level, isHP, currentIV, currentEV, currentNature, targetValue, stat) {
+    // 1. 個体値が31未満の場合、まず個体値を上げる
+    if (currentIV < 31) {
+        // 現在の努力値で個体値を上げて目標に到達できるかチェック
+        for (let iv = currentIV + 1; iv <= 31; iv++) {
+            const statValue = calculateStatWithParams(baseStat, level, iv, currentEV, currentNature, isHP);
+            if (statValue === targetValue) {
+                return { iv: iv, ev: currentEV, natureMod: currentNature };
+            }
+            if (statValue > targetValue) {
+                // 前の個体値で努力値調整を試す
+                const prevIV = iv - 1;
+                return adjustWithEV(baseStat, level, isHP, prevIV, currentEV, currentNature, targetValue, stat);
+            }
+        }
+        // 個体値31でも届かない場合、個体値31で努力値調整
+        return adjustWithEV(baseStat, level, isHP, 31, currentEV, currentNature, targetValue, stat);
+    }
+    // 2. 個体値が31の場合、努力値を上げる
+    else {
+        return adjustWithEV(baseStat, level, isHP, currentIV, currentEV, currentNature, targetValue, stat);
+    }
+}
+
+/**
+ * 実数値を下げる場合の最適化（努力値優先）
+ */
+function optimizeForDecrease(baseStat, level, isHP, currentIV, currentEV, currentNature, targetValue, stat) {
+    // 1. 努力値が0より大きい場合、まず努力値を下げる
+    if (currentEV > 0) {
+        // 現在の個体値で努力値を下げて目標に到達できるかチェック
+        for (let ev = currentEV - 4; ev >= 0; ev -= 4) {
+            const statValue = calculateStatWithParams(baseStat, level, currentIV, ev, currentNature, isHP);
+            if (statValue === targetValue) {
+                return { iv: currentIV, ev: ev, natureMod: currentNature };
+            }
+            if (statValue < targetValue) {
+                break;
+            }
+        }
+    }
+    
+    // 2. 努力値を0にしても目標に届かない場合、個体値を下げる
+    if (currentIV > 0) {
+        for (let iv = currentIV - 1; iv >= 0; iv--) {
+            // 各個体値で最適な努力値を探す
+            for (let ev = 0; ev <= 252; ev += 4) {
+                const statValue = calculateStatWithParams(baseStat, level, iv, ev, currentNature, isHP);
+                if (statValue === targetValue) {
+                    return { iv: iv, ev: ev, natureMod: currentNature };
+                }
+            }
+        }
+    }
+    
+    // どうしても達成できない場合は従来の処理にフォールバック
+    return findOptimalStats({ 
+        baseStats: { [stat]: baseStat }, 
+        level: level, 
+        ivValues: { [stat]: currentIV }, 
+        evValues: { [stat]: currentEV }, 
+        natureModifiers: { [stat]: currentNature } 
+    }, stat, targetValue, baseStat, level);
+}
+
+/**
+ * 指定された個体値で努力値を調整して目標値を探す
+ */
+function adjustWithEV(baseStat, level, isHP, iv, currentEV, currentNature, targetValue, stat) {
+    // 現在の努力値から上げる方向で探索
+    for (let ev = currentEV; ev <= 252; ev += 4) {
+        const statValue = calculateStatWithParams(baseStat, level, iv, ev, currentNature, isHP);
+        if (statValue === targetValue) {
+            return { iv: iv, ev: ev, natureMod: currentNature };
+        }
+        if (statValue > targetValue) {
+            break;
+        }
+    }
+    
+    // 努力値だけでは達成できない場合、性格変更を含む最適化
+    return findOptimalStats({ 
+        baseStats: { [stat]: baseStat }, 
+        level: level, 
+        ivValues: { [stat]: iv }, 
+        evValues: { [stat]: currentEV }, 
+        natureModifiers: { [stat]: currentNature } 
+    }, stat, targetValue, baseStat, level);
+}
+
+/**
+ * 最適化結果を適用
+ */
+function applyOptimizationResult(pokemon, side, stat, result) {
+    pokemon.ivValues[stat] = result.iv;
+    pokemon.evValues[stat] = result.ev;
+    
+    if (result.changeNature && result.natureMod !== undefined && stat !== 'hp') {
+        pokemon.natureModifiers[stat] = result.natureMod;
+        updateNatureUI(side, stat, result.natureMod);
+    }
+    
+    updateIVEVInputs(side, stat, result.iv, result.ev);
+    updateStats(side);
+}
+/**
+ * 性格UIの更新
+ */
+function updateNatureUI(side, stat, natureMod) {
+    // 性格UI更新の処理
+    if ((side === 'attacker' && (stat === 'a' || stat === 'c')) ||
+        (side === 'defender' && (stat === 'b' || stat === 'd'))) {
+        updateMainNatureButtons(side, stat, natureMod);
+    }
+    
+    const plusCheckbox = document.getElementById(`${side}${stat.toUpperCase()}Plus`);
+    const minusCheckbox = document.getElementById(`${side}${stat.toUpperCase()}Minus`);
+    
+    if (plusCheckbox && minusCheckbox) {
+        if (natureMod === 1.1) {
+            plusCheckbox.checked = true;
+            minusCheckbox.checked = false;
+        } else if (natureMod === 0.9) {
+            plusCheckbox.checked = false;
+            minusCheckbox.checked = true;
+        } else {
+            plusCheckbox.checked = false;
+            minusCheckbox.checked = false;
+        }
+    }
+    
+    updateNatureFromModifiers(side);
+}
+
+/**
+ * 値を設定してイベントを発火
+ */
+function setValueAndTriggerEvents(input, value) {
+    // 値を設定
+    if (input.updateValueSilently) {
+        input.updateValueSilently(value);
+    } else {
+        input.value = value;
+    }
+    
+    // 変更イベントを発火
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
 }
