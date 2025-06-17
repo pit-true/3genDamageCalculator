@@ -145,6 +145,12 @@
   {
     "name": "こころのしずく", 
     "c": 1.5, 
+    "timing": "attackMod",
+    "description": "特殊攻撃と特殊防御が1.5倍になる（ラティオス/ラティアスが持った場合）",
+    "romaji":"kokoronosizuku"
+  },
+  {
+    "name": "こころのしずく", 
     "d": 1.5,
     "timing": "attackMod",
     "description": "特殊攻撃と特殊防御が1.5倍になる（ラティオス/ラティアスが持った場合）",
@@ -160,7 +166,6 @@
   {
     "name": "しんかいのウロコ",
     "d": 2.0, 
-    "timing": "attackMod",
     "description": "特殊防御が2.0倍になる（パールルが持った場合）",
     "romaji":"sinkainouroko"
   },
@@ -175,7 +180,6 @@
   {
     "name": "メタルパウダー", 
     "b": 2.0,
-    "timing": "attackMod",
     "description": "防御が2倍になる（メタモンが持った場合）",
     "romaji":"metarupauda-"
   },
