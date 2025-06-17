@@ -1629,17 +1629,28 @@ input[type="number"]::-webkit-inner-spin-button {
    ======================== */
 .mobile-control-bar {
     position: fixed;
-    bottom: 0;
+    top: 50px; /* モバイル専用ボタン群の下に配置 */
     left: 0;
     right: 0;
     height: 70px;
     background-color: white;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-    border-top: 2px solid #007bff;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    z-index: 998; /* ナビゲーションより低く設定 */
+    border-bottom: 2px solid #007bff; /* 上部配置に合わせて下線に変更 */
     padding: 10px;
     box-sizing: border-box;
     display: none; /* 初期状態では非表示 */
+}
+/* モバイルコントロールバー用の半透明背景 */
+.mobile-control-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.3);
+    z-index: 997;
+    display: none;
 }
 
 .mobile-control-content {
@@ -1714,6 +1725,11 @@ input[type="number"]::-webkit-inner-spin-button {
     border-radius: 4px;
     outline: none;
     transition: background 0.3s ease;
+}
+
+/* モバイルコントロールバーが表示されている時の本文調整 */
+body.mobile-control-active {
+    padding-top: 130px !important; /* 50px(モバイルボタン) + 70px(コントロールバー) + 10px(余白) */
 }
 
 .mobile-slider::-webkit-slider-thumb {
