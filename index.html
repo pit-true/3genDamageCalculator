@@ -621,8 +621,19 @@
                     </select>
                 </div>
                 <div class="input-row">
-                    <label for="leechSeedSelect" class="inline-label">やどりぎ:</label>
+                    <label for="leechSeedSelect" class="inline-label">やどりぎ(ダメ):</label>
                     <select id="leechSeedSelect">
+                        <option value="none">なし</option>
+                        <option value="1">1ターン目から</option>
+                        <option value="2">2ターン目から</option>
+                        <option value="3">3ターン目から</option>
+                        <option value="4">4ターン目から</option>
+                        <option value="5">5ターン目から</option>
+                    </select>
+                </div>
+                <div class="input-row">
+                    <label for="leechSeed2Select" class="inline-label">やどりぎ(回復):</label>
+                    <select id="leechSeed2Select">
                         <option value="none">なし</option>
                         <option value="1">1ターン目から</option>
                         <option value="2">2ターン目から</option>
@@ -663,6 +674,28 @@
                     <p><strong>未対応技:</strong> アイスボール/いかり/サイコウェーブ<br>トリプルキック/はきだす/ふくろだたき/プレゼント<br>れんぞくぎり</p>
                 </div>
             </div>
+        </div>
+    </div>
+    <!-- モバイル数値コントロールバー -->
+    <div class="mobile-control-bar" id="mobileControlBar">
+        <div class="mobile-control-content">
+            <div class="mobile-control-info">
+                <span class="field-name" id="mobileFieldName">-</span>
+                <span class="current-value" id="mobileCurrentValue">-</span>
+            </div>
+            
+            <button class="mobile-minus-btn" id="mobileMinus">−</button>
+            
+            <div class="mobile-slider-container">
+                <input type="range" class="mobile-slider" id="mobileSlider" 
+                       min="0" max="100" value="50" step="1">
+                <div class="mobile-slider-labels">
+                    <span id="mobileMinLabel">0</span>
+                    <span id="mobileMaxLabel">100</span>
+                </div>
+            </div>
+            
+            <button class="mobile-plus-btn" id="mobilePlus">+</button>
         </div>
     </div>
 </body>
