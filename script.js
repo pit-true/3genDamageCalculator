@@ -9286,10 +9286,24 @@ function activateMobileControl(input) {
     // コントロールバーを更新
     updateMobileControlBar();
     
-    // コントロールバーを表示
+    // オーバーレイとコントロールバーを表示
     const controlBar = document.getElementById('mobileControlBar');
+    let overlay = document.querySelector('.mobile-control-overlay');
+    
+    // オーバーレイが存在しない場合は作成
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'mobile-control-overlay';
+        document.body.appendChild(overlay);
+        
+        // オーバーレイクリックで閉じる
+        overlay.addEventListener('click', function() {
+            deactivateMobileControl();
+        });
+    }
     
     if (controlBar) {
+        overlay.style.display = 'block';
         controlBar.style.display = 'flex';
     }
 }
@@ -9306,10 +9320,15 @@ function deactivateMobileControl() {
     mobileControlState.fieldInfo = null;
     mobileControlState.isActive = false;
     
-    // コントロールバーを非表示
+    // オーバーレイとコントロールバーを非表示
     const controlBar = document.getElementById('mobileControlBar');
+    const overlay = document.querySelector('.mobile-control-overlay');
+    
     if (controlBar) {
         controlBar.style.display = 'none';
+    }
+    if (overlay) {
+        overlay.style.display = 'none';
     }
 }
 
