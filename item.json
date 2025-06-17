@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "name": "シルクのスカーフ", 
     "type": "ノーマル", 
@@ -143,13 +143,6 @@
     "romaji":"kodawarihatimaki"
   },
   {
-    "name": "ふといホネ", 
-    "a": 2.0,
-    "timing": "attackMod",
-    "description": "物理攻撃の威力が2.0倍になる（カラカラが持った場合）",
-    "romaji":"futoihone"
-  },
-  {
     "name": "こころのしずく", 
     "c": 1.5, 
     "d": 1.5,
@@ -157,6 +150,42 @@
     "description": "特殊攻撃と特殊防御が1.5倍になる（ラティオス/ラティアスが持った場合）",
     "romaji":"kokoronosizuku"
   },
+  {
+    "name": "しんかいのキバ",
+    "c": 2.0, 
+    "timing": "attackMod",
+    "description": "特殊攻撃が2.0倍になる（パールルが持った場合）",
+    "romaji":"sinkainokiba"
+  },
+  {
+    "name": "しんかいのウロコ",
+    "d": 2.0, 
+    "timing": "attackMod",
+    "description": "特殊防御が2.0倍になる（パールルが持った場合）",
+    "romaji":"sinkainouroko"
+  },
+  {
+    "name": "でんきだま",
+    "a": 2.0, 
+    "c": 2.0, 
+    "timing": "attackMod",
+    "description": "攻撃と特殊攻撃が2.0倍になる（ピカチュウが持った場合）",
+    "romaji":"denkidama"
+  },
+  {
+    "name": "メタルパウダー", 
+    "b": 2.0,
+    "timing": "attackMod",
+    "description": "防御が2倍になる（メタモンが持った場合）",
+    "romaji":"metarupauda-"
+  },
+  {
+    "name": "ふといホネ", 
+    "a": 2.0,
+    "timing": "attackMod",
+    "description": "物理攻撃の威力が2.0倍になる（カラカラが持った場合）",
+    "romaji":"futoihone"
+  },  
   {
     "name": "たべのこし", 
     "description": "最大HPの1/16回復する",
