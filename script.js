@@ -4255,8 +4255,10 @@ function calculateDamage(attack, defense, level, power, category, moveType, atta
   if (attackerPokemon.item) {
       const item = attackerPokemon.item;
       if (item.timing === "attackMod") {
-          const modifier = category === "Physical" ? (item.a || 1.0) : (item.c || 1.0);
+          let modifier = category === "Physical" ? (item.a || 1.0) : (item.c || 1.0);
           finalAttack = Math.floor(finalAttack * modifier);
+          modifier = category === "Physical" ? (item.b || 1.0) : (item.d || 1.0);
+          finalDefense = Math.floor(finalAttack * modifier);
       }
   }
 
@@ -5012,6 +5014,7 @@ function calculateRandText(displayMinDamage, displayMaxDamage, defenderHP, curre
 // 固定回数連続技の乱数計算
 // calculateRandText関数の修正版（script.js内の該当部分を置き換え）
 
+// 修正版 calculateRandText 関数（完全版）
 function calculateRandText(displayMinDamage, displayMaxDamage, defenderHP, currentMove) {
     if (displayMinDamage === 0 && displayMaxDamage === 0) {
         return { hits: 0, percent: "0.0", randLevel: "" };
@@ -5055,8 +5058,17 @@ function calculateRandText(displayMinDamage, displayMaxDamage, defenderHP, curre
     const effectiveMinDamage = displayMinDamage;
     const effectiveMaxDamage = displayMaxDamage;
     
-    // ★修正: 確定1発判定を最初に行う
-    if (effectiveMinDamage >= targetHP) {
+    // ★修正: 確定1発判定（16パターンベース）
+    let koCount = 0;
+    for (let i = 0; i < 16; i++) {
+        const damage = Math.floor(effectiveMinDamage + (effectiveMaxDamage - effectiveMinDamage) * i / 15);
+        if (damage >= targetHP) {
+            koCount++;
+        }
+    }
+    
+    // 全パターンで瀕死の場合
+    if (koCount === 16) {
         return {
             hits: 1,
             percent: null,
@@ -5068,15 +5080,53 @@ function calculateRandText(displayMinDamage, displayMaxDamage, defenderHP, curre
         };
     }
     
-    // 必要打数計算
-    const minHits = effectiveMaxDamage > 0 ? Math.ceil(targetHP / effectiveMaxDamage) : Infinity;
-    const maxHits = effectiveMinDamage > 0 ? Math.ceil(targetHP / effectiveMinDamage) : Infinity;
+    // 一部パターンで瀕死の場合（乱数1発）
+    if (koCount > 0) {
+        const successRate = (koCount / 16) * 100;
+        
+        let randLevel = "";
+        if (successRate >= 93.75) {
+            randLevel = "超高乱数";
+        } else if (successRate >= 75.0) {
+            randLevel = "高乱数";
+        } else if (successRate >= 62.5) {
+            randLevel = "中高乱数";
+        } else if (successRate >= 37.5) {
+            randLevel = "中乱数";
+        } else if (successRate >= 25.0) {
+            randLevel = "中低乱数";
+        } else if (successRate > 6.3) {
+            randLevel = "低乱数";
+        } else {
+            randLevel = "超低乱数";
+        }
+        
+        return {
+            hits: 1,
+            percent: successRate.toFixed(1),
+            randLevel: randLevel,
+            effectiveMinDamage: effectiveMinDamage,
+            effectiveMaxDamage: effectiveMaxDamage,
+            isSubstitute: isSubstitute,
+            targetHP: targetHP
+        };
+    }
+    
+    // どのパターンでも瀕死にならない場合、2発以上が必要
+    
+    // ★修正: 必要打数計算（16パターンベース）
+    // 最小ダメージでの必要回数を計算
+    const minDamageValue = Math.floor(effectiveMinDamage + (effectiveMaxDamage - effectiveMinDamage) * 0 / 15);
+    const maxDamageValue = Math.floor(effectiveMinDamage + (effectiveMaxDamage - effectiveMinDamage) * 15 / 15);
+    
+    const minHits = Math.ceil(targetHP / maxDamageValue);
+    const maxHits = Math.ceil(targetHP / minDamageValue);
     
     if (!isFinite(minHits) || !isFinite(maxHits)) {
         return { hits: 0, percent: "0.0", randLevel: "不可", isSubstitute: isSubstitute, targetHP: targetHP };
     }
     
-    // ★修正: 確定n発判定を追加
+    // 確定n発の場合
     if (minHits === maxHits) {
         return {
             hits: minHits,
@@ -5089,38 +5139,39 @@ function calculateRandText(displayMinDamage, displayMaxDamage, defenderHP, curre
         };
     }
     
-    // ここから乱数計算
+    // 乱数n発の場合
     let knockoutPercent = 0;
     
-    if (minHits === 1) {
-        if (effectiveMaxDamage >= targetHP) {
-            const successfulOutcomes = Math.max(0, effectiveMaxDamage - Math.max(effectiveMinDamage, targetHP) + 1);
-            const totalOutcomes = effectiveMaxDamage - effectiveMinDamage + 1;
-            knockoutPercent = (successfulOutcomes / totalOutcomes) * 100;
-        } else {
-            knockoutPercent = 0;
-        }
-    } else if (minHits === 2) {
-        const totalOutcomes = Math.pow(effectiveMaxDamage - effectiveMinDamage + 1, 2);
+    if (minHits === 2) {
+        // ★修正: 2発での瀕死率計算（16パターンベース）
         let successfulOutcomes = 0;
+        const totalOutcomes = 16 * 16; // 16パターン × 16パターン
         
-        for (let dmg1 = effectiveMinDamage; dmg1 <= effectiveMaxDamage; dmg1++) {
+        for (let i = 0; i < 16; i++) {
+            const dmg1 = Math.floor(effectiveMinDamage + (effectiveMaxDamage - effectiveMinDamage) * i / 15);
             const requiredDmg2 = targetHP - dmg1;
             
             if (requiredDmg2 <= 0) {
-                successfulOutcomes += effectiveMaxDamage - effectiveMinDamage + 1;
-            } else if (requiredDmg2 <= effectiveMaxDamage) {
-                successfulOutcomes += Math.max(0, effectiveMaxDamage - Math.max(effectiveMinDamage, requiredDmg2) + 1);
+                // 1発目で瀕死（既に上で処理済み）
+                successfulOutcomes += 16;
+            } else {
+                // 2発目で瀕死させるパターンを数える
+                for (let j = 0; j < 16; j++) {
+                    const dmg2 = Math.floor(effectiveMinDamage + (effectiveMaxDamage - effectiveMinDamage) * j / 15);
+                    if (dmg2 >= requiredDmg2) {
+                        successfulOutcomes++;
+                    }
+                }
             }
         }
         
         knockoutPercent = (successfulOutcomes / totalOutcomes) * 100;
     } else {
         // 3発以上の場合の近似計算
-        const avgDamage = (effectiveMinDamage + effectiveMaxDamage) / 2;
+        const avgDamageValue = (minDamageValue + maxDamageValue) / 2;
         const totalDamageNeeded = targetHP;
-        const minTotalDamage = effectiveMinDamage * minHits;
-        const maxTotalDamage = effectiveMaxDamage * minHits;
+        const minTotalDamage = minDamageValue * minHits;
+        const maxTotalDamage = maxDamageValue * minHits;
         
         if (minTotalDamage >= totalDamageNeeded) {
             knockoutPercent = 95.0;
@@ -5152,7 +5203,7 @@ function calculateRandText(displayMinDamage, displayMaxDamage, defenderHP, curre
     } else if (knockoutPercent > 0) {
         randLevelText = "超低乱数";
     } else {
-        const requiredHits = Math.ceil(targetHP / effectiveMinDamage);
+        const requiredHits = Math.ceil(targetHP / minDamageValue);
         return {
             hits: requiredHits,
             percent: null,
