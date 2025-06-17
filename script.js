@@ -4463,13 +4463,7 @@ function calculateDamage(attack, defense, level, power, category, moveType, atta
   }
   
   // タイプ相性
-  if (typeEffectiveness > 1.0) {
-    // 抜群
-    proc = Math.floor(proc * 20 / 10);
-  } else if (typeEffectiveness < 1.0) {
-    // 半減
-    proc = Math.floor(proc * 5 / 10);
-  }
+  proc = Math.floor(proc * typeEffectiveness);
   
   // 乱数(最終ダメージ)
   const baseDamage = Math.max(1, proc);
