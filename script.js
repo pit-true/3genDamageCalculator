@@ -83,13 +83,12 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeNatureButtons();
     updateDamageCalculationButton();
     setupMultiTurnMoveListeners();
-    setupRealStatInputListeners();
     document.getElementById('twofoldContainer').style.display = 'none';
     document.getElementById('multiHitContainer').style.display = 'none';
     updateDetailSummary('attacker');
     updateDetailSummary('defender');
     setupHPSyncListeners();
-    initializeMobileControls();
+    initializeMobileControlsFixed();
     // ナビゲーションメニューの動作
     const navToggle = document.querySelector('.nav-toggle');
     const navMenu = document.querySelector('.nav-menu');
@@ -3359,6 +3358,87 @@ function setupHPRealStatChangeListener() {
             updateCurrentHPFromRealHP();
         });
     }
+}
+
+/**
+ * 個別の実数値入力要素を設定（修正版）
+ */
+function setupRealStatInputFixed({ id, side, stat, type }) {
+    const input = document.getElementById(id);
+    if (!input) return;
+
+    // ★修正：新しい要素に置き換えずに、既存の要素にイベントリスナーを追加
+    let previousValue = parseInt(input.value) || 0;
+    const updateKey = id;
+
+    // ★重要：既存のupdateValueSilently関数があれば保持、なければ作成
+    if (!input.updateValueSilently) {
+        input.updateValueSilently = (newValue) => {
+            if (realStatManager && realStatManager.isUpdating) {
+                realStatManager.isUpdating.add(updateKey);
+            }
+            input.value = newValue;
+            previousValue = parseInt(newValue) || 0;
+            if (realStatManager && realStatManager.isUpdating) {
+                realStatManager.isUpdating.delete(updateKey);
+            }
+        };
+    }
+
+    // ★修正：既存のinputイベントリスナーと干渉しないよう、モバイル専用の処理を分離
+    const mobileInputHandler = function(e) {
+        // モバイルコントロールからの変更の場合はスキップ
+        if (mobileControlState.isActive && mobileControlState.activeInput === this) {
+            return;
+        }
+        
+        // デスクトップまたは通常のスピンボタン操作の場合は既存の処理を実行
+        if (window.innerWidth > 768) {
+            // 既存のスピンボタン機能をここで実行
+            const currentValue = parseInt(e.target.value) || 0;
+            const direction = getChangeDirection(currentValue, previousValue);
+            
+            if (direction !== 0) {
+                if (realStatManager && realStatManager.isUpdating) {
+                    realStatManager.isUpdating.add(updateKey);
+                }
+                handleRealStatChange({ id, side, stat, type }, currentValue, direction);
+                if (realStatManager && realStatManager.isUpdating) {
+                    realStatManager.isUpdating.delete(updateKey);
+                }
+                previousValue = currentValue;
+            }
+        }
+    };
+
+    // input イベントリスナーを追加（既存のリスナーとは別に）
+    input.addEventListener('input', mobileInputHandler);
+
+    // change イベントも同様に処理
+    const mobileChangeHandler = function(e) {
+        if (mobileControlState.isActive && mobileControlState.activeInput === this) {
+            return;
+        }
+        
+        if (window.innerWidth > 768) {
+            const currentValue = parseInt(e.target.value) || 0;
+            if (currentValue !== previousValue) {
+                if (realStatManager && realStatManager.isUpdating) {
+                    realStatManager.isUpdating.add(updateKey);
+                }
+                handleRealStatChange({ id, side, stat, type }, currentValue, 0);
+                if (realStatManager && realStatManager.isUpdating) {
+                    realStatManager.isUpdating.delete(updateKey);
+                }
+                previousValue = currentValue;
+            }
+        }
+    };
+
+    input.addEventListener('change', mobileChangeHandler);
+
+    // ★修正：スピンボタンの特殊処理も保持
+    setupSpinButtonHandlingFixed(input, { id, side, stat, type });
 }
 
 // HP実数値から現在HPを更新する
@@ -9150,7 +9230,6 @@ function initializeMobileControls() {
  * 数値入力欄のイベントリスナーを設定
  */
 function setupMobileInputListeners() {
-    
     // 対象となる数値入力欄を特定
     const targetInputs = [
         // 攻撃側実数値
@@ -9187,41 +9266,31 @@ function setupMobileInputListeners() {
         'attackerLevel', 'defenderLevel'
     ];
     
-    let foundInputs = 0;
-    let missingInputs = [];
-    
     targetInputs.forEach(inputId => {
         const input = document.getElementById(inputId);
         if (input) {
-            foundInputs++;
+            // ★修正：既存のイベントリスナーを削除せずに、モバイル専用のイベントを追加
             
-            // 既存のイベントリスナーをクリア（重複防止）
-            const newInput = input.cloneNode(true);
-            input.parentNode.replaceChild(newInput, input);
-            
-            // ★修正1: touchstart の passive: false に変更し、タップを確実に検知
-            newInput.addEventListener('touchstart', function(e) {
-                
+            // モバイル専用のタッチイベント
+            input.addEventListener('touchstart', function(e) {
                 if (window.innerWidth <= 768) {
+                    // タッチデバイスでは既存機能を無効化してモバイルコントロールを使用
                     e.preventDefault();
                     activateMobileControl(this);
                 }
-            }, { passive: false }); // passive: false に変更
+            }, { passive: false });
             
-            // ★修正4: touchend イベントを追加して確実にアクティブ状態を維持
-            newInput.addEventListener('touchend', function(e) {
+            input.addEventListener('touchend', function(e) {
                 if (window.innerWidth <= 768) {
                     e.preventDefault();
-                    // touchend でもアクティブ化を確実に実行
                     if (mobileControlState.activeInput !== this) {
                         activateMobileControl(this);
                     }
                 }
             }, { passive: false });
             
-            // フォーカス時（バックアップ）- 修正5: 遅延を短縮
-            newInput.addEventListener('focus', function(e) {
-
+            // ★重要：デスクトップでは既存機能を維持するため、フォーカスイベントは条件付きで追加
+            const originalFocusHandler = function(e) {
                 if (window.innerWidth <= 768) {
                     setTimeout(() => {
                         if (mobileControlState.activeInput !== this) {
@@ -9229,42 +9298,54 @@ function setupMobileInputListeners() {
                         }
                     }, 50);
                 }
-            });
+            };
+            input.addEventListener('focus', originalFocusHandler);
             
-            // クリック時（さらなるバックアップ）- 修正6: 遅延を削除
-            newInput.addEventListener('click', function(e) {
-                
+            // クリック時（モバイルのみ）
+            input.addEventListener('click', function(e) {
                 if (window.innerWidth <= 768) {
                     e.preventDefault();
                     if (mobileControlState.activeInput !== this) {
                         activateMobileControl(this);
                     }
                 }
+                // デスクトップでは通常のクリック処理を継続
             });
-            
-            // 値変更時
-            newInput.addEventListener('input', function() {
-                if (mobileControlState.activeInput === this) {
-                    updateMobileControlValue();
-                }
-            });
-            
-        } else {
-            missingInputs.push(inputId);
         }
     });
     
-    // 画面外タップ検知を改善
+    // 画面外タップ検知
     document.addEventListener('touchstart', function(e) {
         if (window.innerWidth <= 768 && 
             mobileControlState.isActive &&
             !e.target.closest('.mobile-control-bar') && 
-            !e.target.closest('.mobile-control-content') && // ★追加
+            !e.target.closest('.mobile-control-content') &&
             !e.target.matches('input[type="number"]') &&
             !e.target.closest('.section')) {
             deactivateMobileControl();
         }
     }, { passive: false });
+}
+/**
+ * 実数値入力管理クラスの初期化関数を修正
+ */
+function initializeRealStatInputsFixed() {
+    const config = [
+        // メイン画面の実数値入力
+        { id: 'attackerRealA', side: 'attacker', stat: 'a', type: 'main' },
+        { id: 'attackerRealC', side: 'attacker', stat: 'c', type: 'main' },
+        { id: 'defenderRealHP', side: 'defender', stat: 'hp', type: 'main' },
+        { id: 'defenderRealB', side: 'defender', stat: 'b', type: 'main' },
+        { id: 'defenderRealD', side: 'defender', stat: 'd', type: 'main' },
+        
+        // 詳細設定の実数値入力
+        ...['hp', 'a', 'b', 'c', 'd', 's'].flatMap(stat => [
+            { id: `attackerDetailReal${stat.toUpperCase()}`, side: 'attacker', stat, type: 'detail' },
+            { id: `defenderDetailReal${stat.toUpperCase()}`, side: 'defender', stat, type: 'detail' }
+        ])
+    ];
+
+    config.forEach(item => setupRealStatInputFixed(item));
 }
 
 /**
@@ -9918,6 +9999,35 @@ function updateMobileControlValue() {
 }
 
 /**
+ * 実数値変更の統一処理（修正版）
+ */
+function handleRealStatChange(config, targetValue, direction) {
+    const pokemon = config.side === 'attacker' ? attackerPokemon : defenderPokemon;
+    const currentRealStat = calculateCurrentStat(pokemon, config.stat);
+    
+    // 基本的な制限チェック
+    if (targetValue === currentRealStat) return;
+    
+    // 個体値1→0の特別処理
+    if (handleSpecialIV1to0CaseFixed(pokemon, config, targetValue, direction)) {
+        return;
+    }
+    
+    // 個体値優先の最適化処理
+    const result = findOptimalStatsIVFirstFixed(pokemon, config.stat, targetValue, direction);
+    if (result) {
+        applyStatResultFixed(pokemon, config, result);
+    }
+
+    // HP実数値が変更された場合は現在HPも更新
+    if (config.side === 'defender' && config.stat === 'hp') {
+        setTimeout(() => {
+            updateCurrentHPFromRealHP();
+        }, 100);
+    }
+}
+
+/**
  * 実数値変更時の処理（スピンボタン機能の再現）
  */
 function handleRealStatChangeFromMobile(input, targetValue, direction) {
@@ -10167,5 +10277,282 @@ function setValueAndTriggerEvents(input, value) {
     input.dispatchEvent(new Event('input', { bubbles: true }));
     input.dispatchEvent(new Event('change', { bubbles: true }));
 }
-// デバッグ用：コンソールから手動で状態確認できるようにする
-window.debugMobileControl = debugMobileControlState;
+
+/**
+ * スピンボタンの特殊処理を設定（修正版）
+ */
+function setupSpinButtonHandlingFixed(input, config) {
+    // キーボード操作（矢印キー）- デスクトップのみ
+    input.addEventListener('keydown', function(e) {
+        if (window.innerWidth > 768 && e.key === 'ArrowDown') {
+            setTimeout(() => handleSpinButtonDownFixed(config), 10);
+        }
+    });
+
+    // マウス操作（スピンボタンクリック）- デスクトップのみ
+    input.addEventListener('mousedown', function(e) {
+        if (window.innerWidth > 768 && isSpinButtonDownClickFixed(e, input)) {
+            setTimeout(() => handleSpinButtonDownFixed(config), 10);
+        }
+    });
+}
+
+/**
+ * スピンボタン下向きクリックかどうか判定（修正版）
+ */
+function isSpinButtonDownClickFixed(event, input) {
+    const rect = input.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const clickY = event.clientY - rect.top;
+    
+    const isInSpinButtonArea = clickX > rect.width - 20;
+    const isLowerHalf = clickY > rect.height / 2;
+    
+    return isInSpinButtonArea && isLowerHalf;
+}
+
+/**
+ * スピンボタン下向き操作の処理（修正版）
+ */
+function handleSpinButtonDownFixed(config) {
+    const pokemon = config.side === 'attacker' ? attackerPokemon : defenderPokemon;
+    const currentRealStat = calculateCurrentStat(pokemon, config.stat);
+    const limits = calculateStatLimits(pokemon.baseStats[config.stat], pokemon.level, config.stat === 'hp');
+    
+    // 個体値1→0の特殊処理
+    if (currentRealStat === limits.min && pokemon.ivValues[config.stat] === 1) {
+        const statWith0IV = calculateStatWithParams(
+            pokemon.baseStats[config.stat], 
+            pokemon.level, 
+            0, 
+            pokemon.evValues[config.stat], 
+            pokemon.natureModifiers[config.stat], 
+            config.stat === 'hp'
+        );
+        
+        if (statWith0IV <= currentRealStat) {
+            pokemon.ivValues[config.stat] = 0;
+            updateIVEVInputs(config.side, config.stat, 0, pokemon.evValues[config.stat]);
+            updateStats(config.side);
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * 個体値1→0の特別処理（修正版）
+ */
+function handleSpecialIV1to0CaseFixed(pokemon, config, targetValue, direction) {
+    if (pokemon.ivValues[config.stat] !== 1 || direction >= 0) return false;
+    
+    const statWith0IV = calculateStatWithParams(
+        pokemon.baseStats[config.stat], 
+        pokemon.level, 
+        0, 
+        pokemon.evValues[config.stat], 
+        pokemon.natureModifiers[config.stat], 
+        config.stat === 'hp'
+    );
+    
+    if (statWith0IV <= targetValue) {
+        pokemon.ivValues[config.stat] = 0;
+        updateIVEVInputs(config.side, config.stat, 0, pokemon.evValues[config.stat]);
+        updateStats(config.side);
+        return true;
+    }
+    
+    return false;
+}
+
+/**
+ * 個体値優先の最適化処理（修正版）
+ */
+function findOptimalStatsIVFirstFixed(pokemon, stat, targetValue, direction) {
+    const baseStat = pokemon.baseStats[stat];
+    const level = pokemon.level;
+    const currentIV = pokemon.ivValues[stat];
+    const currentEV = pokemon.evValues[stat];
+    const currentNature = pokemon.natureModifiers[stat] || 1.0;
+    const isHP = stat === 'hp';
+    
+    // 実数値を上げる場合（direction > 0）
+    if (direction > 0) {
+        return optimizeForIncreaseFixed(baseStat, level, isHP, currentIV, currentEV, currentNature, targetValue, stat);
+    }
+    // 実数値を下げる場合（direction < 0）
+    else if (direction < 0) {
+        return optimizeForDecreaseFixed(baseStat, level, isHP, currentIV, currentEV, currentNature, targetValue, stat);
+    }
+    // 方向が不明な場合は従来の処理
+    else {
+        return findOptimalStats(pokemon, stat, targetValue, baseStat, level);
+    }
+}
+
+/**
+ * 実数値を上げる場合の最適化（個体値優先）（修正版）
+ */
+function optimizeForIncreaseFixed(baseStat, level, isHP, currentIV, currentEV, currentNature, targetValue, stat) {
+    // 1. 個体値が31未満の場合、まず個体値を上げる
+    if (currentIV < 31) {
+        // 現在の努力値で個体値を上げて目標に到達できるかチェック
+        for (let iv = currentIV + 1; iv <= 31; iv++) {
+            const statValue = calculateStatWithParams(baseStat, level, iv, currentEV, currentNature, isHP);
+            if (statValue === targetValue) {
+                return { iv: iv, ev: currentEV, natureMod: currentNature };
+            }
+            if (statValue > targetValue) {
+                // 前の個体値で努力値調整を試す
+                const prevIV = iv - 1;
+                return adjustWithEVFixed(baseStat, level, isHP, prevIV, currentEV, currentNature, targetValue, stat);
+            }
+        }
+        // 個体値31でも届かない場合、個体値31で努力値調整
+        return adjustWithEVFixed(baseStat, level, isHP, 31, currentEV, currentNature, targetValue, stat);
+    }
+    // 2. 個体値が31の場合、努力値を上げる
+    else {
+        return adjustWithEVFixed(baseStat, level, isHP, currentIV, currentEV, currentNature, targetValue, stat);
+    }
+}
+
+/**
+ * 実数値を下げる場合の最適化（努力値優先）（修正版）
+ */
+function optimizeForDecreaseFixed(baseStat, level, isHP, currentIV, currentEV, currentNature, targetValue, stat) {
+    // 1. 努力値が0より大きい場合、まず努力値を下げる
+    if (currentEV > 0) {
+        // 現在の個体値で努力値を下げて目標に到達できるかチェック
+        for (let ev = currentEV - 4; ev >= 0; ev -= 4) {
+            const statValue = calculateStatWithParams(baseStat, level, currentIV, ev, currentNature, isHP);
+            if (statValue === targetValue) {
+                return { iv: currentIV, ev: ev, natureMod: currentNature };
+            }
+            if (statValue < targetValue) {
+                break;
+            }
+        }
+    }
+    
+    // 2. 努力値を0にしても目標に届かない場合、個体値を下げる
+    if (currentIV > 0) {
+        for (let iv = currentIV - 1; iv >= 0; iv--) {
+            // 各個体値で最適な努力値を探す
+            for (let ev = 0; ev <= 252; ev += 4) {
+                const statValue = calculateStatWithParams(baseStat, level, iv, ev, currentNature, isHP);
+                if (statValue === targetValue) {
+                    return { iv: iv, ev: ev, natureMod: currentNature };
+                }
+            }
+        }
+    }
+    
+    // どうしても達成できない場合は従来の処理にフォールバック
+    return findOptimalStats({ 
+        baseStats: { [stat]: baseStat }, 
+        level: level, 
+        ivValues: { [stat]: currentIV }, 
+        evValues: { [stat]: currentEV }, 
+        natureModifiers: { [stat]: currentNature } 
+    }, stat, targetValue, baseStat, level);
+}
+
+/**
+ * 指定された個体値で努力値を調整して目標値を探す（修正版）
+ */
+function adjustWithEVFixed(baseStat, level, isHP, iv, currentEV, currentNature, targetValue, stat) {
+    // 現在の努力値から上げる方向で探索
+    for (let ev = currentEV; ev <= 252; ev += 4) {
+        const statValue = calculateStatWithParams(baseStat, level, iv, ev, currentNature, isHP);
+        if (statValue === targetValue) {
+            return { iv: iv, ev: ev, natureMod: currentNature };
+        }
+        if (statValue > targetValue) {
+            break;
+        }
+    }
+    
+    // 努力値だけでは達成できない場合、性格変更を含む最適化
+    return findOptimalStats({ 
+        baseStats: { [stat]: baseStat }, 
+        level: level, 
+        ivValues: { [stat]: iv }, 
+        evValues: { [stat]: currentEV }, 
+        natureModifiers: { [stat]: currentNature } 
+    }, stat, targetValue, baseStat, level);
+}
+
+/**
+ * 最適化結果を適用（修正版）
+ */
+function applyStatResultFixed(pokemon, config, result) {
+    pokemon.ivValues[config.stat] = result.iv;
+    pokemon.evValues[config.stat] = result.ev;
+    
+    if (result.changeNature && result.natureMod !== undefined && config.stat !== 'hp') {
+        pokemon.natureModifiers[config.stat] = result.natureMod;
+        updateNatureUIFixed(config.side, config.stat, result.natureMod);
+    }
+    
+    updateIVEVInputs(config.side, config.stat, result.iv, result.ev);
+    updateStats(config.side);
+}
+
+/**
+ * 性格UI更新（修正版）
+ */
+function updateNatureUIFixed(side, stat, natureMod) {
+    // 性格UI更新の処理
+    if ((side === 'attacker' && (stat === 'a' || stat === 'c')) ||
+        (side === 'defender' && (stat === 'b' || stat === 'd'))) {
+        updateMainNatureButtons(side, stat, natureMod);
+    }
+    
+    const plusCheckbox = document.getElementById(`${side}${stat.toUpperCase()}Plus`);
+    const minusCheckbox = document.getElementById(`${side}${stat.toUpperCase()}Minus`);
+    
+    if (plusCheckbox && minusCheckbox) {
+        if (natureMod === 1.1) {
+            plusCheckbox.checked = true;
+            minusCheckbox.checked = false;
+        } else if (natureMod === 0.9) {
+            plusCheckbox.checked = false;
+            minusCheckbox.checked = true;
+        } else {
+            plusCheckbox.checked = false;
+            minusCheckbox.checked = false;
+        }
+    }
+    
+    updateNatureFromModifiers(side);
+}
+
+/**
+ * 変化方向を判定（修正版）
+ */
+function getChangeDirection(current, previous) {
+    if (current > previous) return 1;
+    if (current < previous) return -1;
+    return 0;
+}
+
+/**
+ * 既存のsetupRealStatInputListenersを修正版で置き換える
+ */
+function setupRealStatInputListenersFixed() {
+    initializeRealStatInputsFixed();
+    setupHPRealStatChangeListener();
+}
+/**
+ * DOMContentLoaded内での呼び出しを修正
+ */
+function initializeMobileControlsFixed() {
+    // 修正版のリスナー設定を呼び出し
+    setupMobileInputListeners();
+    setupMobileControlListeners();
+    
+    // 実数値入力の初期化も修正版を使用
+    setupRealStatInputListenersFixed();
+}
