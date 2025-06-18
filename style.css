@@ -1629,18 +1629,17 @@ input[type="number"]::-webkit-inner-spin-button {
    ======================== */
 .mobile-control-bar {
     position: fixed;
-    top: 50px; /* モバイル専用ボタン群の下に配置 */
-    left: 0;
-    right: 0;
-    height: 70px;
-    background-color: white;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    z-index: 998; /* ナビゲーションより低く設定 */
-    border-bottom: 2px solid #007bff; /* 上部配置に合わせて下線に変更 */
-    padding: 10px;
-    box-sizing: border-box;
-    display: none; /* 初期状態では非表示 */
+    z-index: 1000;
+    pointer-events: auto;
+    transform: translateY(120px);
 }
+
+/* ★追加: 表示状態のスタイル */
+.mobile-control-bar.show {
+    transform: translateY(0);
+    opacity: 1;
+}
+
 /* モバイルコントロールバー用の半透明背景 */
 .mobile-control-overlay {
     position: fixed;
@@ -1648,111 +1647,159 @@ input[type="number"]::-webkit-inner-spin-button {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.3);
-    z-index: 997;
+    background-color: rgba(0, 0, 0, 0.4); /* ★変更: 少し濃く */
+    z-index: 999; /* ★変更: コントロールバーより低く */
     display: none;
+    /* タッチイベントの改善 */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    /* ★変更: フェードイン */
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+/* ★追加: オーバーレイ表示状態 */
+.mobile-control-overlay.show {
+    opacity: 1;
 }
 
 .mobile-control-content {
     display: flex;
     align-items: center;
     height: 100%;
-    gap: 10px;
-    max-width: 400px;
+    gap: 12px;
+    max-width: 500px;
     margin: 0 auto;
+    background-color: white;
+    padding: 12px 15px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    pointer-events: auto;
 }
 
 .mobile-control-info {
     flex-shrink: 0;
-    font-size: 12px;
+    font-size: 13px; /* ★変更: 少し大きく */
     color: #666;
-    min-width: 80px;
+    min-width: 90px; /* ★変更: 少し広く */
     text-align: center;
 }
+
 
 .mobile-control-info .field-name {
     font-weight: bold;
     color: #007bff;
     display: block;
+    font-size: 14px; /* ★追加: フィールド名を大きく */
 }
 
 .mobile-control-info .current-value {
     color: #333;
-    font-size: 14px;
+    font-size: 16px; /* ★変更: 値を大きく */
     font-weight: bold;
-    margin-top: 2px;
+    margin-top: 3px;
 }
 
+/* モバイルコントロールボタン（オーバーレイ用） */
 .mobile-minus-btn,
 .mobile-plus-btn {
-    width: 45px;
-    height: 45px;
+    width: 50px;
+    height: 50px;
     border-radius: 50%;
     border: none;
     background-color: #007bff;
     color: white;
-    font-size: 20px;
+    font-size: 22px;
     font-weight: bold;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
     flex-shrink: 0;
+    /* ★追加: 操作可能に */
+    pointer-events: auto;
+    /* タッチ操作の改善 */
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .mobile-minus-btn:active,
 .mobile-plus-btn:active {
     background-color: #0056b3;
     transform: scale(0.95);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
+
+/* スライダーコンテナ（オーバーレイ用） */
 .mobile-slider-container {
     flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
+    pointer-events: auto;
 }
+
 
 .mobile-slider {
     width: 100%;
-    height: 8px;
+    height: 5px;
     -webkit-appearance: none;
     appearance: none;
-    background: #007bff 50%;
-    border-radius: 4px;
+    background: #dcdcdc;
+    border-radius: 10px;
     outline: none;
     transition: background 0.3s ease;
+    -webkit-tap-highlight-color: transparent;
+    pointer-events: auto;
 }
+
 
 /* モバイルコントロールバーが表示されている時の本文調整 */
 body.mobile-control-active {
-    padding-top: 130px !important; /* 50px(モバイルボタン) + 70px(コントロールバー) + 10px(余白) */
+    overflow: hidden; /* スクロール防止のみ */
+    position: fixed; /* より確実な固定 */
+    width: 100%;
 }
 
 .mobile-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    background: #007bff;
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
     cursor: pointer;
     border: 3px solid white;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-    transition: all 0.2s ease;
+    box-shadow: 
+        0 4px 12px rgba(0, 123, 255, 0.4),
+        0 2px 4px rgba(0, 0, 0, 0.2),
+        inset 0 1px 3px rgba(255, 255, 255, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
 }
 
+
 .mobile-slider::-moz-range-thumb {
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     background: #007bff;
     cursor: pointer;
-    border: 3px solid white;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    border: 4px solid white;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
     transition: all 0.2s ease;
 }
 
@@ -1760,15 +1807,43 @@ body.mobile-control-active {
     display: flex;
     justify-content: space-between;
     width: 100%;
-    font-size: 10px;
-    color: #999;
+    font-size: 11px;
+    color: #333;
+    font-weight: 600;
 }
+
+/* ★追加: 閉じるボタン（右上に×ボタン） */
+.mobile-control-close {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 24px;
+    height: 24px;
+    border: none;
+    background-color: #dc3545;
+    color: white;
+    border-radius: 50%;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-control-close:active {
+    background-color: #c82333;
+    transform: scale(0.95);
+}
+
 
 /* 入力欄がアクティブ時のハイライト */
 .mobile-active-input {
-    border: 2px solid #007bff !important;
+    border: 3px solid #007bff !important;
     background-color: #e7f3ff !important;
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25) !important;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.3) !important;
 }
 
 /* HPバーのコンテナ */
@@ -1902,5 +1977,74 @@ body.mobile-control-active {
             rgba(0, 0, 0, 0.5) calc(100% / 48 - 1px),
             rgba(0, 0, 0, 0.5) calc(100% / 48)
         );
+    }
+}
+
+/* モバイル環境での入力欄のタッチ改善 */
+@media (max-width: 768px) {
+    input[type="number"] {
+        /* タッチ時の視覚フィードバックを無効化 */
+        -webkit-tap-highlight-color: transparent;
+        /* フォーカス時の輪郭線を調整 */
+        outline: none;
+        /* タッチ時のズームを防ぐ */
+        font-size: 16px;
+    }
+    
+    input[type="number"]:focus {
+        /* フォーカス時はモバイルコントロールが表示されるので標準フォーカスを無効化 */
+        outline: none;
+        border-color: #007bff;
+    }
+    
+    /* セクション内のタッチイベント改善 */
+    .section {
+        /* タッチスクロールを滑らかに */
+        -webkit-overflow-scrolling: touch;
+        /* タッチ時のハイライトを制御 */
+        -webkit-tap-highlight-color: rgba(0, 0, 0, 0.05);
+    }
+}
+/* ★追加: モバイル環境での追加調整 */
+@media (max-width: 768px) {
+    .mobile-control-bar {
+        left: 5px;
+        right: 5px;
+        bottom: 15px;
+    }
+    
+    /* ★追加: 小さい画面では少し小さく */
+    .mobile-minus-btn,
+    .mobile-plus-btn {
+        width: 45px;
+        height: 45px;
+        font-size: 20px;
+    }
+    
+    .mobile-control-info {
+        min-width: 80px;
+        font-size: 12px;
+    }
+    
+    .mobile-control-info .current-value {
+        font-size: 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .mobile-control-bar {
+        height: 75px;
+        padding: 10px;
+    }
+    
+    .mobile-control-content {
+        gap: 8px;
+    }
+    
+    .mobile-minus-btn,
+    .mobile-plus-btn {
+        width: 42px;
+        height: 42px;
+        font-size: 18px;
     }
 }
