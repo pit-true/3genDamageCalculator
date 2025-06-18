@@ -9150,6 +9150,7 @@ function initializeMobileControls() {
  * 数値入力欄のイベントリスナーを設定
  */
 function setupMobileInputListeners() {
+    
     // 対象となる数値入力欄を特定
     const targetInputs = [
         // 攻撃側実数値
@@ -9180,33 +9181,90 @@ function setupMobileInputListeners() {
         // 防御側努力値
         'defenderEvHP', 'defenderEvB', 'defenderEvD',
         'defenderDetailEvHP', 'defenderDetailEvA', 'defenderDetailEvB',
-        'defenderDetailEvC', 'defenderDetailEvD', 'defenderDetailEvS'
+        'defenderDetailEvC', 'defenderDetailEvD', 'defenderDetailEvS',
+        
+        // レベル
+        'attackerLevel', 'defenderLevel'
     ];
+    
+    let foundInputs = 0;
+    let missingInputs = [];
     
     targetInputs.forEach(inputId => {
         const input = document.getElementById(inputId);
         if (input) {
-            // フォーカス時
-            input.addEventListener('focus', function() {
-                activateMobileControl(this);
+            foundInputs++;
+            
+            // 既存のイベントリスナーをクリア（重複防止）
+            const newInput = input.cloneNode(true);
+            input.parentNode.replaceChild(newInput, input);
+            
+            // ★修正1: touchstart の passive: false に変更し、タップを確実に検知
+            newInput.addEventListener('touchstart', function(e) {
+                
+                if (window.innerWidth <= 768) {
+                    e.preventDefault();
+                    activateMobileControl(this);
+                }
+            }, { passive: false }); // passive: false に変更
+            
+            // ★修正4: touchend イベントを追加して確実にアクティブ状態を維持
+            newInput.addEventListener('touchend', function(e) {
+                if (window.innerWidth <= 768) {
+                    e.preventDefault();
+                    // touchend でもアクティブ化を確実に実行
+                    if (mobileControlState.activeInput !== this) {
+                        activateMobileControl(this);
+                    }
+                }
+            }, { passive: false });
+            
+            // フォーカス時（バックアップ）- 修正5: 遅延を短縮
+            newInput.addEventListener('focus', function(e) {
+
+                if (window.innerWidth <= 768) {
+                    setTimeout(() => {
+                        if (mobileControlState.activeInput !== this) {
+                            activateMobileControl(this);
+                        }
+                    }, 50);
+                }
+            });
+            
+            // クリック時（さらなるバックアップ）- 修正6: 遅延を削除
+            newInput.addEventListener('click', function(e) {
+                
+                if (window.innerWidth <= 768) {
+                    e.preventDefault();
+                    if (mobileControlState.activeInput !== this) {
+                        activateMobileControl(this);
+                    }
+                }
             });
             
             // 値変更時
-            input.addEventListener('input', function() {
+            newInput.addEventListener('input', function() {
                 if (mobileControlState.activeInput === this) {
                     updateMobileControlValue();
                 }
             });
+            
+        } else {
+            missingInputs.push(inputId);
         }
     });
     
-    // 他の場所をタップした時の処理
-    document.addEventListener('click', function(e) {
-        if (!e.target.closest('.mobile-control-bar') && 
-            !e.target.matches('input[type="number"]')) {
+    // 画面外タップ検知を改善
+    document.addEventListener('touchstart', function(e) {
+        if (window.innerWidth <= 768 && 
+            mobileControlState.isActive &&
+            !e.target.closest('.mobile-control-bar') && 
+            !e.target.closest('.mobile-control-content') && // ★追加
+            !e.target.matches('input[type="number"]') &&
+            !e.target.closest('.section')) {
             deactivateMobileControl();
         }
-    });
+    }, { passive: false });
 }
 
 /**
@@ -9219,18 +9277,23 @@ function setupMobileControlListeners() {
     
     if (!minusBtn || !plusBtn || !slider) return;
     
-    // マイナスボタン
-    minusBtn.addEventListener('click', function() {
+    // マイナスボタン - イベント伝播を停止
+    minusBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
         adjustMobileValue(-1);
     });
     
-    // プラスボタン
-    plusBtn.addEventListener('click', function() {
+    // プラスボタン - イベント伝播を停止
+    plusBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
         adjustMobileValue(1);
     });
     
-    // スライダー
-    slider.addEventListener('input', function() {
+    // スライダー - イベント伝播を停止
+    slider.addEventListener('input', function(e) {
+        e.stopPropagation();
         updateValueFromSlider();
     });
     
@@ -9238,6 +9301,7 @@ function setupMobileControlListeners() {
     setupLongPressListeners(minusBtn, -1);
     setupLongPressListeners(plusBtn, 1);
 }
+
 
 /**
  * 長押し機能の設定
@@ -9271,24 +9335,41 @@ function setupLongPressListeners(button, direction) {
  */
 function activateMobileControl(input) {
     
+    // 既にアクティブな場合はスキップ
+    if (mobileControlState.isActive && mobileControlState.activeInput === input) {
+        return;
+    }
+    
     // 前のアクティブ入力のハイライトを削除
     if (mobileControlState.activeInput) {
         mobileControlState.activeInput.classList.remove('mobile-active-input');
     }
     
+    // フィールド情報を取得
+    const fieldInfo = getFieldInfo(input);
+    
+    // 状態を更新
     mobileControlState.activeInput = input;
-    mobileControlState.fieldInfo = getFieldInfo(input);
+    mobileControlState.fieldInfo = fieldInfo;
     mobileControlState.isActive = true;
     
-    // 新しいアクティブ入力にハイライトを追加
+    // ハイライトを追加
     input.classList.add('mobile-active-input');
+    
+    // フォーカスをぼかして仮想キーボードを隠す
+    input.blur();
     
     // コントロールバーを更新
     updateMobileControlBar();
     
-    // オーバーレイとコントロールバーを表示
+    // ★重要: スクロール位置を保存
+    const currentScrollY = window.scrollY;
+    const currentScrollX = window.scrollX;
+    
+    // UI要素を取得
     const controlBar = document.getElementById('mobileControlBar');
     let overlay = document.querySelector('.mobile-control-overlay');
+
     
     // オーバーレイが存在しない場合は作成
     if (!overlay) {
@@ -9296,22 +9377,58 @@ function activateMobileControl(input) {
         overlay.className = 'mobile-control-overlay';
         document.body.appendChild(overlay);
         
-        // オーバーレイクリックで閉じる
-        overlay.addEventListener('click', function() {
-            deactivateMobileControl();
+        // ★修正: オーバーレイのタッチイベント（コントロールバー以外のタップで終了）
+        overlay.addEventListener('touchstart', function(e) {
+            // コントロールバーやその中身に触れた場合は終了しない
+            if (!e.target.closest('.mobile-control-bar') && 
+                !e.target.closest('.mobile-control-content')) {
+                e.preventDefault();
+                deactivateMobileControl();
+            }
+        }, { passive: false });
+        
+        overlay.addEventListener('click', function(e) {
+            // コントロールバーやその中身をクリックした場合は終了しない
+            if (!e.target.closest('.mobile-control-bar') && 
+                !e.target.closest('.mobile-control-content')) {
+                e.preventDefault();
+                deactivateMobileControl();
+            }
         });
     }
     
+    // 表示処理
     if (controlBar) {
+        
+        // ★重要: body に固定スタイルを適用（レイアウトに影響なし）
+        document.body.classList.add('mobile-control-active');
+        
+        // ★重要: スクロール位置を維持
+        document.body.style.top = `-${currentScrollY}px`;
+        document.body.style.left = `-${currentScrollX}px`;
+        
+        // オーバーレイとコントロールバーを表示
         overlay.style.display = 'block';
         controlBar.style.display = 'flex';
+        
+        // アニメーション用の短い遅延
+        requestAnimationFrame(() => {
+            overlay.classList.add('show');
+            controlBar.classList.add('show');
+        });     
     }
+
 }
 
 /**
  * モバイルコントロールを非アクティブ化
  */
 function deactivateMobileControl() {
+    
+    // ★重要: スクロール位置を復元
+    const scrollY = parseInt(document.body.style.top || '0') * -1;
+    const scrollX = parseInt(document.body.style.left || '0') * -1;
+    
     if (mobileControlState.activeInput) {
         mobileControlState.activeInput.classList.remove('mobile-active-input');
     }
@@ -9324,37 +9441,30 @@ function deactivateMobileControl() {
     const controlBar = document.getElementById('mobileControlBar');
     const overlay = document.querySelector('.mobile-control-overlay');
     
-    if (controlBar) {
-        controlBar.style.display = 'none';
-    }
-    if (overlay) {
-        overlay.style.display = 'none';
-    }
-}
-
-/**
- * デバッグ用：モバイルコントロールの状態確認
- */
-function debugMobileControl() {
-
-    // 対象入力欄の存在確認
-    const testInputs = ['attackerRealA', 'defenderRealHP', 'attackerIvA'];
-    testInputs.forEach(id => {
-        const input = document.getElementById(id);
-        console.log(`Input ${id}:`, input ? 'exists' : 'not found');
-    });
-}
-
-/**
- * 強制的にモバイルコントロールを表示（テスト用）
- */
-function forceShowMobileControl() {
-    const controlBar = document.getElementById('mobileControlBar');
-    if (controlBar) {
-        controlBar.style.display = 'flex';
+    if (controlBar && overlay) {
+        // アニメーション付きで非表示
+        overlay.classList.remove('show');
+        controlBar.classList.remove('show');
+        
+        // アニメーション完了後にDOM操作
+        setTimeout(() => {
+            overlay.style.display = 'none';
+            controlBar.style.display = 'none';
+            
+            // ★重要: body スタイルをリセット
+            document.body.classList.remove('mobile-control-active');
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.left = '';
+            document.body.style.width = '';
+            
+            // ★重要: スクロール位置を復元
+            window.scrollTo(scrollX, scrollY);
+            
+        }, 400); // アニメーション時間と合わせる
+        
     }
 }
-
 /**
  * 入力欄の情報を取得
  */
@@ -9362,56 +9472,7 @@ function getFieldInfo(input) {
     const id = input.id;
     let type, stat, side, displayName, min, max, step;
     
-    // 入力欄のタイプを判定
-    if (id.includes('Real')) {
-        type = 'real';
-        min = parseInt(input.getAttribute('min')) || 1;
-        max = parseInt(input.getAttribute('max')) || 999;
-        step = 1;
-    } else if (id.includes('Iv')) {
-        type = 'iv';
-        min = 0;
-        max = 31;
-        step = 1;
-    } else if (id.includes('Ev')) {
-        type = 'ev';
-        min = 0;
-        max = 252;
-        
-        // 努力値のステップを個体値に応じて決定
-        const side = id.includes('attacker') ? 'attacker' : 'defender';
-        let stat;
-        if (id.includes('HP') || id.includes('Hp')) stat = 'hp';
-        else if (id.includes('A')) stat = 'a';
-        else if (id.includes('B')) stat = 'b';
-        else if (id.includes('C')) stat = 'c';
-        else if (id.includes('D')) stat = 'd';
-        else if (id.includes('S')) stat = 's';
-        
-        if (stat && side) {
-            const pokemon = side === 'attacker' ? attackerPokemon : defenderPokemon;
-            const currentIV = pokemon.ivValues[stat];
-
-            if (currentIV === 31) {
-                step = 4; // 個体値31の場合：8n-4ずつ（4, 12, 20, 28, ...）
-                max = 252;
-            } else if (currentIV === 30) {
-                step = 8; // 個体値30の場合：8nずつ（8, 16, 24, 32, ...）
-                max = 248;
-            } else {
-                step = 4; // その他は従来通り
-            }
-        } else {
-            step = 4;
-        }
-    } else if (id === 'defenderCurrentHP') {
-        type = 'currentHP';
-        min = 1;
-        max = parseInt(input.getAttribute('max')) || 999;
-        step = 1;
-    }
-    
-    // サイドとステータスを判定
+    // サイドとステータスを判定（先に実行）
     if (id.includes('attacker')) {
         side = '攻撃側';
     } else if (id.includes('defender')) {
@@ -9433,9 +9494,72 @@ function getFieldInfo(input) {
         stat = 'S';
     }
     
+    // 入力欄のタイプを判定
+    if (id.includes('Real')) {
+        type = 'real';
+        // 実数値の場合は、ポケモンデータから制限を取得
+        min = parseInt(input.getAttribute('min')) || 1;
+        max = parseInt(input.getAttribute('max')) || 999;
+        
+        // min/maxが設定されていない場合、ポケモンデータから計算
+        if ((min === 1 && max === 999) || !min || !max) {
+            const pokemon = side === '攻撃側' ? attackerPokemon : defenderPokemon;
+            const statKey = stat.toLowerCase();
+            
+            if (pokemon && pokemon.baseStats && pokemon.baseStats[statKey]) {
+                const limits = calculateStatLimits(pokemon.baseStats[statKey], pokemon.level || 50, statKey === 'h');
+                min = limits.min;
+                max = limits.max;
+            }
+        }
+        step = 1;
+    } else if (id.includes('Iv')) {
+        type = 'iv';
+        min = 0;
+        max = 31;
+        step = 1;
+    } else if (id.includes('Ev')) {
+        type = 'ev';
+        min = 0;
+        max = 252;
+        
+        // 努力値のステップを個体値に応じて決定
+        const statKey = stat.toLowerCase();
+        const pokemon = side === '攻撃側' ? attackerPokemon : defenderPokemon;
+        
+        if (statKey && pokemon && pokemon.ivValues) {
+            const currentIV = pokemon.ivValues[statKey];
+
+            if (currentIV === 31) {
+                step = 4; // 個体値31の場合：8n-4ずつ（4, 12, 20, 28, ...）
+                max = 252;
+            } else if (currentIV === 30) {
+                step = 8; // 個体値30の場合：8nずつ（8, 16, 24, 32, ...）
+                max = 248;
+            } else {
+                step = 4; // その他は従来通り
+            }
+        } else {
+            step = 4;
+        }
+    } else if (id === 'defenderCurrentHP') {
+        type = 'currentHP';
+        min = 1;
+        max = parseInt(input.getAttribute('max')) || 999;
+        step = 1;
+    } else {
+        // その他の数値入力欄
+        type = 'other';
+        min = parseInt(input.getAttribute('min')) || 0;
+        max = parseInt(input.getAttribute('max')) || 100;
+        step = 1;
+    }
+    
     // 表示名を生成
     if (type === 'currentHP') {
         displayName = '現在HP';
+    } else if (type === 'other') {
+        displayName = input.placeholder || 'レベル';
     } else {
         const typeNames = {
             'real': '実数値',
@@ -9452,32 +9576,91 @@ function getFieldInfo(input) {
  * コントロールバーの表示を更新
  */
 function updateMobileControlBar() {
-    if (!mobileControlState.isActive || !mobileControlState.activeInput) return;
+    console.log(`📊 === コントロールバー更新開始 ===`);
+    
+    if (!mobileControlState.isActive || !mobileControlState.activeInput) {
+        console.log(`❌ 状態が無効のため更新をスキップ`);
+        console.log(`isActive: ${mobileControlState.isActive}`);
+        console.log(`activeInput: ${mobileControlState.activeInput}`);
+        return;
+    }
     
     const input = mobileControlState.activeInput;
     const fieldInfo = mobileControlState.fieldInfo;
     const currentValue = parseInt(input.value) || fieldInfo.min;
     
+    console.log(`更新対象:`, {
+        inputId: input.id,
+        currentValue: currentValue,
+        fieldInfo: fieldInfo
+    });
+    
     // フィールド名と現在値を更新
     const fieldNameEl = document.getElementById('mobileFieldName');
     const currentValueEl = document.getElementById('mobileCurrentValue');
-    if (fieldNameEl) fieldNameEl.textContent = fieldInfo.displayName;
-    if (currentValueEl) currentValueEl.textContent = currentValue;
+    
+    console.log(`UI要素取得:`, {
+        fieldNameEl: fieldNameEl ? '存在' : '見つからない',
+        currentValueEl: currentValueEl ? '存在' : '見つからない'
+    });
+    
+    if (fieldNameEl) {
+        fieldNameEl.textContent = fieldInfo.displayName;
+        console.log(`✅ フィールド名更新: ${fieldInfo.displayName}`);
+    }
+    if (currentValueEl) {
+        currentValueEl.textContent = currentValue;
+        console.log(`✅ 現在値更新: ${currentValue}`);
+    }
     
     // スライダーの設定を更新
     const slider = document.getElementById('mobileSlider');
+    console.log(`スライダー要素:`, slider ? '存在' : '見つからない');
+    
     if (slider) {
+        const sliderValue = Math.max(fieldInfo.min, Math.min(fieldInfo.max, currentValue));
+        
         slider.min = fieldInfo.min;
         slider.max = fieldInfo.max;
         slider.step = fieldInfo.step;
-        slider.value = currentValue;
+        slider.value = sliderValue;
+        
+        console.log(`✅ スライダー設定完了:`, {
+            min: fieldInfo.min,
+            max: fieldInfo.max,
+            step: fieldInfo.step,
+            value: sliderValue,
+            inputValue: currentValue
+        });
+        
+        // 設定後の実際の値を確認
+        console.log(`設定後のスライダー実際の値:`, {
+            min: slider.min,
+            max: slider.max,
+            step: slider.step,
+            value: slider.value
+        });
     }
     
     // ラベルを更新
     const minLabel = document.getElementById('mobileMinLabel');
     const maxLabel = document.getElementById('mobileMaxLabel');
-    if (minLabel) minLabel.textContent = fieldInfo.min;
-    if (maxLabel) maxLabel.textContent = fieldInfo.max;
+    
+    console.log(`ラベル要素:`, {
+        minLabel: minLabel ? '存在' : '見つからない',
+        maxLabel: maxLabel ? '存在' : '見つからない'
+    });
+    
+    if (minLabel) {
+        minLabel.textContent = fieldInfo.min;
+        console.log(`✅ 最小ラベル更新: ${fieldInfo.min}`);
+    }
+    if (maxLabel) {
+        maxLabel.textContent = fieldInfo.max;
+        console.log(`✅ 最大ラベル更新: ${fieldInfo.max}`);
+    }
+    
+    console.log(`✅ === コントロールバー更新完了 ===`);
 }
 
 /**
@@ -9984,3 +10167,5 @@ function setValueAndTriggerEvents(input, value) {
     input.dispatchEvent(new Event('input', { bubbles: true }));
     input.dispatchEvent(new Event('change', { bubbles: true }));
 }
+// デバッグ用：コンソールから手動で状態確認できるようにする
+window.debugMobileControl = debugMobileControlState;
