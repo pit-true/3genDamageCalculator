@@ -631,6 +631,39 @@ input[type="number"]::-webkit-inner-spin-button {
     background-color: #bad3ff;
 }
 
+.nature-dropdown-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.nature-dropdown-item:hover {
+    background-color: #f5f5f5;
+}
+
+.nature-name {
+    font-weight: bold;
+    color: #333;
+}
+
+.nature-modifier {
+    font-size: 0.85em;
+    color: #666;
+    margin-left: 10px;
+}
+
+.nature-dropdown {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    z-index: 1000;
+}
+
 /* ========================
    12. 戦闘条件・防御側条件
    ======================== */
