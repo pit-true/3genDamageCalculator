@@ -75,20 +75,463 @@ const natureDataList = [
 // ========================
 
 document.addEventListener('DOMContentLoaded', function() {
-    loadAllData();
-    setupEventListeners();
-    initializeNatureData();
-    syncIVInputs();
-    setupStepInputs();
-    initializeNatureButtons();
-    updateDamageCalculationButton();
-    setupMultiTurnMoveListeners();
-    document.getElementById('twofoldContainer').style.display = 'none';
-    document.getElementById('multiHitContainer').style.display = 'none';
+    initializePageWithRestore();
+});
+
+// ========================
+// ページ再読み込み時の入力値復元機能
+// ========================
+
+/**
+ * ページ読み込み時に既存の入力値をJavaScript状態に同期
+ */
+function restoreInputValuesOnLoad() {
+    // ポケモン名の復元
+    restorePokemonSelection();
+    
+    // レベルの復元
+    restoreLevels();
+    
+    // 個体値・努力値の復元
+    restoreIVEVValues();
+    
+    // 性格の復元
+    restoreNatureSelection();
+    
+    // アイテムの復元
+    restoreItemSelection();
+    
+    // 技の復元
+    restoreMoveSelection();
+    
+    // 複数ターン技の復元
+    restoreMultiTurnMoves();
+    
+    // 実数値の同期（最後に実行）
+    restoreRealStatValues();
+    
+    // ステータス計算を実行
+    if (attackerPokemon.name) {
+        updateStats('attacker');
+    }
+    if (defenderPokemon.name) {
+        updateStats('defender');
+    }
+    
+    // ボタンの表示を更新
+    updateAllButtons();
+    
+    // 詳細設定の表示更新
     updateDetailSummary('attacker');
     updateDetailSummary('defender');
-    setupHPSyncListeners();
-    initializeMobileControlsFixed();
+}
+
+/**
+ * ポケモン選択の復元
+ */
+function restorePokemonSelection() {
+    const attackerInput = document.getElementById('attackerPokemon');
+    const defenderInput = document.getElementById('defenderPokemon');
+    
+    if (attackerInput && attackerInput.value) {
+        selectPokemon('attacker', attackerInput.value);
+    }
+    
+    if (defenderInput && defenderInput.value) {
+        selectPokemon('defender', defenderInput.value);
+    }
+}
+
+/**
+ * レベルの復元
+ */
+function restoreLevels() {
+    const attackerLevel = document.getElementById('attackerLevel');
+    const defenderLevel = document.getElementById('defenderLevel');
+    
+    if (attackerLevel && attackerLevel.value) {
+        attackerPokemon.level = parseInt(attackerLevel.value) || 50;
+    }
+    
+    if (defenderLevel && defenderLevel.value) {
+        defenderPokemon.level = parseInt(defenderLevel.value) || 50;
+    }
+}
+
+/**
+ * 個体値・努力値の復元
+ */
+function restoreIVEVValues() {
+    const stats = ['hp', 'a', 'b', 'c', 'd', 's'];
+    
+    // 攻撃側の復元
+    stats.forEach(stat => {
+        const statUpper = stat.toUpperCase();
+        
+        // 個体値（メイン）
+        const mainIV = document.getElementById(`attackerIv${statUpper}`);
+        if (mainIV && mainIV.value !== '') {
+            attackerPokemon.ivValues[stat] = parseInt(mainIV.value) || 31;
+        }
+        
+        // 個体値（詳細）
+        const detailIV = document.getElementById(`attackerDetailIv${statUpper}`);
+        if (detailIV && detailIV.value !== '') {
+            attackerPokemon.ivValues[stat] = parseInt(detailIV.value) || 31;
+            if (mainIV) mainIV.value = detailIV.value; // 同期
+        }
+        
+        // 努力値（メイン）
+        const mainEV = document.getElementById(`attackerEv${statUpper}`);
+        if (mainEV && mainEV.value !== '') {
+            attackerPokemon.evValues[stat] = parseInt(mainEV.value) || 0;
+        }
+        
+        // 努力値（詳細）
+        const detailEV = document.getElementById(`attackerDetailEv${statUpper}`);
+        if (detailEV && detailEV.value !== '') {
+            attackerPokemon.evValues[stat] = parseInt(detailEV.value) || 0;
+            if (mainEV) mainEV.value = detailEV.value; // 同期
+        }
+    });
+    
+    // 防御側の復元
+    stats.forEach(stat => {
+        const statUpper = stat.toUpperCase();
+        
+        // 個体値（メイン）
+        const mainIV = document.getElementById(`defenderIv${statUpper}`);
+        if (mainIV && mainIV.value !== '') {
+            defenderPokemon.ivValues[stat] = parseInt(mainIV.value) || 31;
+        }
+        
+        // 個体値（詳細）
+        const detailIV = document.getElementById(`defenderDetailIv${statUpper}`);
+        if (detailIV && detailIV.value !== '') {
+            defenderPokemon.ivValues[stat] = parseInt(detailIV.value) || 31;
+            if (mainIV) mainIV.value = detailIV.value; // 同期
+        }
+        
+        // 努力値（メイン）
+        const mainEV = document.getElementById(`defenderEv${statUpper}`);
+        if (mainEV && mainEV.value !== '') {
+            defenderPokemon.evValues[stat] = parseInt(mainEV.value) || 0;
+        }
+        
+        // 努力値（詳細）
+        const detailEV = document.getElementById(`defenderDetailEv${statUpper}`);
+        if (detailEV && detailEV.value !== '') {
+            defenderPokemon.evValues[stat] = parseInt(detailEV.value) || 0;
+            if (mainEV) mainEV.value = detailEV.value; // 同期
+        }
+    });
+}
+
+/**
+ * 性格選択の復元
+ */
+function restoreNatureSelection() {
+    const attackerNature = document.getElementById('attackerNature');
+    const defenderNature = document.getElementById('defenderNature');
+    
+    if (attackerNature && attackerNature.value) {
+        selectNature('attacker');
+    }
+    
+    if (defenderNature && defenderNature.value) {
+        selectNature('defender');
+    }
+    
+    // 性格チェックボックスの復元
+    restoreNatureCheckboxes();
+}
+
+/**
+ * 性格チェックボックスの復元
+ */
+function restoreNatureCheckboxes() {
+    const sides = ['attacker', 'defender'];
+    const stats = ['a', 'b', 'c', 'd', 's'];
+    
+    sides.forEach(side => {
+        const pokemon = side === 'attacker' ? attackerPokemon : defenderPokemon;
+        
+        stats.forEach(stat => {
+            const plusCheckbox = document.getElementById(`${side}${stat.toUpperCase()}Plus`);
+            const minusCheckbox = document.getElementById(`${side}${stat.toUpperCase()}Minus`);
+            
+            if (plusCheckbox && plusCheckbox.checked) {
+                pokemon.natureModifiers[stat] = 1.1;
+                // 他のプラス補正を解除
+                stats.forEach(otherStat => {
+                    if (otherStat !== stat) {
+                        const otherPlusCheckbox = document.getElementById(`${side}${otherStat.toUpperCase()}Plus`);
+                        if (otherPlusCheckbox && otherPlusCheckbox.checked) {
+                            otherPlusCheckbox.checked = false;
+                            pokemon.natureModifiers[otherStat] = pokemon.natureModifiers[otherStat] === 0.9 ? 0.9 : 1.0;
+                        }
+                    }
+                });
+            }
+            
+            if (minusCheckbox && minusCheckbox.checked) {
+                pokemon.natureModifiers[stat] = 0.9;
+                // 他のマイナス補正を解除
+                stats.forEach(otherStat => {
+                    if (otherStat !== stat) {
+                        const otherMinusCheckbox = document.getElementById(`${side}${otherStat.toUpperCase()}Minus`);
+                        if (otherMinusCheckbox && otherMinusCheckbox.checked) {
+                            otherMinusCheckbox.checked = false;
+                            pokemon.natureModifiers[otherStat] = pokemon.natureModifiers[otherStat] === 1.1 ? 1.1 : 1.0;
+                        }
+                    }
+                });
+            }
+        });
+        
+        // メイン画面の性格補正ボタンも更新
+        if (side === 'attacker') {
+            updateMainNatureButtons(side, 'a', pokemon.natureModifiers['a']);
+            updateMainNatureButtons(side, 'c', pokemon.natureModifiers['c']);
+        } else {
+            updateMainNatureButtons(side, 'b', pokemon.natureModifiers['b']);
+            updateMainNatureButtons(side, 'd', pokemon.natureModifiers['d']);
+        }
+    });
+}
+
+/**
+ * アイテム選択の復元
+ */
+function restoreItemSelection() {
+    const attackerItem = document.getElementById('attackerItem');
+    const defenderItem = document.getElementById('defenderItem');
+    
+    if (attackerItem && attackerItem.value) {
+        selectItem('attacker', attackerItem.value);
+    }
+    
+    if (defenderItem && defenderItem.value) {
+        selectItem('defender', defenderItem.value);
+    }
+}
+
+/**
+ * 技選択の復元
+ */
+function restoreMoveSelection() {
+    const attackMove = document.getElementById('attackMove');
+    
+    if (attackMove && attackMove.value) {
+        selectMove(attackMove.value);
+    }
+}
+
+/**
+ * 複数ターン技の復元
+ */
+function restoreMultiTurnMoves() {
+    for (let i = 2; i <= 5; i++) {
+        const moveInput = document.getElementById(`multiTurnMove${i}`);
+        if (moveInput && moveInput.value) {
+            selectMultiTurnMove(i - 1, moveInput.value);
+        }
+    }
+}
+
+/**
+ * 実数値の同期（既存の入力値がある場合）
+ */
+function restoreRealStatValues() {
+    const sides = ['attacker', 'defender'];
+    const stats = ['hp', 'a', 'b', 'c', 'd', 's'];
+    
+    sides.forEach(side => {
+        stats.forEach(stat => {
+            const statUpper = stat.toUpperCase();
+            
+            // メイン画面の実数値
+            const mainReal = document.getElementById(`${side}Real${statUpper}`);
+            if (mainReal && mainReal.value && parseInt(mainReal.value) > 0) {
+                // 実数値から逆算して個体値・努力値を調整
+                adjustStatsFromRealValue(side, stat, parseInt(mainReal.value));
+            }
+            
+            // 詳細画面の実数値
+            const detailReal = document.getElementById(`${side}DetailReal${statUpper}`);
+            if (detailReal && detailReal.value && parseInt(detailReal.value) > 0) {
+                // メイン画面にも反映
+                if (mainReal && !mainReal.value) {
+                    if (mainReal.updateValueSilently) {
+                        mainReal.updateValueSilently(detailReal.value);
+                    } else {
+                        mainReal.value = detailReal.value;
+                    }
+                }
+            }
+        });
+    });
+}
+
+/**
+ * 実数値から個体値・努力値を逆算調整
+ */
+function adjustStatsFromRealValue(side, stat, targetValue) {
+    const pokemon = side === 'attacker' ? attackerPokemon : defenderPokemon;
+    
+    // ポケモンが選択されていない場合はスキップ
+    if (!pokemon.name || !pokemon.baseStats[stat]) {
+        return;
+    }
+    
+    // 現在の実数値を計算
+    const currentRealStat = calculateCurrentStat(pokemon, stat);
+    
+    // 既に目標値と一致している場合はスキップ
+    if (currentRealStat === targetValue) {
+        return;
+    }
+    
+    // 制限チェック
+    const limits = calculateStatLimits(pokemon.baseStats[stat], pokemon.level, stat === 'hp');
+    if (targetValue < limits.min || targetValue > limits.max) {
+        console.warn(`実数値${targetValue}は範囲外です (${limits.min}-${limits.max})`);
+        return;
+    }
+    
+    // 最適化処理を実行
+    const result = findOptimalStats(pokemon, stat, targetValue, pokemon.baseStats[stat], pokemon.level);
+    
+    if (result && isValidResult(result, targetValue, pokemon.baseStats[stat], pokemon.level, stat === 'hp')) {
+        // 結果を適用
+        pokemon.ivValues[stat] = result.iv;
+        pokemon.evValues[stat] = result.ev;
+        
+        // 性格補正も変更された場合
+        if (result.changeNature && result.natureMod !== undefined && stat !== 'hp') {
+            pokemon.natureModifiers[stat] = result.natureMod;
+        }
+        
+        // UI要素を更新
+        updateIVEVInputs(side, stat, result.iv, result.ev);
+    }
+}
+
+/**
+ * 特殊設定の復元（チェックボックス、セレクトボックスなど）
+ */
+function restoreSpecialSettings() {
+    // 天候設定
+    const weatherSelect = document.getElementById('weatherSelect');
+    if (weatherSelect && weatherSelect.value) {
+        updateWeatherBallIfNeeded();
+        updateCastformTypeIfNeeded();
+    }
+    
+    // 特性チェックボックス（必要に応じて追加）
+    restoreAbilityCheckboxes();
+    
+    // その他のチェックボックス
+    restoreOtherCheckboxes();
+}
+
+/**
+ * 特性チェックボックスの復元
+ */
+function restoreAbilityCheckboxes() {
+    // 攻撃側特性
+    const attackerAbilities = [
+        'yogaPowerCheck', 'hugePowerCheck', 'harikiriCheck',
+        'plusCheck', 'minusCheck', 'gutsCheck',
+        'shinryokuCheck', 'moukaCheck', 'gekiryuuCheck',
+        'mushiNoShiraseCheck', 'moraibiCheck'
+    ];
+    
+    // 防御側特性
+    const defenderAbilities = [
+        'atsuishibouCheck', 'fushiginaurokoCheck'
+    ];
+    
+    [...attackerAbilities, ...defenderAbilities].forEach(abilityId => {
+        const checkbox = document.getElementById(abilityId);
+        if (checkbox && checkbox.checked) {
+        }
+    });
+}
+
+/**
+ * その他のチェックボックスの復元
+ */
+function restoreOtherCheckboxes() {
+    const checkboxes = [
+        'criticalCheck', 'substituteCheck', 'doubleCheck',
+        'wallCheck', 'burnCheck', 'chargingCheck',
+        'helpCheck', 'twofoldCheck', 'keepDamageCheck'
+    ];
+    
+    checkboxes.forEach(checkboxId => {
+        const checkbox = document.getElementById(checkboxId);
+    });
+}
+
+/**
+ * 現在HPの復元と同期
+ */
+function restoreCurrentHP() {
+    const currentHPInput = document.getElementById('defenderCurrentHP');
+    const maxHPInput = document.getElementById('defenderRealHP');
+    const detailMaxHPInput = document.getElementById('defenderDetailRealHP');
+    
+    if (currentHPInput && maxHPInput) {
+        const currentHP = parseInt(currentHPInput.value) || 0;
+        const maxHP = parseInt(maxHPInput.value) || parseInt(detailMaxHPInput?.value) || 0;
+        
+        if (currentHP > 0 && maxHP > 0) {
+            // 制限を設定
+            currentHPInput.setAttribute('max', maxHP);
+            currentHPInput.setAttribute('min', 1);
+            currentHPInput.setAttribute('data-max-hp', maxHP);
+            
+            // 現在HPが最大HPを超えている場合は修正
+            if (currentHP > maxHP) {
+                currentHPInput.value = maxHP;
+            }
+        }
+    }
+}
+
+// ========================
+// DOMContentLoaded内で呼び出す修正版初期化関数
+// ========================
+
+function initializePageWithRestore() {
+    // 既存の初期化処理
+    loadAllData().then(() => {
+        setupEventListeners();
+        initializeNatureDataWithDropdown();
+        syncIVInputs();
+        setupStepInputs();
+        initializeNatureButtons();
+        updateDamageCalculationButton();
+        setupMultiTurnMoveListeners();
+        setupRealStatInputListeners();
+        updateDetailSummary('attacker');
+        updateDetailSummary('defender');
+        setupHPSyncListeners();
+        initializeMobileControls();
+        
+        // ★重要：データ読み込み完了後に入力値を復元
+        setTimeout(() => {
+            restoreInputValuesOnLoad();
+            restoreSpecialSettings();
+            restoreCurrentHP();
+        }, 100);
+    });
+    
+    // UI初期化
+    document.getElementById('twofoldContainer').style.display = 'none';
+    document.getElementById('multiHitContainer').style.display = 'none';
+    
     // ナビゲーションメニューの動作
     const navToggle = document.querySelector('.nav-toggle');
     const navMenu = document.querySelector('.nav-menu');
@@ -98,7 +541,6 @@ document.addEventListener('DOMContentLoaded', function() {
             navMenu.classList.toggle('active');
         });
 
-        // メニューリンクをクリックしたら閉じる
         const navLinks = navMenu.querySelectorAll('a');
         navLinks.forEach(link => {
             link.addEventListener('click', function() {
@@ -106,8 +548,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
-    
-});
+}
+
 
 // データ読み込み
 async function loadAllData() {
@@ -129,7 +571,7 @@ async function loadAllData() {
         typeMultiplierData = await typeResponse.json();
         
         // ドロップダウンの初期化
-        initializeDropdowns();
+        initializeDropdownsWithNature();
         
     } catch (error) {
         console.error('データ読み込みエラー:', error);
@@ -137,10 +579,10 @@ async function loadAllData() {
 }
 
 // 性格データの初期化
-function initializeNatureData() {
+function initializeNatureDataWithDropdown() {
     natureData = natureDataList;
-    populateNatureList();
 }
+
 
 function initializeNatureButtons() {
     // 攻撃側の初期化
@@ -250,14 +692,12 @@ function setupEventListeners() {
     
     if (paralysisSelect) {
         paralysisSelect.addEventListener('change', function() {
-            console.log('まひ設定変更:', this.value);
             handleActionRestrictionChange();
         });
     }
     
     if (confusionSelect) {
         confusionSelect.addEventListener('change', function() {
-            console.log('こんらん設定変更:', this.value);
             handleActionRestrictionChange();
         });
     }
@@ -266,14 +706,12 @@ function setupEventListeners() {
     
     if (statusDamageSelect) {
         statusDamageSelect.addEventListener('change', function() {
-            console.log('状態異常ダメージ設定変更:', this.value);
             handleAutoSettingChange();
         });
     }
     
     if (spikesLevelInput) {
         spikesLevelInput.addEventListener('change', function() {
-            console.log('まきびしレベル変更:', this.value);
             handleAutoSettingChange();
         });
     }
@@ -284,21 +722,18 @@ function setupEventListeners() {
     
     if (curseSelect) {
         curseSelect.addEventListener('change', function() {
-            console.log('のろい設定変更:', this.value);
             handleAutoSettingChange();
         });
     }
     
     if (nightmareSelect) {
         nightmareSelect.addEventListener('change', function() {
-            console.log('あくむ設定変更:', this.value);
             handleAutoSettingChange();
         });
     }
     
     if (leechSeedSelect) {
         leechSeedSelect.addEventListener('change', function() {
-            console.log('やどりぎ設定変更:', this.value);
             handleAutoSettingChange();
         });
     }
@@ -546,17 +981,14 @@ function syncDetailIV(side, stat) {
 // 3. ドロップダウン機能
 // ========================
 
-function initializeDropdowns() {
-    // ポケモン検索
+function initializeDropdownsWithNature() {
+    // 既存のドロップダウン初期化
     setupPokemonDropdown('attackerPokemon', 'attacker');
     setupPokemonDropdown('defenderPokemon', 'defender');
-    
-    // 技検索
     setupMoveDropdown();
-    
-    // アイテム検索
     setupItemDropdown('attackerItem', 'attacker');
     setupItemDropdown('defenderItem', 'defender');
+    setupNatureDropdowns();
 }
 
 // ポケモンドロップダウンの設定
@@ -1045,6 +1477,326 @@ function createDropdownItem(text, onClick) {
     item.textContent = text;
     item.addEventListener('click', onClick);
     return item;
+}
+
+// ========================
+// 性格選択のドロップダウン化システム
+// ========================
+
+/**
+ * 性格ドロップダウンの設定（他のフィールドと同じ方式）
+ */
+function setupNatureDropdowns() {
+    setupNatureDropdown('attackerNature', 'attacker');
+    setupNatureDropdown('defenderNature', 'defender');
+}
+
+/**
+ * 個別の性格ドロップダウンを設定
+ */
+function setupNatureDropdown(inputId, side) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+    
+    // ドロップダウン作成
+    const dropdown = document.createElement('div');
+    dropdown.className = 'pokemon-dropdown nature-dropdown';
+    dropdown.style.display = 'none';
+    document.body.appendChild(dropdown);
+    
+    // クリック時
+    input.addEventListener('click', function(e) {
+        e.stopPropagation();
+        this.value = '';
+        showNatureList(dropdown, input, side);
+    });
+    
+    // 入力時
+    input.addEventListener('input', function() {
+        filterNatureList(this.value, dropdown, input, side);
+    });
+
+    // 入力完了時（フォーカスアウト、Enter）の処理
+    input.addEventListener('blur', function() {
+        checkExactNatureMatch(this.value, side);
+    });
+    
+    input.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            checkExactNatureMatch(this.value, side);
+            dropdown.style.display = 'none';
+        }
+    });
+    
+    // 外側クリックで閉じる
+    document.addEventListener('click', function(e) {
+        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+            dropdown.style.display = 'none';
+        }
+    });
+}
+
+/**
+ * 性格リスト表示
+ */
+function showNatureList(dropdown, input, side) {
+    dropdown.innerHTML = '';
+    
+    const rect = input.getBoundingClientRect();
+    dropdown.style.top = (rect.bottom + window.scrollY) + 'px';
+    dropdown.style.left = (rect.left + window.scrollX) + 'px';
+    dropdown.style.width = rect.width + 'px';
+    
+    // 性格データを取得（既存のnatureDataListを使用）
+    const natures = getNatureDataForDropdown();
+    
+    natures.forEach(nature => {
+        const item = createNatureDropdownItem(nature, side, () => {
+            input.value = nature.displayName;
+            dropdown.style.display = 'none';
+            selectNatureFromDropdown(side, nature.name);
+        });
+        dropdown.appendChild(item);
+    });
+    
+    dropdown.style.display = 'block';
+}
+
+/**
+ * 性格フィルタリング
+ */
+function filterNatureList(searchText, dropdown, input, side) {
+    if (!searchText) {
+        dropdown.style.display = 'none';
+        return;
+    }
+    
+    dropdown.innerHTML = '';
+    
+    const search = searchText.toLowerCase();
+    const natures = getNatureDataForDropdown();
+    
+    // ひらがな・カタカナ変換
+    const toHiragana = (text) => {
+        return text.replace(/[\u30A1-\u30F6]/g, function(match) {
+            return String.fromCharCode(match.charCodeAt(0) - 0x60);
+        });
+    };
+    
+    const toKatakana = (text) => {
+        return text.replace(/[\u3041-\u3096]/g, function(match) {
+            return String.fromCharCode(match.charCodeAt(0) + 0x60);
+        });
+    };
+    
+    const hiraganaSearch = toHiragana(search);
+    const katakanaSearch = toKatakana(search);
+    
+    const filtered = natures.filter(nature => {
+        const name = nature.name.toLowerCase();
+        const displayName = nature.displayName.toLowerCase();
+        
+        return name.includes(search) || 
+               name.includes(hiraganaSearch) ||
+               name.includes(katakanaSearch) ||
+               displayName.includes(search) ||
+               displayName.includes(hiraganaSearch) ||
+               displayName.includes(katakanaSearch);
+    });
+    
+    filtered.forEach(nature => {
+        const item = createNatureDropdownItem(nature, side, () => {
+            input.value = nature.displayName;
+            dropdown.style.display = 'none';
+            selectNatureFromDropdown(side, nature.name);
+        });
+        dropdown.appendChild(item);
+    });
+    
+    const rect = input.getBoundingClientRect();
+    dropdown.style.top = (rect.bottom + window.scrollY) + 'px';
+    dropdown.style.left = (rect.left + window.scrollX) + 'px';
+    dropdown.style.width = rect.width + 'px';
+    
+    dropdown.style.display = filtered.length > 0 ? 'block' : 'none';
+}
+
+/**
+ * 性格の完全一致チェック
+ */
+function checkExactNatureMatch(inputText, side) {
+    if (!inputText) {
+        // 空の場合は「まじめ」（補正なし）にリセット
+        selectNatureFromDropdown(side, 'まじめ');
+        return;
+    }
+    
+    const natures = getNatureDataForDropdown();
+    const exactMatch = natures.find(nature => 
+        nature.name === inputText || nature.displayName === inputText
+    );
+    
+    if (exactMatch) {
+        selectNatureFromDropdown(side, exactMatch.name);
+    } else {
+        // 一致しない場合は「まじめ」にリセット
+        selectNatureFromDropdown(side, 'まじめ');
+        const input = document.getElementById(side === 'attacker' ? 'attackerNature' : 'defenderNature');
+        if (input) {
+            input.value = 'まじめ (無補正)';
+        }
+    }
+}
+
+/**
+ * ドロップダウン表示用の性格データを取得
+ */
+function getNatureDataForDropdown() {
+    const customOrder = getCustomNatureOrder();
+    
+    const natureList = natureDataList.map(nature => {
+        let displayName = nature.name;
+        
+        // 補正情報を追加
+        const modifiers = [];
+        Object.keys(nature).forEach(stat => {
+            if (stat !== 'name') {
+                const value = nature[stat];
+                if (value === 1.1) {
+                    const statName = getStatDisplayName(stat);
+                    modifiers.push(`${statName}↑`);  // 修正：A↑ 形式
+                } else if (value === 0.9) {
+                    const statName = getStatDisplayName(stat);
+                    modifiers.push(`${statName}↓`);  // 修正：A↓ 形式
+                }
+            }
+        });
+        
+        if (modifiers.length > 0) {
+            displayName += ` (${modifiers.join(' ')})`;
+        } else {
+            displayName += ' (無補正)';
+        }
+        
+        return {
+            name: nature.name,
+            displayName: displayName,
+            data: nature
+        };
+    });
+    
+    // カスタム順序でソート
+    return natureList.sort((a, b) => {
+        const indexA = customOrder.indexOf(a.name);
+        const indexB = customOrder.indexOf(b.name);
+        
+        // カスタム順序にない場合は最後に配置
+        if (indexA === -1 && indexB === -1) {
+            return a.name.localeCompare(b.name, 'ja');
+        }
+        if (indexA === -1) return 1;
+        if (indexB === -1) return -1;
+        
+        return indexA - indexB;
+    });
+}
+
+/**
+ * ステータス名の表示用変換
+ */
+function getStatDisplayName(stat) {
+    const statNames = {
+        'a': 'A',
+        'b': 'B', 
+        'c': 'C',
+        'd': 'D',
+        's': 'S'
+    };
+    return statNames[stat] || stat;
+}
+
+/**
+ * 性格ドロップダウンアイテム作成
+ */
+function createNatureDropdownItem(nature, side, onClick) {
+    const item = document.createElement('div');
+    item.className = 'dropdown-item nature-dropdown-item';
+    
+    // メイン表示（性格名）
+    const nameSpan = document.createElement('span');
+    nameSpan.className = 'nature-name';
+    nameSpan.textContent = nature.name;
+    
+    // 補正表示
+    const modifierSpan = document.createElement('span');
+    modifierSpan.className = 'nature-modifier';
+    
+    const modifiers = [];
+    Object.keys(nature.data).forEach(stat => {
+        if (stat !== 'name') {
+            const value = nature.data[stat];
+            if (value === 1.1) {
+                modifiers.push(`${getStatDisplayName(stat)}↑`);
+            } else if (value === 0.9) {
+                modifiers.push(`${getStatDisplayName(stat)}↓`);
+            }
+        }
+    });
+    
+    modifierSpan.textContent = modifiers.length > 0 ? `(${modifiers.join(' ')})` : '(無補正)';
+    
+    item.appendChild(nameSpan);
+    item.appendChild(modifierSpan);
+    item.addEventListener('click', onClick);
+    
+    return item;
+}
+
+function getCustomNatureOrder() {
+    return [
+        'いじっぱり', 'わんぱく', 'しんちょう', 'ようき',
+        'ひかえめ', 'ずぶとい', 'おだやか', 'おくびょう',
+        'ゆうかん', 'れいせい', 'のんき', 'なまいき',
+        'やんちゃ', 'のうてんき', 'うっかりや', 'むじゃき',
+        'さみしがり', 'おっとり', 'おとなしい', 'せっかち',
+        'まじめ', 'てれや', 'がんばりや', 'すなお', 'きまぐれ'
+    ];
+}
+
+/**
+ * ドロップダウンから性格選択
+ */
+function selectNatureFromDropdown(side, natureName) {
+    const inputId = side === 'attacker' ? 'attackerNature' : 'defenderNature';
+    const input = document.getElementById(inputId);
+    
+    // 既存の性格選択ロジックを使用
+    if (input) {
+        input.value = natureName;
+    }
+    
+    selectNature(side);
+    
+    // 入力欄の表示を更新（表示名に変更）
+    const natures = getNatureDataForDropdown();
+    const selectedNature = natures.find(nature => nature.name === natureName);
+    if (selectedNature && input) {
+        input.value = selectedNature.displayName;
+    }
+}
+
+/**
+ * 性格復元時の処理（復元機能用）
+ */
+function restoreNatureSelectionFromValue(side, natureName) {
+    if (!natureName) return;
+    
+    const natures = getNatureDataForDropdown();
+    const nature = natures.find(n => n.name === natureName || n.displayName === natureName);
+    
+    if (nature) {
+        selectNatureFromDropdown(side, nature.name);
+    }
 }
 
 // ========================
@@ -1907,18 +2659,6 @@ function selectNature(side) {
     // 性格チェックボックスを更新（メイン画面のボタンも含む）
     updateNatureCheckboxes(side);
     updateStats(side);
-}
-
-// 性格リスト作成
-function populateNatureList() {
-    const list = document.getElementById('natureList');
-    list.innerHTML = '';
-    
-    natureData.forEach(nature => {
-        const option = document.createElement('option');
-        option.value = nature.name;
-        list.appendChild(option);
-    });
 }
 
 // ========================
@@ -6076,8 +6816,6 @@ function performDamageCalculationEnhanced() {
         const minDamage = baseDamageMin;
         const maxDamage = baseDamageMax;
         
-        console.log(`単発技（定数ダメージあり）: ${minDamage}~${maxDamage}`);
-        
         // 単発表示として結果を表示（内部的には複数ターン計算を使用）
         displayUnifiedResults(minDamage, maxDamage, defenderStats.hp, false, atkRank, defRank);
         
@@ -6528,8 +7266,6 @@ function hasMultiTurnMoves() {
                     break;
                 }
             }
-        } else {
-            console.log('自動設定が有効のため、配列内の技は無視します');
         }
     }
     
@@ -6587,18 +7323,7 @@ function calculateMultiTurnKORate(defenderHP, turns = 4) {
         return result;
         
     } catch (error) {
-        console.error('=== calculateMultiTurnKORate内でエラー発生 ===');
-        console.error('エラーメッセージ:', error.message);
-        console.error('エラータイプ:', error.name);
-        console.error('エラースタック:', error.stack);
-        console.error('エラー発生時の状態:', {
-            defenderHP,
-            turns,
-            hasItem,
-            multiTurnMovesLength: multiTurnMoves.length,
-            currentMoveName: currentMove?.name
-        });
-        
+     
         // エラーを再スローして上位で処理
         throw error;
     }
@@ -7281,8 +8006,6 @@ function calculateMultiTurnKORate(defenderHP, turns = 4) {
             try {
                 itemResult = calculateMultiTurnKORateWithItems(defenderHP, turns);
             } catch (itemError) {
-                console.error('アイテム効果計算でエラー:', itemError);
-                console.error('アイテムエラースタック:', itemError.stack);
             }
         }
 
@@ -7296,19 +8019,7 @@ function calculateMultiTurnKORate(defenderHP, turns = 4) {
         
         return result;
         
-    } catch (error) {
-        console.error('=== calculateMultiTurnKORate内でエラー発生 ===');
-        console.error('エラーメッセージ:', error.message);
-        console.error('エラータイプ:', error.name);
-        console.error('エラースタック:', error.stack);
-        console.error('エラー発生時の状態:', {
-            defenderHP,
-            turns,
-            hasItem,
-            multiTurnMovesLength: multiTurnMoves.length,
-            currentMoveName: currentMove?.name
-        });
-        
+    } catch (error) {       
         // エラーを再スローして上位で処理
         throw error;
     }
@@ -9562,17 +10273,12 @@ function getFieldInfo(input) {
     
     // ステータスを判定
     if (id.includes('HP') || id.includes('Hp')) {
-        stat = 'H';
-    } else if (id.includes('A')) {
-        stat = 'A';
-    } else if (id.includes('B')) {
-        stat = 'B';
-    } else if (id.includes('C')) {
-        stat = 'C';
-    } else if (id.includes('D')) {
-        stat = 'D';
-    } else if (id.includes('S')) {
-        stat = 'S';
+    stat = 'H';
+    } else {
+        const lastChar = id.slice(-1);  // 末尾の1文字を取得
+        if (['A', 'B', 'C', 'D', 'S'].includes(lastChar)) {
+            stat = lastChar;
+        }
     }
     
     // 入力欄のタイプを判定
@@ -9657,12 +10363,7 @@ function getFieldInfo(input) {
  * コントロールバーの表示を更新
  */
 function updateMobileControlBar() {
-    console.log(`📊 === コントロールバー更新開始 ===`);
-    
     if (!mobileControlState.isActive || !mobileControlState.activeInput) {
-        console.log(`❌ 状態が無効のため更新をスキップ`);
-        console.log(`isActive: ${mobileControlState.isActive}`);
-        console.log(`activeInput: ${mobileControlState.activeInput}`);
         return;
     }
     
@@ -9670,34 +10371,20 @@ function updateMobileControlBar() {
     const fieldInfo = mobileControlState.fieldInfo;
     const currentValue = parseInt(input.value) || fieldInfo.min;
     
-    console.log(`更新対象:`, {
-        inputId: input.id,
-        currentValue: currentValue,
-        fieldInfo: fieldInfo
-    });
-    
     // フィールド名と現在値を更新
     const fieldNameEl = document.getElementById('mobileFieldName');
     const currentValueEl = document.getElementById('mobileCurrentValue');
     
-    console.log(`UI要素取得:`, {
-        fieldNameEl: fieldNameEl ? '存在' : '見つからない',
-        currentValueEl: currentValueEl ? '存在' : '見つからない'
-    });
-    
     if (fieldNameEl) {
         fieldNameEl.textContent = fieldInfo.displayName;
-        console.log(`✅ フィールド名更新: ${fieldInfo.displayName}`);
     }
     if (currentValueEl) {
         currentValueEl.textContent = currentValue;
-        console.log(`✅ 現在値更新: ${currentValue}`);
     }
     
     // スライダーの設定を更新
     const slider = document.getElementById('mobileSlider');
-    console.log(`スライダー要素:`, slider ? '存在' : '見つからない');
-    
+
     if (slider) {
         const sliderValue = Math.max(fieldInfo.min, Math.min(fieldInfo.max, currentValue));
         
@@ -9705,43 +10392,20 @@ function updateMobileControlBar() {
         slider.max = fieldInfo.max;
         slider.step = fieldInfo.step;
         slider.value = sliderValue;
-        
-        console.log(`✅ スライダー設定完了:`, {
-            min: fieldInfo.min,
-            max: fieldInfo.max,
-            step: fieldInfo.step,
-            value: sliderValue,
-            inputValue: currentValue
-        });
-        
-        // 設定後の実際の値を確認
-        console.log(`設定後のスライダー実際の値:`, {
-            min: slider.min,
-            max: slider.max,
-            step: slider.step,
-            value: slider.value
-        });
     }
     
     // ラベルを更新
     const minLabel = document.getElementById('mobileMinLabel');
     const maxLabel = document.getElementById('mobileMaxLabel');
     
-    console.log(`ラベル要素:`, {
-        minLabel: minLabel ? '存在' : '見つからない',
-        maxLabel: maxLabel ? '存在' : '見つからない'
-    });
-    
     if (minLabel) {
         minLabel.textContent = fieldInfo.min;
-        console.log(`✅ 最小ラベル更新: ${fieldInfo.min}`);
     }
     if (maxLabel) {
         maxLabel.textContent = fieldInfo.max;
-        console.log(`✅ 最大ラベル更新: ${fieldInfo.max}`);
     }
     
-    console.log(`✅ === コントロールバー更新完了 ===`);
+
 }
 
 /**
