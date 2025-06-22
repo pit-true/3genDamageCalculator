@@ -1273,26 +1273,78 @@ function checkExactItemMatch(inputText, side) {
     }
 }
 
-function checkExactMoveMatchForTurn(inputText, turn) {
+function selectMoveForTurn(moveName, turn) {
+    const moveData_found = moveData.find(m => m.name === moveName);
+    if (!moveData_found) return;
+    
+    // 複数ターン技の配列に保存
+    multiTurnMoves[turn] = moveData_found;
+    
+    console.log(`${turn + 1}ターン目に技を設定: ${moveName} (class: ${moveData_found.class})`);
+    
+    // HP入力欄の表示/非表示を制御
+    const pinchUpContainer = document.querySelector('.pinchUpContainer');
+    const pinchDownContainer = document.querySelector('.pinchDownContainer');
+    
+    // 一旦すべて非表示
+    if (pinchUpContainer) pinchUpContainer.style.display = 'none';
+    if (pinchDownContainer) pinchDownContainer.style.display = 'none';
+    
+    // 技のクラスに応じて表示
+    switch (moveData_found.class) {
+        case 'pinch_up':
+            if (pinchUpContainer) {
+                pinchUpContainer.style.display = 'flex';
+                updatePinchHPValues(); // ★HP値を更新
+                console.log('きしかいせい・じたばた用HP入力欄を表示');
+            }
+            break;
+            
+        case 'pinch_down':
+            if (pinchDownContainer) {
+                pinchDownContainer.style.display = 'flex';
+                updatePinchHPValues(); // ★HP値を更新
+                console.log('ふんか・しおふき用HP入力欄を表示');
+            }
+            break;
+            
+        default:
+            console.log(`通常技のため特殊HP入力欄は表示しません: ${moveData_found.class}`);
+            break;
+    }
+}
+
+
+function checkExactMoveMatchForTurn(inputText, turn, inputId) {
+    // ★フラグチェック：ドロップダウンクリック直後は処理をスキップ
+    const input = document.getElementById(inputId);
+    if (input && input._preventBlur) {
+        console.log(`${turn + 1}ターン目: ドロップダウンクリック後のためblurをスキップ`);
+        return;
+    }
+
     if (!inputText || inputText.trim() === '') {
         multiTurnMoves[turn] = null;
-        //console.log(`${turn + 1}ターン目の技をクリア（空入力）`);
+        hideAllMoveSpecialSettings(); // HP入力欄を非表示
+        console.log(`${turn + 1}ターン目の技をクリア`);
         return;
     }
     
-    const exactMatch = moveData.find(move => {
-        return move.name === inputText ||
-               (move.hiragana && move.hiragana === inputText) ||
-               (move.romaji && move.romaji.toLowerCase() === inputText.toLowerCase());
-    });
+    const exactMatch = moveData.find(move => move.name === inputText.trim());
     
     if (exactMatch) {
-        selectMultiTurnMove(turn, exactMatch.name);
+        console.log(`${turn + 1}ターン目に一致する技が見つかりました: ${exactMatch.name}`);
+        multiTurnMoves[turn] = exactMatch;
+        
+        // ★重要：selectMoveForTurnを呼んでHP入力欄を表示
+        selectMoveForTurn(exactMatch.name, turn);
     } else {
+        console.log(`${turn + 1}ターン目に一致する技が見つかりません: "${inputText}"`);
         multiTurnMoves[turn] = null;
-        console.log(`一致する技が見つからないため${turn + 1}ターン目をクリア`);
+        hideAllMoveSpecialSettings();
     }
 }
+
 
 // 技リスト表示
 function showMoveList(dropdown, input) {
@@ -5086,6 +5138,27 @@ function calculateLeechSeed2HealAmount(maxHP) {
     return Math.floor(maxHP / 8);
 }
 
+function getRankMultiplier(rankValue) {
+    const multipliers = {
+        '-6': { numerator: 10, denominator: 40 },
+        '-5': { numerator: 10, denominator: 35 },
+        '-4': { numerator: 10, denominator: 30 },
+        '-3': { numerator: 10, denominator: 25 },
+        '-2': { numerator: 10, denominator: 20 },
+        '-1': { numerator: 10, denominator: 15 },
+        '±0':  { numerator: 10, denominator: 10 },
+        '+1':  { numerator: 15, denominator: 10 },
+        '+2':  { numerator: 20, denominator: 10 },
+        '+3':  { numerator: 25, denominator: 10 },
+        '+4':  { numerator: 30, denominator: 10 },
+        '+5':  { numerator: 35, denominator: 10 },
+        '+6':  { numerator: 40, denominator: 10 }
+    };
+    
+    const mult = multipliers[rankValue.toString()];
+    return mult ? mult.numerator / mult.denominator : 1.0;
+}
+
 // ダメージ計算本体
 function calculateDamage(attack, defense, level, power, category, moveType, attackerTypes, defenderTypes, atkRank, defRank) {
   let finalAttack = attack;
@@ -5198,27 +5271,6 @@ function calculateDamage(attack, defense, level, power, category, moveType, atta
   }
   
   // ランク補正
-  const getRankMultiplier = (rankValue) => {
-    const multipliers = {
-      '-6': { numerator: 10, denominator: 40 },
-      '-5': { numerator: 10, denominator: 35 },
-      '-4': { numerator: 10, denominator: 30 },
-      '-3': { numerator: 10, denominator: 25 },
-      '-2': { numerator: 10, denominator: 20 },
-      '-1': { numerator: 10, denominator: 15 },
-      '±0':  { numerator: 10, denominator: 10 },
-      '+1':  { numerator: 15, denominator: 10 },
-      '+2':  { numerator: 20, denominator: 10 },
-      '+3':  { numerator: 25, denominator: 10 },
-      '+4':  { numerator: 30, denominator: 10 },
-      '+5':  { numerator: 35, denominator: 10 },
-      '+6':  { numerator: 40, denominator: 10 }
-    };
-    
-    const mult = multipliers[rankValue.toString()];
-    return mult ? mult.numerator / mult.denominator : 1.0;
-  };
-  
   const atkRankMultiplier = getRankMultiplier(atkRank);
   const defRankMultiplier = getRankMultiplier(defRank);
 
@@ -5531,8 +5583,25 @@ function performDamageCalculationEnhanced() {
 // HPバー作成関数
 // ========================
 
+// HPバー作成関数の修正版
 function createHPBar(minDamage, maxDamage, totalHP, keepDamage = false) {
     const maxDots = 48;
+    
+    // みがわり仮定かチェック
+    const isSubstitute = document.getElementById('substituteCheck')?.checked || false;
+    let currentHP = totalHP;
+    let displayMaxHP = totalHP;
+    
+    if (isSubstitute) {
+        currentHP = Math.floor(totalHP / 4);
+        displayMaxHP = currentHP;
+    } else {
+        const currentHPInput = document.getElementById('defenderCurrentHP');
+        if (currentHPInput && currentHPInput.value) {
+            currentHP = parseInt(currentHPInput.value) || totalHP;
+        }
+        displayMaxHP = currentHP;
+    }
     
     let displayMinDamage = minDamage;
     let displayMaxDamage = maxDamage;
@@ -5552,117 +5621,197 @@ function createHPBar(minDamage, maxDamage, totalHP, keepDamage = false) {
     displayMinDamage += constantDamage;
     displayMaxDamage += constantDamage;
     
-    // アイテム効果を考慮
+    // ★修正：攻撃後のHPを先に計算
+    const hpAfterMinDamage = Math.max(0, currentHP - displayMinDamage);
+    const hpAfterMaxDamage = Math.max(0, currentHP - displayMaxDamage);
+    
+    // アイテム効果を正しい順序で計算
     const defenderItem = defenderPokemon.item;
     let healInfo = '';
-    let effectiveMinDamage = displayMinDamage;
-    let effectiveMaxDamage = displayMaxDamage;
+    let finalMinHP = hpAfterMinDamage;
+    let finalMaxHP = hpAfterMaxDamage;
     
-    if (defenderItem) {
-        if (defenderItem.name === 'オボンのみ') {
-            // HP50%以下で30回復
-            const halfHP = totalHP / 2;
-            if (totalHP - effectiveMinDamage <= halfHP) {
-                healInfo = ' (オボンのみ発動後)';
-                effectiveMinDamage = Math.max(0, effectiveMinDamage - 30);
-                effectiveMaxDamage = Math.max(0, effectiveMaxDamage - 30);
-            }
-        } else if (isFigyBerry(defenderItem.name)) {
-            // HP50%以下で最大HPの1/8回復
-            const halfHP = totalHP / 2;
-            const healAmount = Math.floor(totalHP / 8);
-            if (totalHP - effectiveMinDamage <= halfHP) {
-                healInfo = ` (${defenderItem.name}発動後)`;
-                effectiveMinDamage = Math.max(0, effectiveMinDamage - healAmount);
-                effectiveMaxDamage = Math.max(0, effectiveMaxDamage - healAmount);
-            }
-        } else if (defenderItem.name === 'たべのこし') {
-            // 毎ターン1/16回復
-            const healAmount = Math.floor(totalHP / 16);
-            healInfo = ' (たべのこし考慮)';
-            effectiveMinDamage = Math.max(0, effectiveMinDamage - healAmount);
-            effectiveMaxDamage = Math.max(0, effectiveMaxDamage - healAmount);
-        }
-    }
-    
-    // 定数ダメージの表示情報を追加
-    if (constantDamage > 0) {
-    const damageDetails = [];
-    
-    // 状態異常ダメージ
-    const statusType = document.getElementById('statusDamageSelect').value;
-    if (statusType !== 'none') {
-        const statusNames = {
-            'burn': 'やけど',
-            'poison': 'どく', 
-            'badlypoison': 'もうどく'
-        };
-        const statusDamage = calculateStatusDamage(totalHP, statusType, 1);
-        if (statusDamage > 0) {
-            damageDetails.push(`${statusNames[statusType]} -${statusDamage}`);
-        }
-    }
-    
-    // まきびしダメージ
-    const spikesLevel = parseInt(document.getElementById('spikesLevel').value) || 0;
-    const spikesDamage = calculateSpikesDamage(totalHP, spikesLevel, 1);
-    if (spikesDamage > 0) {
-        damageDetails.push(`まきびし -${spikesDamage}`);
-    }
-    
-    // のろいダメージ
-    const curseSelect = document.getElementById('curseSelect');
-    if (curseSelect && curseSelect.value !== 'none') {
-        const curseDamage = calculateCurseDamage(totalHP);
-        damageDetails.push(`のろい -${curseDamage}`);
-    }
-    
-    // あくむダメージ
-    const nightmareSelect = document.getElementById('nightmareSelect');
-    if (nightmareSelect && nightmareSelect.value !== 'none') {
-        const nightmareDamage = calculateNightmareDamage(totalHP);
-        damageDetails.push(`あくむ -${nightmareDamage}`);
-    }
-    
-    // やどりぎダメージ
-    const leechSeedSelect = document.getElementById('leechSeedSelect');
-    if (leechSeedSelect && leechSeedSelect.value !== 'none') {
-        const leechSeedDamage = calculateLeechSeedDamage(totalHP);
-        damageDetails.push(`やどりぎ -${leechSeedDamage}`);
-    }
-    
-    // やどりぎ回復
+    // やどりぎ回復量を計算
+    let leechSeedHeal = 0;
     const leechSeed2Select = document.getElementById('leechSeed2Select');
     if (leechSeed2Select && leechSeed2Select.value !== 'none') {
-        const leechSeed2HealAmount = calculateLeechSeed2HealAmount(totalHP);
-        damageDetails.push(`やどりぎ回復 +${leechSeed2HealAmount}`);
-    }
-
-    // 天候ダメージ
-    const weather = document.getElementById('weatherSelect').value;
-    const weatherDamage = calculateWeatherDamage(totalHP, defenderPokemon.types, weather);
-    if (weatherDamage > 0) {
-        const weatherNames = {
-            'sandstorm': 'すなあらし',
-            'hail': 'あられ'
-        };
-        damageDetails.push(`${weatherNames[weather]} -${weatherDamage}`);
+        leechSeedHeal = calculateLeechSeed2HealAmount(totalHP);
     }
     
-    if (damageDetails.length > 0) {
-        constantDamageInfo = `<br>(${damageDetails.join(', ')})`;
+    if (defenderItem && !isSubstitute) {
+        if (defenderItem.name === 'オボンのみ') {
+            // ★修正：攻撃後のHPで発動条件を判定
+            const halfHP = totalHP / 2;
+            let berryActivatedMin = false;
+            let berryActivatedMax = false;
+            
+            // 最小ダメージの場合
+            if (hpAfterMinDamage > 0 && hpAfterMinDamage <= halfHP) {
+                berryActivatedMin = true;
+                finalMinHP = Math.min(hpAfterMinDamage + 30 + leechSeedHeal, totalHP);
+            } else if (leechSeedHeal > 0) {
+                finalMinHP = Math.min(hpAfterMinDamage + leechSeedHeal, totalHP);
+            }
+            
+            // 最大ダメージの場合
+            if (hpAfterMaxDamage > 0 && hpAfterMaxDamage <= halfHP) {
+                berryActivatedMax = true;
+                finalMaxHP = Math.min(hpAfterMaxDamage + 30 + leechSeedHeal, totalHP);
+            } else if (leechSeedHeal > 0) {
+                finalMaxHP = Math.min(hpAfterMaxDamage + leechSeedHeal, totalHP);
+            }
+            
+            // 表示テキストを設定
+            if (berryActivatedMin || berryActivatedMax) {
+                if (leechSeedHeal > 0) {
+                    healInfo = berryActivatedMin && berryActivatedMax ? 
+                        `<br>(オボンのみ+やどりぎ回復 +${30 + leechSeedHeal})` :
+                        `<br>(オボンのみ+やどりぎ回復 条件付き発動)`;
+                } else {
+                    healInfo = berryActivatedMin && berryActivatedMax ? 
+                        '<br>(オボンのみ発動後)' : 
+                        '<br>(オボンのみ 条件付き発動)';
+                }
+            } else if (leechSeedHeal > 0) {
+                healInfo = `<br>(やどりぎ回復 +${leechSeedHeal})`;
+            }
+            
+        } else if (isFigyBerry(defenderItem.name)) {
+            // フィラ系きのみも同様に修正
+            const halfHP = totalHP / 2;
+            const berryHealAmount = Math.floor(totalHP / 8);
+            let berryActivatedMin = false;
+            let berryActivatedMax = false;
+            
+            // 最小ダメージの場合
+            if (hpAfterMinDamage > 0 && hpAfterMinDamage <= halfHP) {
+                berryActivatedMin = true;
+                finalMinHP = Math.min(hpAfterMinDamage + berryHealAmount + leechSeedHeal, totalHP);
+            } else if (leechSeedHeal > 0) {
+                finalMinHP = Math.min(hpAfterMinDamage + leechSeedHeal, totalHP);
+            }
+            
+            // 最大ダメージの場合
+            if (hpAfterMaxDamage > 0 && hpAfterMaxDamage <= halfHP) {
+                berryActivatedMax = true;
+                finalMaxHP = Math.min(hpAfterMaxDamage + berryHealAmount + leechSeedHeal, totalHP);
+            } else if (leechSeedHeal > 0) {
+                finalMaxHP = Math.min(hpAfterMaxDamage + leechSeedHeal, totalHP);
+            }
+            
+            // 表示テキストを設定
+            if (berryActivatedMin || berryActivatedMax) {
+                if (leechSeedHeal > 0) {
+                    healInfo = berryActivatedMin && berryActivatedMax ? 
+                        `<br>(${defenderItem.name}+やどりぎ回復 +${berryHealAmount + leechSeedHeal})` :
+                        `<br>(${defenderItem.name}+やどりぎ回復 条件付き発動)`;
+                } else {
+                    healInfo = berryActivatedMin && berryActivatedMax ? 
+                        `<br>(${defenderItem.name}発動後)` : 
+                        `<br>(${defenderItem.name} 条件付き発動)`;
+                }
+            } else if (leechSeedHeal > 0) {
+                healInfo = `<br>(やどりぎ回復 +${leechSeedHeal})`;
+            }
+            
+        } else if (defenderItem.name === 'たべのこし') {
+            // たべのこしは毎ターン確実に発動
+            const leftoversHealAmount = Math.floor(totalHP / 16);
+            const totalHealAmount = leftoversHealAmount + leechSeedHeal;
+            finalMinHP = Math.min(hpAfterMinDamage + totalHealAmount, totalHP);
+            finalMaxHP = Math.min(hpAfterMaxDamage + totalHealAmount, totalHP);
+            
+            healInfo = leechSeedHeal > 0 ? 
+                `<br>(たべのこし+やどりぎ回復 +${totalHealAmount})` : 
+                '<br>(たべのこし考慮)';
+                
+        } else if (leechSeedHeal > 0) {
+            // やどりぎ回復のみ
+            finalMinHP = Math.min(hpAfterMinDamage + leechSeedHeal, totalHP);
+            finalMaxHP = Math.min(hpAfterMaxDamage + leechSeedHeal, totalHP);
+            healInfo = `<br>(やどりぎ回復 +${leechSeedHeal})`;
+        }
+    } else if (leechSeedHeal > 0 && !isSubstitute) {
+        // アイテムなし、やどりぎ回復のみ
+        finalMinHP = Math.min(hpAfterMinDamage + leechSeedHeal, totalHP);
+        finalMaxHP = Math.min(hpAfterMaxDamage + leechSeedHeal, totalHP);
+        healInfo = `<br>(やどりぎ回復 +${leechSeedHeal})`;
     }
-}
     
-    const remainHPAfterMinDamage = Math.max(0, totalHP - effectiveMinDamage);
-    const remainHPAfterMaxDamage = Math.max(0, totalHP - effectiveMaxDamage);
+    // ★修正：ここから先は最終的なHP残量で処理
+    const remainHPAfterMinDamage = finalMinHP;
+    const remainHPAfterMaxDamage = finalMaxHP;
     
-    const remainMinDots = Math.ceil((remainHPAfterMinDamage / totalHP) * maxDots);
-    const remainMaxDots = Math.ceil((remainHPAfterMaxDamage / totalHP) * maxDots);
+    const remainMinDots = Math.ceil((remainHPAfterMinDamage / displayMaxHP) * maxDots);
+    const remainMaxDots = Math.ceil((remainHPAfterMaxDamage / displayMaxHP) * maxDots);
     
-    const remainMinPercent = (remainHPAfterMinDamage / totalHP * 100).toFixed(1);
-    const remainMaxPercent = (remainHPAfterMaxDamage / totalHP * 100).toFixed(1);
+    const remainMinPercent = (remainHPAfterMinDamage / displayMaxHP * 100).toFixed(1);
+    const remainMaxPercent = (remainHPAfterMaxDamage / displayMaxHP * 100).toFixed(1);
     
+    // 定数ダメージの詳細情報を生成（変更なし）
+    let constantDamageInfo = '';
+    if (constantDamage > 0 || leechSeedHeal > 0) {
+        const damageDetails = [];
+        
+        // 状態異常ダメージ
+        const statusType = document.getElementById('statusDamageSelect').value;
+        if (statusType !== 'none') {
+            const statusNames = {
+                'burn': 'やけど',
+                'poison': 'どく', 
+                'badlypoison': 'もうどく'
+            };
+            const statusDamage = calculateStatusDamage(totalHP, statusType, 1);
+            if (statusDamage > 0) {
+                damageDetails.push(`${statusNames[statusType]} -${statusDamage}`);
+            }
+        }
+        
+        // まきびしダメージ
+        const spikesLevel = parseInt(document.getElementById('spikesLevel').value) || 0;
+        const spikesDamage = calculateSpikesDamage(totalHP, spikesLevel, 1);
+        if (spikesDamage > 0) {
+            damageDetails.push(`まきびし -${spikesDamage}`);
+        }
+        
+        // のろいダメージ
+        const curseSelect = document.getElementById('curseSelect');
+        if (curseSelect && curseSelect.value !== 'none') {
+            const curseDamage = calculateCurseDamage(totalHP);
+            damageDetails.push(`のろい -${curseDamage}`);
+        }
+        
+        // あくむダメージ
+        const nightmareSelect = document.getElementById('nightmareSelect');
+        if (nightmareSelect && nightmareSelect.value !== 'none') {
+            const nightmareDamage = calculateNightmareDamage(totalHP);
+            damageDetails.push(`あくむ -${nightmareDamage}`);
+        }
+        
+        // やどりぎダメージ
+        const leechSeedSelect = document.getElementById('leechSeedSelect');
+        if (leechSeedSelect && leechSeedSelect.value !== 'none') {
+            const leechSeedDamage = calculateLeechSeedDamage(totalHP);
+            damageDetails.push(`やどりぎ -${leechSeedDamage}`);
+        }
+        
+        // 天候ダメージ
+        const weather = document.getElementById('weatherSelect').value;
+        const weatherDamage = calculateWeatherDamage(totalHP, defenderPokemon.types, weather);
+        if (weatherDamage > 0) {
+            const weatherNames = {
+                'sandstorm': 'すなあらし',
+                'hail': 'あられ'
+            };
+            damageDetails.push(`${weatherNames[weather]} -${weatherDamage}`);
+        }
+        
+        if (damageDetails.length > 0) {
+            constantDamageInfo = `<br>(${damageDetails.join(', ')})`;
+        }
+    }
+    
+    // HPバーの生成処理（変更なし）
     const dotPercentage = 100 / maxDots;
     const minDotPercent = remainMinDots * dotPercentage;
     const maxDotPercent = remainMaxDots * dotPercentage;
@@ -5695,25 +5844,30 @@ function createHPBar(minDamage, maxDamage, totalHP, keepDamage = false) {
     }
     
     function generateDotMarkers() {
-    // CSSの::beforeで描画するため、この関数は空にする
-    return '';
+        let markers = '';
+        
+        for (let i = 1; i < maxDots; i++) {
+            const position = (i / maxDots) * 100;
+            markers += `<div class="dot-marker" style="height: 100%; width: 1px; background-color: rgba(0,0,0,0.2); position: absolute; left: calc(${position}% - 0.5px); top: 0; z-index: 20;"></div>`;
+        }
+        
+        return markers;
     }
     
     let hpBarHtml = '';
     
     if (remainHPAfterMaxDamage == remainHPAfterMinDamage) {
-        hpBarHtml = `
-        <div style="margin: 10px 0; width: 100%; position: relative;">
-          <div class="hp-bar-container">
-            ${generateLayers()}
-          </div>
-          <div style="text-align: center; margin-top: 3px; font-size: 0.85em; color: #777;">
-            <div>HP: ${remainHPAfterMaxDamage}/${totalHP} (${remainMaxPercent}%)${healInfo}</div>
-            <div>ドット: [${remainMaxDots}/48]</div>
-          </div>
-        </div>
-        `;
-    } else {
+        let hpDisplayText = '';
+        if (isSubstitute) {
+            hpDisplayText = `みがわりHP: ${remainHPAfterMaxDamage}/${displayMaxHP} (${remainMaxPercent}%)${healInfo}${constantDamageInfo}`;
+        } else {
+            if (currentHP === totalHP) {
+                hpDisplayText = `HP: ${remainHPAfterMaxDamage}/${currentHP} (${remainMaxPercent}%)${healInfo}${constantDamageInfo}`;
+            } else {
+                hpDisplayText = `HP: ${remainHPAfterMaxDamage}/${currentHP} (現在HPから${remainMaxPercent}%)${healInfo}${constantDamageInfo}`;
+            }
+        }
+        
         hpBarHtml = `
         <div style="margin: 10px 0; width: 100%; position: relative;">
           <div style="height: 15px; width: 100%; background-color: #506858; border-radius: 5px; position: relative; overflow: hidden;">
@@ -5721,7 +5875,31 @@ function createHPBar(minDamage, maxDamage, totalHP, keepDamage = false) {
             ${generateDotMarkers()}
           </div>
           <div style="text-align: center; margin-top: 3px; font-size: 0.85em; color: #777;">
-            <div>HP: ${remainHPAfterMaxDamage}~${remainHPAfterMinDamage}/${totalHP} (${remainMaxPercent}%~${remainMinPercent}%)${healInfo}</div>
+            <div>${hpDisplayText}</div>
+            <div>ドット: [${remainMaxDots}/48]</div>
+          </div>
+        </div>
+        `;
+    } else {
+        let hpDisplayText = '';
+        if (isSubstitute) {
+            hpDisplayText = `みがわりHP: ${remainHPAfterMaxDamage}~${remainHPAfterMinDamage}/${displayMaxHP} (${remainMaxPercent}%~${remainMinPercent}%)${healInfo}${constantDamageInfo}`;
+        } else {
+            if (currentHP === totalHP) {
+                hpDisplayText = `HP: ${remainHPAfterMaxDamage}~${remainHPAfterMinDamage}/${currentHP} (${remainMaxPercent}%~${remainMinPercent}%)${healInfo}${constantDamageInfo}`;
+            } else {
+                hpDisplayText = `HP: ${remainHPAfterMaxDamage}~${remainHPAfterMinDamage}/${currentHP} (現在HPから${remainMaxPercent}%~${remainMinPercent}%)${healInfo}${constantDamageInfo}`;
+            }
+        }
+        
+        hpBarHtml = `
+        <div style="margin: 10px 0; width: 100%; position: relative;">
+          <div style="height: 15px; width: 100%; background-color: #506858; border-radius: 5px; position: relative; overflow: hidden;">
+            ${generateLayers()}
+            ${generateDotMarkers()}
+          </div>
+          <div style="text-align: center; margin-top: 3px; font-size: 0.85em; color: #777;">
+            <div>${hpDisplayText}</div>
             <div>ドット: [${remainMaxDots}~${remainMinDots}/48]</div>
           </div>
         </div>
@@ -6265,8 +6443,23 @@ class MultiHitCalculator {
             { hits: 5, probability: 1/8 }   // 12.5%
         ];
         
-        this.criticalRate = 1/16;  // 急所率（固定）
-        this.normalRate = 15/16;   // 通常攻撃率（固定）
+        // ★修正: 固定の急所率は削除（動的に取得するため）
+        // this.criticalRate = 1/16;
+        // this.normalRate = 15/16;
+    }
+    
+    /**
+     * 急所率を動的に取得
+     */
+    getCriticalRate() {
+        return getCriticalRate(); // グローバル関数を呼び出し
+    }
+    
+    /**
+     * 通常攻撃率を動的に取得
+     */
+    getNormalRate() {
+        return 1 - this.getCriticalRate();
     }
     
     /**
@@ -6280,6 +6473,9 @@ class MultiHitCalculator {
     calculateMultiHitKORate(singleMinDamage, singleMaxDamage, targetHP, move) {
         console.log(`=== 連続技統合計算開始: ${move.name} ===`);
         console.log(`1発ダメージ: ${singleMinDamage}~${singleMaxDamage}, 対象HP: ${targetHP}`);
+        
+        const criticalRate = this.getCriticalRate();
+        console.log(`急所率: ${(criticalRate * 100).toFixed(2)}% (${criticalRate === 1/8 ? 'ピントレンズ' : '通常'})`);
         
         // 命中率を計算（各種補正込み）
         const accuracy = this.calculateAccuracy(move);
@@ -6368,6 +6564,14 @@ class MultiHitCalculator {
      * @returns {number} 瀕死確率（0-1）
      */
     calculateKOForSpecificHits(singleMinDamage, singleMaxDamage, hitCount, targetHP) {
+        const criticalRate = this.getCriticalRate();
+        const normalRate = this.getNormalRate();
+        
+        console.log(`連続技${hitCount}回攻撃の詳細計算:`);
+        console.log(`  1発ダメージ: ${singleMinDamage}~${singleMaxDamage}`);
+        console.log(`  急所率: ${(criticalRate * 100).toFixed(2)}% (${criticalRate === 1/8 ? 'ピントレンズ' : '通常'})`);
+        console.log(`  対象HP: ${targetHP}`);
+        
         // HP状態とその確率を管理（動的プログラミング）
         let states = new Map();
         states.set(targetHP, 1.0);
@@ -6392,7 +6596,10 @@ class MultiHitCalculator {
             states = newStates;
         }
         
-        return states.get(0) || 0;
+        const koRate = states.get(0) || 0;
+        console.log(`  瀕死率: ${(koRate * 100).toFixed(3)}%`);
+        
+        return koRate;
     }
     
     /**
@@ -6400,11 +6607,12 @@ class MultiHitCalculator {
      */
     processNormalDamage(hp, prob, singleMinDamage, singleMaxDamage, newStates) {
         const normalPatterns = singleMaxDamage - singleMinDamage + 1;
+        const normalRate = this.getNormalRate(); // ★修正: 動的に取得
         
         for (let i = 0; i < normalPatterns; i++) {
             const damage = singleMinDamage + i;
             const newHP = Math.max(0, hp - damage);
-            const patternProb = prob * this.normalRate / normalPatterns;
+            const patternProb = prob * normalRate / normalPatterns;
             
             newStates.set(newHP, (newStates.get(newHP) || 0) + patternProb);
         }
@@ -6417,11 +6625,12 @@ class MultiHitCalculator {
         const critMinDamage = singleMinDamage * 2;
         const critMaxDamage = singleMaxDamage * 2;
         const critPatterns = critMaxDamage - critMinDamage + 1;
+        const criticalRate = this.getCriticalRate(); // ★修正: 動的に取得
         
         for (let i = 0; i < critPatterns; i++) {
             const damage = critMinDamage + i;
             const newHP = Math.max(0, hp - damage);
-            const patternProb = prob * this.criticalRate / critPatterns;
+            const patternProb = prob * criticalRate / critPatterns;
             
             newStates.set(newHP, (newStates.get(newHP) || 0) + patternProb);
         }
@@ -7329,165 +7538,6 @@ function calculateMultiTurnKORate(defenderHP, turns = 4) {
     }
 }
 
-// 複数ターン基本瀕死率計算
-// 複数ターン基本瀕死率計算
-function calculateMultiTurnBasicKORateUnified(defenderHP, maxTurns) {
-    const results = Array(maxTurns).fill(0);
-    const calculationBasis = Array(maxTurns).fill(null);
-    const remainingHPRanges = Array(maxTurns).fill(null);
-    
-    console.log('=== 統合版基本瀕死率計算開始 ===');
-    
-    // moveDataListを構築
-    const moveDataList = [];
-    
-    for (let turn = 0; turn < maxTurns; turn++) {
-        const move = turn === 0 ? currentMove : multiTurnMoves[turn];
-        
-        if (!move) {
-            const firstMove = currentMove;
-            if (firstMove) {
-                const damageData = calculateMoveDamageRange(firstMove, turn);
-                moveDataList.push(damageData);
-            } else {
-                moveDataList.push(null);
-            }
-            continue;
-        }
-        
-        const damageData = calculateMoveDamageRange(move, turn);
-        moveDataList.push(damageData);
-    }
-    
-    // 表示用の計算根拠を準備
-    for (let turn = 0; turn < maxTurns; turn++) {
-        if (moveDataList[turn]) {
-            const move = turn === 0 ? currentMove : multiTurnMoves[turn];
-            
-            // 状態異常の影響を記録
-            let statusEffects = [];
-            
-            const paralysisSelect = document.getElementById('paralysisSelect');
-            const paralysisStartTurn = paralysisSelect ? parseInt(paralysisSelect.value) : null;
-            if (paralysisStartTurn && paralysisStartTurn !== 'none' && !isNaN(paralysisStartTurn) && turn + 1 >= paralysisStartTurn) {
-                statusEffects.push('まひ（行動確率3/4）');
-            }
-            
-            const confusionSelect = document.getElementById('confusionSelect');
-            const confusionStartTurn = confusionSelect ? parseInt(confusionSelect.value) : null;
-            if (confusionStartTurn && confusionStartTurn !== 'none' && !isNaN(confusionStartTurn) && turn + 1 >= confusionStartTurn) {
-                statusEffects.push('こんらん（行動確率1/2）');
-            }
-            
-            if (defenderPokemon.item && defenderPokemon.item.name === 'ひかりのこな') {
-                statusEffects.push('ひかりのこな（命中率0.9倍）');
-            }
-            
-            // 表示用ダメージ範囲を設定（やどりぎ回復考慮）
-            let displayDamageRange;
-            if (move.class === 'multi_hit') {
-                // 連続技の場合は統合版を使用
-                const singleMin = moveDataList[turn].minDamage;
-                const singleMax = moveDataList[turn].maxDamage;
-                const constantDamage = calculateTotalConstantDamage(defenderHP, defenderPokemon.types, turn + 1);
-                
-                // やどりぎ回復量を計算
-                let healAmount = 0;
-                const leechSeed2Select = document.getElementById('leechSeed2Select');
-                if (leechSeed2Select) {
-                    const leechSeed2StartTurn = parseInt(leechSeed2Select.value);
-                    if (!isNaN(leechSeed2StartTurn) && turn + 1 >= leechSeed2StartTurn) {
-                        healAmount = calculateLeechSeed2HealAmount(defenderHP);
-                    }
-                }
-                
-                const netConstantEffect = constantDamage - healAmount;
-                const displayRange = multiHitCalculator.getDisplayDamageRange(singleMin, singleMax, netConstantEffect);
-                displayDamageRange = displayRange.text;
-            } else {
-                // 通常技の場合
-                const constantDamage = calculateTotalConstantDamage(defenderHP, defenderPokemon.types, turn + 1);
-                
-                // やどりぎ回復量を計算
-                let healAmount = 0;
-                const leechSeed2Select = document.getElementById('leechSeed2Select');
-                if (leechSeed2Select) {
-                    const leechSeed2StartTurn = parseInt(leechSeed2Select.value);
-                    if (!isNaN(leechSeed2StartTurn) && turn + 1 >= leechSeed2StartTurn) {
-                        healAmount = calculateLeechSeed2HealAmount(defenderHP);
-                    }
-                }
-                
-                const netConstantEffect = constantDamage - healAmount;
-                const minWithConstant = moveDataList[turn].minDamage + netConstantEffect;
-                const maxWithConstant = moveDataList[turn].maxDamage + netConstantEffect;
-                displayDamageRange = `${minWithConstant}~${maxWithConstant}`;
-            }
-            
-            calculationBasis[turn] = {
-                moveName: move.name,
-                accuracy: move.accuracy || 100,
-                damageRange: displayDamageRange,
-                statusEffects: statusEffects,
-                isMultiHit: move.class === 'multi_hit'
-            };
-        }
-    }
-
-    // ★修正: 連続技があるかどうかを一度だけチェックし、適切な計算方法を選択
-    let hasAnyMultiHit = false;
-    const multiHitTurns = new Set(); // 連続技があるターンを記録
-    
-    // 連続技があるターンを特定
-    for (let turn = 0; turn < maxTurns; turn++) {
-        const move = turn === 0 ? currentMove : multiTurnMoves[turn];
-        if (move && move.class === 'multi_hit') {
-            hasAnyMultiHit = true;
-            multiHitTurns.add(turn);
-        }
-    }
-    
-    // ★重要: やどりぎ回復がある場合は必ずcalculateKORateWithConstantDamageを使用
-    const leechSeed2Select = document.getElementById('leechSeed2Select');
-    const hasLeechSeedHeal = leechSeed2Select && leechSeed2Select.value !== 'none';
-    
-    if (hasAnyMultiHit) {
-        console.log('=== 連続技混在: 統合計算開始 ===');
-        console.log('連続技があるターン:', Array.from(multiHitTurns).map(t => t + 1));
-        
-        if (hasLeechSeedHeal) {
-            // やどりぎ回復がある場合は回復対応の計算を使用
-            calculateKORateWithConstantDamage(defenderHP, defenderHP, moveDataList, 0, 1.0, results, null);
-        } else {
-            // 統合された混合計算を実行
-            calculateMixedKORateProbability(defenderHP, moveDataList, 0, 0, 1.0, results);
-        }
-        
-        console.log('=== 連続技混在: 統合計算完了 ===');
-    } else {
-        console.log('=== 通常技のみ: 計算開始 ===');
-        
-        if (hasLeechSeedHeal) {
-            // やどりぎ回復がある場合は回復対応の計算を使用
-            calculateKORateWithConstantDamage(defenderHP, defenderHP, moveDataList, 0, 1.0, results, null);
-        } else {
-            // 従来の計算
-            calculateKORateProbability(defenderHP, moveDataList, 0, 0, 1.0, results);
-        }
-        
-        console.log('=== 通常技のみ: 計算完了 ===');
-    }
-    
-    console.log('統合版最終瀕死率:', results.map((rate, i) => `${i+1}T: ${(rate * 100).toFixed(3)}%`));
-    console.log('=== 統合版基本瀕死率計算完了 ===');
-    
-    return {
-        rates: results.map(rate => rate * 100),
-        basis: calculationBasis,
-        hpRanges: remainingHPRanges
-    };
-}
-
 // 連続技と通常技が混在する場合の計算関数
 function calculateMixedKORateProbability(remainingHP, moveDataList, turnIndex, totalDamage, currentProbability, results) {
     // HPが0以下になった場合
@@ -7567,113 +7617,123 @@ function calculateMixedKORateProbability(remainingHP, moveDataList, turnIndex, t
 }
 
 function calculateMultiHitKORateProbability(remainingHP, moveDataList, turnIndex, totalDamage, currentProbability, results) {
-    // HPが0以下になった場合
-    if (remainingHP <= 0) {
-        // 現在のターン以降すべてに確率を加算
-        for (let i = turnIndex; i < results.length; i++) {
-            results[i] += currentProbability;
-        }
-        return;
-    }
-    
-    // すべてのターンを処理した場合
     if (turnIndex >= moveDataList.length) {
         return;
     }
     
     const moveData = moveDataList[turnIndex];
     if (!moveData) {
-        // 技が設定されていない場合は次のターンへ
         calculateMultiHitKORateProbability(remainingHP, moveDataList, turnIndex + 1, totalDamage, currentProbability, results);
         return;
     }
     
-    // ★重要: 1ターン目で連続技の場合は発生確率を考慮
-    if (turnIndex === 0 && currentMove && currentMove.class === 'multi_hit') {
-        // 連続技の発生確率
-        const hitDistribution = [
-            { hits: 2, probability: 3/8 },  // 37.5%
-            { hits: 3, probability: 3/8 },  // 37.5%
-            { hits: 4, probability: 1/8 },  // 12.5%
-            { hits: 5, probability: 1/8 }   // 12.5%
-        ];
-        
-        console.log(`連続技瀕死率計算: 残HP=${remainingHP}, 確率=${(currentProbability * 100).toFixed(4)}%`);
-        
-        // 技が外れた場合
-        const missProbability = 1 - moveData.accuracy;
-        if (missProbability > 0) {
-            console.log(`  技外れ分岐: 確率=${(currentProbability * missProbability * 100).toFixed(4)}%`);
-            calculateMultiHitKORateProbability(remainingHP, moveDataList, turnIndex + 1, totalDamage, currentProbability * missProbability, results);
-        }
-        
-        // 各回数での処理
-        for (const { hits, probability } of hitDistribution) {
-            const hitProbability = moveData.accuracy * probability;
-            
-            // この回数での全ダメージパターンを処理
-            const singleMinDamage = moveData.minDamage;
-            const singleMaxDamage = moveData.maxDamage;
-            
-            // 各ヒットの組み合わせを簡略化して計算
-            const totalMinDamage = singleMinDamage * hits;
-            const totalMaxDamage = singleMaxDamage * hits;
-            
-            // ダメージパターンの処理（急所考慮）
-            const normalProb = hitProbability * (15/16); // 急所以外
-            const critProb = hitProbability * (1/16);    // 急所
-            
-            // 通常ダメージ
-            for (let i = 0; i < 16; i++) {
-                const damage = Math.floor(totalMinDamage + (totalMaxDamage - totalMinDamage) * i / 15);
-                const patternProb = currentProbability * normalProb * (1/16);
+    // ★修正: オボンのみ持ちかどうかをチェック
+    const defenderItem = defenderPokemon.item;
+    const isOranBerry = defenderItem && defenderItem.name === 'オボンのみ';
+    
+    const criticalRate = getCriticalRate();
+    const normalRate = 1 - criticalRate;
+    
+    // ★修正: オボンのみの場合は基本ログを抑制
+    if (!isOranBerry) {
+        // 通常の連続技ログ出力処理
+        if (turnIndex === 0 && (currentMove.class === 'multi_hit' || currentMove.class === 'two_hit')) {
+            if (!turnCommonInfoDisplayed.has(turnIndex)) {
+                console.log(`=== ${turnIndex + 1}ターン目 共通情報 ===`);
+                console.log(`通常ダメージ範囲: ${moveData.minDamage}~${moveData.maxDamage}`);
+                console.log(`急所ダメージ範囲: ${moveData.minCritDamage}~${moveData.maxCritDamage}`);
+                console.log(`命中率: ${(moveData.accuracy * 100).toFixed(1)}%`);
                 
-                if (damage >= remainingHP) {
-                    // 倒せる場合
-                    for (let j = turnIndex; j < results.length; j++) {
-                        results[j] += patternProb;
-                    }
-                } else {
-                    // 倒せない場合は次のターンへ
-                    calculateMultiHitKORateProbability(
-                        remainingHP - damage,
-                        moveDataList,
-                        turnIndex + 1,
-                        totalDamage + damage,
-                        patternProb,
-                        results
-                    );
+                const criticalText = criticalRate === 1/8 ? '高い確率' : '通常';
+                console.log(`急所率: ${(criticalRate * 100).toFixed(2)}% (${criticalText})`);
+                
+                // 連続技の詳細情報
+                if (currentMove.class === 'multi_hit') {
+                    const hitCountSelect = document.getElementById('multiHitCount');
+                    const selectedHitCount = hitCountSelect ? hitCountSelect.value : '2-5';
+                    console.log(`連続技: ${currentMove.name} (${selectedHitCount}回)`);
+                } else if (currentMove.class === 'two_hit') {
+                    console.log(`連続技: ${currentMove.name} (2回)`);
                 }
+                
+                console.log('--- 各HPパターンでの計算 ---');
+                turnCommonInfoDisplayed.add(turnIndex);
+            }
+        }
+    }
+    
+    // ★修正: 連続技計算処理はオボンのみに関係なく実行
+    if (turnIndex === 0 && (currentMove.class === 'multi_hit' || currentMove.class === 'two_hit')) {
+        // 連続技の計算処理
+        const hitCountSelect = document.getElementById('multiHitCount');
+        const selectedHitCount = hitCountSelect ? hitCountSelect.value : '2-5';
+        
+        if (currentMove.class === 'multi_hit' && selectedHitCount === '2-5') {
+            // 2-5回連続技の処理
+            const hitDistribution = [
+                { hits: 2, probability: 3/8 },
+                { hits: 3, probability: 3/8 },
+                { hits: 4, probability: 1/8 },
+                { hits: 5, probability: 1/8 }
+            ];
+            
+            // ★修正: オボンのみでない場合のみログ出力
+            if (!isOranBerry) {
+                console.log(`=== 連続技統合計算: ${currentMove.name} ===`);
+                console.log(`1発ダメージ: ${Math.floor(moveData.minDamage / 2)}~${Math.floor(moveData.maxDamage / 5)}, 対象HP: ${remainingHP}`);
             }
             
-            // 急所ダメージ
-            const critTotalMinDamage = totalMinDamage * 2;
-            const critTotalMaxDamage = totalMaxDamage * 2;
+            let totalKOProb = 0;
             
-            for (let i = 0; i < 16; i++) {
-                const damage = Math.floor(critTotalMinDamage + (critTotalMaxDamage - critTotalMinDamage) * i / 15);
-                const patternProb = currentProbability * critProb * (1/16);
+            hitDistribution.forEach(({ hits, probability }) => {
+                // 各回数での計算処理
+                const singleMinDamage = Math.floor(moveData.minDamage / hits);
+                const singleMaxDamage = Math.floor(moveData.maxDamage / hits);
                 
-                if (damage >= remainingHP) {
-                    // 倒せる場合
-                    for (let j = turnIndex; j < results.length; j++) {
-                        results[j] += patternProb;
+                // 実際の瀕死計算
+                let hitKOProb = 0;
+                
+                // 通常攻撃パターン
+                const normalAttackProb = Math.pow(normalRate, hits);
+                for (let totalNormalDamage = singleMinDamage * hits; totalNormalDamage <= singleMaxDamage * hits; totalNormalDamage++) {
+                    if (totalNormalDamage >= remainingHP) {
+                        hitKOProb += normalAttackProb / (singleMaxDamage - singleMinDamage + 1);
                     }
-                } else {
-                    // 倒せない場合は次のターンへ
-                    calculateMultiHitKORateProbability(
-                        remainingHP - damage,
-                        moveDataList,
-                        turnIndex + 1,
-                        totalDamage + damage,
-                        patternProb,
-                        results
-                    );
                 }
+                
+                // 急所混合パターン（簡略化）
+                for (let i = 1; i <= hits; i++) {
+                    const critPatternProb = Math.pow(normalRate, hits - i) * Math.pow(criticalRate, i);
+                    const critTotalMinDamage = singleMinDamage * (hits - i) + singleMinDamage * 2 * i;
+                    const critTotalMaxDamage = singleMaxDamage * (hits - i) + singleMaxDamage * 2 * i;
+                    
+                    for (let critDamage = critTotalMinDamage; critDamage <= critTotalMaxDamage; critDamage++) {
+                        if (critDamage >= remainingHP) {
+                            hitKOProb += critPatternProb / (critTotalMaxDamage - critTotalMinDamage + 1);
+                        }
+                    }
+                }
+                
+                const weightedKOProb = hitKOProb * probability;
+                totalKOProb += weightedKOProb;
+                
+                // ★修正: オボンのみでない場合のみログ出力
+                if (!isOranBerry) {
+                    console.log(`${hits}回攻撃: 瀕死率${(hitKOProb * 100).toFixed(2)}% × 発生率${(probability * 100).toFixed(1)}% = ${(weightedKOProb * 100).toFixed(3)}%`);
+                }
+            });
+            
+            // ★修正: オボンのみでない場合のみログ出力
+            if (!isOranBerry) {
+                console.log(`総合瀕死率: ${(totalKOProb * 100).toFixed(3)}%`);
+                console.log('===============================');
             }
             
-            console.log(`  ${hits}回攻撃: 基本確率=${(hitProbability * 100).toFixed(3)}%`);
+        } else {
+            // 通常技または2ターン目以降は既存の処理
+            calculateKORateProbability(remainingHP, moveDataList, turnIndex, totalDamage, currentProbability, results);
         }
+        
     } else {
         // 通常技または2ターン目以降は既存の処理
         calculateKORateProbability(remainingHP, moveDataList, turnIndex, totalDamage, currentProbability, results);
@@ -7728,7 +7788,13 @@ function calculateMoveDamageRange(move, turnIndex = 0) {
         movePower = calculatePower(move);
     }
 
-    // ★重要: 常に1発分のダメージを計算（統合版との整合性）
+    // ★修正: 防御側のアイテムのみを一時的に無効化
+    const originalDefenderItem = defenderPokemon.item;
+    
+    // 基本瀕死率計算時は防御側アイテム効果のみを除外
+    defenderPokemon.item = null;
+    // 攻撃側のアイテムはそのまま維持
+    
     const [baseDamageMin, baseDamageMax] = calculateDamage(
         attackValue,
         defenseValue,
@@ -7742,11 +7808,16 @@ function calculateMoveDamageRange(move, turnIndex = 0) {
         defRank
     );
     
-    // ★連続技でも1発分のダメージを返す（表示用変換は呼び出し側で実行）
+    // 防御側アイテムのみを元に戻す
+    defenderPokemon.item = originalDefenderItem;
+    
+    // 1発分のダメージを返す
     let minDamage = baseDamageMin;
     let maxDamage = baseDamageMax;
     
-    // 急所ダメージ計算
+    // 急所ダメージ計算（防御側アイテム効果なし）
+    defenderPokemon.item = null; // 一時的にアイテム無効化
+    
     const criticalCheckbox = document.getElementById('criticalCheck');
     const originalCritical = criticalCheckbox.checked;
     criticalCheckbox.checked = true;
@@ -7764,20 +7835,18 @@ function calculateMoveDamageRange(move, turnIndex = 0) {
         defRank
     );
     
-    // ★急所も1発分のダメージを返す
+    // 元の状態に戻す
+    criticalCheckbox.checked = originalCritical;
+    defenderPokemon.item = originalDefenderItem;
+    
     let minCritDamage = baseCritDamageMin;
     let maxCritDamage = baseCritDamageMax;
     
-    // 元の状態に戻す
-    criticalCheckbox.checked = originalCritical;
-    
-    // 命中率計算（統合版を使用）
+    // 命中率計算
     let finalAccuracy;
     if (move.class === 'multi_hit') {
-        // ★統合版の命中率計算を使用
         finalAccuracy = multiHitCalculator.calculateAccuracy(move);
     } else {
-        // 通常技は既存の計算
         const weather = document.getElementById('weatherSelect').value;
         
         if (move.accuracy === 0 || (weather === 'rain' && move.name === 'かみなり')) {
@@ -7789,7 +7858,7 @@ function calculateMoveDamageRange(move, turnIndex = 0) {
                 baseAccuracy *= 0.8;
             }
             
-            if (defenderPokemon.item && defenderPokemon.item.name === 'ひかりのこな') {
+            if (originalDefenderItem && originalDefenderItem.name === 'ひかりのこな') {
                 baseAccuracy *= 0.9;
             }
             
@@ -7806,18 +7875,16 @@ function calculateMoveDamageRange(move, turnIndex = 0) {
         const paralysisSelect = document.getElementById('paralysisSelect');
         const paralysisStartTurn = paralysisSelect ? parseInt(paralysisSelect.value) : null;
         if (paralysisStartTurn && paralysisStartTurn !== 'none' && !isNaN(paralysisStartTurn) && turnIndex + 1 >= paralysisStartTurn) {
-            finalAccuracy *= 0.75; // 3/4の確率で行動可能
+            finalAccuracy *= 0.75;
         }
         
         // こんらんの効果（1/2で行動不能）
         const confusionSelect = document.getElementById('confusionSelect');
         const confusionStartTurn = confusionSelect ? parseInt(confusionSelect.value) : null;
         if (confusionStartTurn && confusionStartTurn !== 'none' && !isNaN(confusionStartTurn) && turnIndex + 1 >= confusionStartTurn) {
-            finalAccuracy *= 0.5; // 1/2の確率で行動可能
+            finalAccuracy *= 0.5;
         }
     }
-    
-    console.log(`ターン${turnIndex + 1}: 1発ダメージ${minDamage}~${maxDamage}, 最終命中率 = ${(finalAccuracy * 100).toFixed(1)}%`);
     
     return {
         accuracy: finalAccuracy,
@@ -7827,6 +7894,7 @@ function calculateMoveDamageRange(move, turnIndex = 0) {
         maxCritDamage: maxCritDamage
     };
 }
+
 
 function getConstantDamageNames() {
     const names = [];
@@ -7883,36 +7951,218 @@ function getConstantDamageNames() {
     return names;
 }
 
+// ================================
+// アイテム効果専用のダメージ計算関数
+// ================================
+
+/**
+ * アイテム効果を考慮したダメージ範囲計算
+ */
+function calculateMoveDamageRangeWithItems(move, turnIndex = 0) {
+    if (!move) return null;
+    
+    // ステータス計算
+    const attackerStats = calculateStats(attackerPokemon);
+    const defenderStats = calculateStats(defenderPokemon);
+    
+    // 攻撃値と防御値を決定
+    const isPhysical = move.category === "Physical";
+    const attackValue = isPhysical ? attackerStats.a : attackerStats.c;
+    const defenseValue = isPhysical ? defenderStats.b : defenderStats.d;
+    
+    // ランク補正取得
+    const atkRankElement = document.getElementById('attackerAtkRank');
+    const defRankElement = document.getElementById('defenderDefRank');
+    
+    const atkRank = atkRankElement ? atkRankElement.value : '±0';
+    const defRank = defRankElement ? defRankElement.value : '±0';
+    
+    // 威力計算
+    let movePower = move.power || 0;
+    if (move.class === 'pinch_up' || move.class === 'pinch_down') {
+        movePower = calculatePower(move);
+    }
+
+    // ★重要: アイテム効果を含めてダメージ計算
+    const [baseDamageMin, baseDamageMax] = calculateDamage(
+        attackValue,
+        defenseValue,
+        attackerPokemon.level,
+        movePower,
+        move.category,
+        move.type,
+        attackerPokemon.types,
+        defenderPokemon.types,
+        atkRank,
+        defRank
+    );
+    
+    let minDamage = baseDamageMin;
+    let maxDamage = baseDamageMax;
+    
+    // 急所ダメージ計算（アイテム効果込み）
+    const criticalCheckbox = document.getElementById('criticalCheck');
+    const originalCritical = criticalCheckbox.checked;
+    criticalCheckbox.checked = true;
+    
+    const [baseCritDamageMin, baseCritDamageMax] = calculateDamage(
+        attackValue,
+        defenseValue,
+        attackerPokemon.level,
+        movePower,
+        move.category,
+        move.type,
+        attackerPokemon.types,
+        defenderPokemon.types,
+        atkRank,
+        defRank
+    );
+    
+    criticalCheckbox.checked = originalCritical;
+    
+    let minCritDamage = baseCritDamageMin;
+    let maxCritDamage = baseCritDamageMax;
+    
+    // 命中率計算（基本版と同じ）
+    let finalAccuracy;
+    if (move.class === 'multi_hit') {
+        finalAccuracy = multiHitCalculator.calculateAccuracy(move);
+    } else {
+        const weather = document.getElementById('weatherSelect').value;
+        
+        if (move.accuracy === 0 || (weather === 'rain' && move.name === 'かみなり')) {
+            finalAccuracy = 1.0;
+        } else {
+            let baseAccuracy = (move.accuracy || 100) / 100;
+            
+            if (document.getElementById('harikiriCheck')?.checked && isPhysical) {
+                baseAccuracy *= 0.8;
+            }
+            
+            if (defenderPokemon.item && defenderPokemon.item.name === 'ひかりのこな') {
+                baseAccuracy *= 0.9;
+            }
+            
+            const evasionRank = parseInt(document.getElementById('defenderEvasionRank')?.value) || 0;
+            if (evasionRank !== 0) {
+                const evasionMultiplier = getAccuracyMultiplier(-evasionRank);
+                finalAccuracy = Math.min(1, baseAccuracy * evasionMultiplier);
+            } else {
+                finalAccuracy = baseAccuracy;
+            }
+        }
+        
+        // まひの効果
+        const paralysisSelect = document.getElementById('paralysisSelect');
+        const paralysisStartTurn = paralysisSelect ? parseInt(paralysisSelect.value) : null;
+        if (paralysisStartTurn && paralysisStartTurn !== 'none' && !isNaN(paralysisStartTurn) && turnIndex + 1 >= paralysisStartTurn) {
+            finalAccuracy *= 0.75;
+        }
+        
+        // こんらんの効果
+        const confusionSelect = document.getElementById('confusionSelect');
+        const confusionStartTurn = confusionSelect ? parseInt(confusionSelect.value) : null;
+        if (confusionStartTurn && confusionStartTurn !== 'none' && !isNaN(confusionStartTurn) && turnIndex + 1 >= confusionStartTurn) {
+            finalAccuracy *= 0.5;
+        }
+    }
+    
+    console.log(`ターン${turnIndex + 1}: 1発ダメージ${minDamage}~${maxDamage}（アイテム効果込み）, 最終命中率 = ${(finalAccuracy * 100).toFixed(1)}%`);
+    
+    return {
+        accuracy: finalAccuracy,
+        minDamage: minDamage,
+        maxDamage: maxDamage,
+        minCritDamage: minCritDamage,
+        maxCritDamage: maxCritDamage
+    };
+}
+
+// 急所率設定
+function getCriticalRate() {
+    // 基本急所率は1/16
+    let criticalRate = 1/16;
+    
+    // ピントレンズを持っている場合は急所率が1段階上昇（1/8）
+    if (attackerPokemon.item && attackerPokemon.item.name === 'ピントレンズ') {
+        criticalRate = 1/8;
+    }
+    
+    return criticalRate;
+}
+
+// ターンごとの共通情報表示フラグを管理
+let turnCommonInfoDisplayed = new Set();
 
 // 再帰的に確率を計算
 function calculateKORateProbability(remainingHP, moveDataList, turnIndex, totalDamage, currentProbability, results) {
-    // HPが0以下になった場合
-    if (remainingHP <= 0) {
-        // 現在のターン以降すべてに確率を加算（ただし既に加算された分は除く）
-        for (let i = turnIndex; i < results.length; i++) {
-            results[i] += currentProbability;
-        }
-        return;
-    }
-    
-    // すべてのターンを処理した場合
     if (turnIndex >= moveDataList.length) {
         return;
     }
     
     const moveData = moveDataList[turnIndex];
     if (!moveData) {
-        // 技が設定されていない場合は次のターンへ
         calculateKORateProbability(remainingHP, moveDataList, turnIndex + 1, totalDamage, currentProbability, results);
         return;
     }
     
-    //console.log(`ターン${turnIndex + 1} 計算: 残HP=${remainingHP}, 確率=${(currentProbability * 100).toFixed(4)}%`);
+    // ★修正: オボンのみ持ちかどうかをチェック
+    const defenderItem = defenderPokemon.item;
+    const isOranBerry = defenderItem && defenderItem.name === 'オボンのみ';
+    
+    const criticalRate = getCriticalRate();
+    const normalRate = 1 - criticalRate;
+    
+    // ★修正: オボンのみでない場合のみログ出力
+    if (!isOranBerry && !turnCommonInfoDisplayed.has(turnIndex)) {
+        console.log(`=== ${turnIndex + 1}ターン目 共通情報 ===`);
+        console.log(`通常ダメージ範囲: ${moveData.minDamage}~${moveData.maxDamage}`);
+        console.log(`急所ダメージ範囲: ${moveData.minCritDamage}~${moveData.maxCritDamage}`);
+        console.log(`命中率: ${(moveData.accuracy * 100).toFixed(1)}%`);
+        
+        const criticalText = criticalRate === 1/8 ? '高い確率' : '通常';
+        console.log(`急所率: ${(criticalRate * 100).toFixed(2)}% (${criticalText})`);
+        console.log('--- 各HPパターンでの計算 ---');
+        turnCommonInfoDisplayed.add(turnIndex);
+    }
+    
+    // ★修正: オボンのみでない場合のみ詳細ログ
+    const shouldLog = !isOranBerry && currentProbability >= 0.001;
+    
+    if (shouldLog) {
+        // 通常ダメージで倒せるパターン数を計算
+        let normalKOPatterns = 0;
+        for (let i = 0; i < 16; i++) {
+            const normalDamage = Math.floor(moveData.minDamage + (moveData.maxDamage - moveData.minDamage) * i / 15);
+            if (normalDamage >= remainingHP) {
+                normalKOPatterns++;
+            }
+        }
+        
+        // 急所ダメージで倒せるパターン数を計算
+        let critKOPatterns = 0;
+        for (let i = 0; i < 16; i++) {
+            const critDamage = Math.floor(moveData.minCritDamage + (moveData.maxCritDamage - moveData.minCritDamage) * i / 15);
+            if (critDamage >= remainingHP) {
+                critKOPatterns++;
+            }
+        }
+        
+        const normalKORate = (normalKOPatterns / 16) * normalRate;
+        const critKORate = (critKOPatterns / 16) * criticalRate;
+        const totalKORate = normalKORate + critKORate;
+        const finalKORate = totalKORate * moveData.accuracy;
+        
+        console.log(`残HP: ${remainingHP} (確率: ${(currentProbability * 100).toFixed(3)}%)`);
+        console.log(`通常ダメージKOパターン: ${normalKOPatterns}/16 (${(normalKORate * 100).toFixed(3)}%)`);
+        console.log(`急所ダメージKOパターン: ${critKOPatterns}/16 (${(critKORate * 100).toFixed(3)}%)`);
+        console.log(`このパターンでの瀕死率: ${(finalKORate * 100).toFixed(3)}%`);
+        addCustomKOLog(remainingHP, currentProbability, moveData, normalKOPatterns, critKOPatterns, normalRate, criticalRate, finalKORate);
+    }
     
     // 技が外れた場合
     const missProbability = 1 - moveData.accuracy;
     if (missProbability > 0) {
-        //console.log(`  技外れ分岐: 確率=${(currentProbability * missProbability * 100).toFixed(4)}%`);
         calculateKORateProbability(remainingHP, moveDataList, turnIndex + 1, totalDamage, currentProbability * missProbability, results);
     }
     
@@ -7923,17 +8173,14 @@ function calculateKORateProbability(remainingHP, moveDataList, turnIndex, totalD
         for (let i = 0; i < 16; i++) {
             // 通常ダメージ
             const normalDamage = Math.floor(moveData.minDamage + (moveData.maxDamage - moveData.minDamage) * i / 15);
-            const normalProb = (1/16) * (15/16); // 急所以外の確率
+            const normalProb = (1/16) * normalRate;
             
             if (normalDamage >= remainingHP) {
-                // 倒せる場合
                 const koProb = currentProbability * hitProbability * normalProb;
-                //console.log(`  通常KO(${i}/16): ダメージ=${normalDamage}, 確率=${(koProb * 100).toFixed(4)}%`);
                 for (let j = turnIndex; j < results.length; j++) {
                     results[j] += koProb;
                 }
             } else {
-                // 倒せない場合は次のターンへ
                 const surviveProb = currentProbability * hitProbability * normalProb;
                 calculateKORateProbability(
                     remainingHP - normalDamage,
@@ -7947,17 +8194,14 @@ function calculateKORateProbability(remainingHP, moveDataList, turnIndex, totalD
             
             // 急所ダメージ
             const critDamage = Math.floor(moveData.minCritDamage + (moveData.maxCritDamage - moveData.minCritDamage) * i / 15);
-            const critProb = (1/16) * (1/16); // 急所の確率
+            const critProb = (1/16) * criticalRate;
             
             if (critDamage >= remainingHP) {
-                // 倒せる場合
                 const koProb = currentProbability * hitProbability * critProb;
-                //console.log(`  急所KO(${i}/16): ダメージ=${critDamage}, 確率=${(koProb * 100).toFixed(4)}%`);
                 for (let j = turnIndex; j < results.length; j++) {
                     results[j] += koProb;
                 }
             } else {
-                // 倒せない場合は次のターンへ
                 const surviveProb = currentProbability * hitProbability * critProb;
                 calculateKORateProbability(
                     remainingHP - critDamage,
@@ -7971,7 +8215,6 @@ function calculateKORateProbability(remainingHP, moveDataList, turnIndex, totalD
         }
     }
 }
-
 
 // フィラ系きのみかチェック
 function isFigyBerry(itemName) {
@@ -8024,52 +8267,6 @@ function calculateMultiTurnKORate(defenderHP, turns = 4) {
         throw error;
     }
 }
-
-function calculateMultiTurnKORateWithItems(defenderHP, turns) {
-    const defenderItem = defenderPokemon.item;
-    const itemName = defenderItem ? defenderItem.name : null;
-    
-    console.log('アイテム考慮瀕死率計算開始:', itemName);
-    
-    // 各技のダメージ範囲を事前計算
-    const moveDataList = [];
-    for (let turn = 0; turn < turns; turn++) {
-        const move = turn === 0 ? currentMove : multiTurnMoves[turn];
-        if (move) {
-            const damageData = calculateMoveDamageRange(move, turn);
-            moveDataList.push(damageData);
-        } else {
-            const firstMove = currentMove;
-            if (firstMove) {
-                const damageData = calculateMoveDamageRange(firstMove, turn);
-                moveDataList.push(damageData);
-            } else {
-                moveDataList.push(null);
-            }
-        }
-    }
-    
-    const results = Array(turns).fill(0);
-    const hpInfo = Array(turns).fill(null);
-    
-    // アイテムごとの処理分岐
-    if (itemName === 'たべのこし') {
-        calculateKORateWithLeftovers(defenderHP, defenderHP, moveDataList, 0, 1.0, results, hpInfo, false);
-    } else if (itemName === 'オボンのみ') {
-        calculateKORateWithSitrusBerry(defenderHP, defenderHP, moveDataList, 0, false, 1.0, results, hpInfo);
-    } else if (isFigyBerry(itemName)) {
-        calculateKORateWithFigyBerry(defenderHP, defenderHP, moveDataList, 0, false, 1.0, results, hpInfo);
-    } else {
-        // アイテム効果なしでも定数ダメージは適用
-        calculateKORateWithConstantDamage(defenderHP, defenderHP, moveDataList, 0, 1.0, results, hpInfo);
-    }
-    
-    return {
-        rates: results.map(rate => rate * 100),
-        hpInfo: hpInfo
-    };
-}
-
 
 // アイテム効果なしの定数ダメージのみ計算
 function calculateKORateWithConstantDamage(currentHP, maxHP, moveDataList, turnIndex, currentProbability, results, hpInfo) {
@@ -8296,8 +8493,986 @@ function calculateKORateWithLeftovers(currentHP, maxHP, moveDataList, turnIndex,
 }
 
 // オボンのみ効果を考慮した確率計算
-function calculateKORateWithSitrusBerry(currentHP, maxHP, moveDataList, turnIndex, berryUsed, currentProbability, results, hpInfo) {
-    if (currentHP <= 0) {
+function calculateKORateWithSitrusBerryOranOnly(currentHP, maxHP, moveDataList, turnIndex, berryUsed, currentProbability, results, hpInfo) {
+    
+    if (turnIndex >= moveDataList.length) {
+        return;
+    }
+    
+    const moveData = moveDataList[turnIndex];
+    if (!moveData) {
+        calculateKORateWithSitrusBerryOranOnly(currentHP, maxHP, moveDataList, turnIndex + 1, berryUsed, currentProbability, results, hpInfo);
+        return;
+    }
+    
+    // 技が外れた場合
+    const missProbability = 1 - moveData.accuracy;
+    if (missProbability > 0) {
+        const constantDamage = calculateTotalConstantDamage(maxHP, defenderPokemon.types, turnIndex + 1);
+        const finalHP = Math.max(0, currentHP - constantDamage);
+        calculateKORateWithSitrusBerryOranOnly(finalHP, maxHP, moveDataList, turnIndex + 1, berryUsed, currentProbability * missProbability, results, hpInfo);
+    }
+    
+    // 技が命中した場合の処理
+    const hitProbability = moveData.accuracy;
+    
+    if (hitProbability > 0) {
+        let totalKOProbability = 0;
+        const survivalPatterns = [];
+        
+        // ★修正: デバッグログを削除
+        
+        // 全16パターンの通常ダメージを個別計算
+        for (let i = 0; i < 16; i++) {
+            const normalDamage = Math.floor(moveData.minDamage + (moveData.maxDamage - moveData.minDamage) * i / 15);
+            const normalPatternProb = (1/16) * (15/16);
+            
+            if (normalDamage >= currentHP) {
+                totalKOProbability += normalPatternProb;
+            } else {
+                const hpAfterDamage = currentHP - normalDamage;
+                const surviveProb = currentProbability * hitProbability * normalPatternProb;
+                
+                // ★修正: デバッグログを削除
+                
+                survivalPatterns.push({
+                    hpAfter: hpAfterDamage,
+                    probability: surviveProb,
+                    damageType: 'normal'
+                });
+            }
+        }
+        
+        // 全16パターンの急所ダメージを個別計算
+        for (let i = 0; i < 16; i++) {
+            const critDamage = Math.floor(moveData.minCritDamage + (moveData.maxCritDamage - moveData.minCritDamage) * i / 15);
+            const critPatternProb = (1/16) * (1/16);
+            
+            if (critDamage >= currentHP) {
+                totalKOProbability += critPatternProb;
+            } else {
+                const hpAfterDamage = currentHP - critDamage;
+                const surviveProb = currentProbability * hitProbability * critPatternProb;
+                
+                // ★修正: デバッグログを削除
+                
+                survivalPatterns.push({
+                    hpAfter: hpAfterDamage,
+                    probability: surviveProb,
+                    damageType: 'critical'
+                });
+            }
+        }
+        
+        // 瀕死確率を結果に加算
+        const koThisTurn = currentProbability * hitProbability * totalKOProbability;
+        if (koThisTurn > 0) {
+            for (let i = turnIndex; i < results.length; i++) {
+                results[i] += koThisTurn;
+            }
+        }
+        
+        // 生存パターンをHP値でグループ化
+        const hpGroups = new Map();
+        survivalPatterns.forEach(pattern => {
+            const hp = pattern.hpAfter;
+            if (!hpGroups.has(hp)) {
+                hpGroups.set(hp, 0);
+            }
+            hpGroups.set(hp, hpGroups.get(hp) + pattern.probability);
+        });
+        
+        // グループ化されたHPパターンを処理（ログ抑制版を呼び出し）
+        hpGroups.forEach((totalProbability, hpAfterDamage) => {
+            processPostDamageHealingOranOnly(hpAfterDamage, maxHP, moveDataList, turnIndex, berryUsed, totalProbability, results, hpInfo);
+        });
+    }
+}
+
+
+//ダメージ後の回復処理
+function analyzeNextTurnSurvivalDebug(currentHP, moveDataList, nextTurnIndex) {
+    if (nextTurnIndex >= moveDataList.length || !moveDataList[nextTurnIndex]) {
+        return 100; // データがない場合は生存とみなす
+    }
+    
+    const nextMoveData = moveDataList[nextTurnIndex];
+    const minDamage = nextMoveData.minDamage;
+    const maxDamage = nextMoveData.maxDamage;
+    const minCritDamage = nextMoveData.minCritDamage;
+    const maxCritDamage = nextMoveData.maxCritDamage;
+    
+    let survivalCount = 0;
+    let normalSurvival = 0;
+    let critSurvival = 0;
+    
+    // 通常ダメージでの生存パターン数
+    for (let i = 0; i < 16; i++) {
+        const damage = Math.floor(minDamage + (maxDamage - minDamage) * i / 15);
+        if (damage < currentHP) {
+            normalSurvival++;
+            survivalCount++;
+        }
+    }
+    
+    // 急所ダメージでの生存パターン数
+    for (let i = 0; i < 16; i++) {
+        const critDamage = Math.floor(minCritDamage + (maxCritDamage - minCritDamage) * i / 15);
+        if (critDamage < currentHP) {
+            critSurvival++;
+            survivalCount++;
+        }
+    }
+    
+    const totalPatterns = 32; // 16通常 + 16急所
+    const survivalRate = (survivalCount / totalPatterns) * 100;
+    
+    // ★デバッグ: 生存率計算の詳細
+    console.log(`    【生存率計算】HP${currentHP} vs 2Tダメージ${minDamage}~${maxDamage}(通常), ${minCritDamage}~${maxCritDamage}(急所)`);
+    console.log(`    通常生存: ${normalSurvival}/16, 急所生存: ${critSurvival}/16, 総計: ${survivalCount}/32 = ${survivalRate.toFixed(1)}%`);
+    
+    return survivalRate;
+}
+
+// ダメージ後回復処理（デバッグ版）
+function processPostDamageHealingDebugSuppressed(hpAfterDamage, maxHP, berryUsed, probability, turnIndex, moveDataList, results, hpInfo) {
+    const defenderItem = defenderPokemon.item;
+    const hasOranBerry = defenderItem && defenderItem.name === 'オボンのみ';
+    
+    // 攻撃ダメージで瀕死になった場合はオボンのみは発動しない
+    if (hpAfterDamage <= 0) {
+        for (let i = turnIndex; i < results.length; i++) {
+            results[i] += probability;
+        }
+        return;
+    }
+    
+    const halfHP = Math.floor(maxHP / 2);
+    const oranThreshold = halfHP % 2 === 1 ? halfHP - 1 : halfHP;
+    const berryCanActivate = !berryUsed && hpAfterDamage > 0 && hpAfterDamage <= oranThreshold;
+    
+    // オボンのみ発動可能な場合
+    if (berryCanActivate) {
+        const healAmount = 30;
+        let healedHP = Math.min(hpAfterDamage + healAmount, maxHP);
+        
+        // やどりぎ回復量を追加
+        let additionalHeal = 0;
+        const leechSeed2Select = document.getElementById('leechSeed2Select');
+        if (leechSeed2Select) {
+            const leechSeed2StartTurn = parseInt(leechSeed2Select.value);
+            if (!isNaN(leechSeed2StartTurn) && turnIndex + 1 >= leechSeed2StartTurn) {
+                additionalHeal = calculateLeechSeed2HealAmount(maxHP);
+                healedHP = Math.min(healedHP + additionalHeal, maxHP);
+            }
+        }
+        
+        // ターン終了時の定数ダメージを適用
+        const constantDamage = calculateTotalConstantDamage(maxHP, defenderPokemon.types, turnIndex + 1);
+        const finalHP = Math.max(0, healedHP - constantDamage);
+        const totalHealAmount = healAmount + additionalHeal;
+        
+        // ★ログ抑制：デバッグログを出力しない
+        
+        if (hpInfo && !hpInfo[turnIndex]) {
+            hpInfo[turnIndex] = {
+                beforeHeal: hpAfterDamage,
+                afterHeal: finalHP,
+                healAmount: totalHealAmount,
+                constantDamage: constantDamage,
+                netHealing: totalHealAmount - constantDamage,
+                healType: additionalHeal > 0 ? 'オボンのみ+やどりぎ回復' : 'オボンのみ',
+                berryActivated: true,
+                activationTurn: turnIndex + 1,
+                maxHP: maxHP
+            };
+        }
+        
+        // 次のターンへ（オボンのみ使用済み）
+        calculateKORateWithSitrusBerry(finalHP, maxHP, moveDataList, turnIndex + 1, true, probability, results, hpInfo);
+        
+    } else {
+        // オボンのみ未発動または使用済み
+        
+        // やどりぎ回復のみチェック
+        let healAmount = 0;
+        const leechSeed2Select = document.getElementById('leechSeed2Select');
+        if (leechSeed2Select) {
+            const leechSeed2StartTurn = parseInt(leechSeed2Select.value);
+            if (!isNaN(leechSeed2StartTurn) && turnIndex + 1 >= leechSeed2StartTurn) {
+                healAmount = calculateLeechSeed2HealAmount(maxHP);
+            }
+        }
+        
+        const constantDamage = calculateTotalConstantDamage(maxHP, defenderPokemon.types, turnIndex + 1);
+        const finalHP = Math.max(0, hpAfterDamage + healAmount - constantDamage);
+        
+        if (hpInfo && !hpInfo[turnIndex]) {
+            let healType;
+            if (berryUsed) {
+                healType = healAmount > 0 ? 'オボンのみ(使用済み)+やどりぎ回復' : 'オボンのみ(使用済み)';
+            } else {
+                healType = healAmount > 0 ? 'やどりぎ回復のみ' : 'オボンのみ(未発動)';
+            }
+            
+            hpInfo[turnIndex] = {
+                beforeHeal: hpAfterDamage,
+                afterHeal: finalHP,
+                healAmount: healAmount,
+                constantDamage: constantDamage,
+                netHealing: healAmount - constantDamage,
+                healType: healType,
+                berryActivated: false,
+                activationTurn: null,
+                maxHP: maxHP
+            };
+        }
+        
+        // 次のターンへ
+        calculateKORateWithSitrusBerry(finalHP, maxHP, moveDataList, turnIndex + 1, berryUsed, probability, results, hpInfo);
+    }
+}
+
+// 3. ダメージ後回復処理のログ抑制版
+function processPostDamageHealingOranOnly(hpAfterDamage, maxHP, moveDataList, turnIndex, berryUsed, probability, results, hpInfo) {
+    // ★修正: オボン専用版 - ログを一切出力しない
+    
+    if (hpAfterDamage <= 0) {
+        return;
+    }
+    
+    let finalHP = hpAfterDamage;
+    let healAmount = 0;
+    
+    // オボンのみ発動判定
+    if (!berryUsed && hpAfterDamage <= Math.floor(maxHP / 2)) {
+        healAmount = 30;
+        finalHP = Math.min(hpAfterDamage + healAmount, maxHP);
+        berryUsed = true;
+    }
+    
+    // 定数ダメージ計算
+    const constantDamage = calculateTotalConstantDamage(maxHP, defenderPokemon.types, turnIndex + 1);
+    finalHP = Math.max(0, finalHP - constantDamage);
+    
+    if (finalHP <= 0) {
+        const koThisTurn = probability;
+        if (koThisTurn > 0) {
+            for (let i = turnIndex; i < results.length; i++) {
+                results[i] += koThisTurn;
+            }
+        }
+        return;
+    }
+    
+    // HP情報を記録
+    if (hpInfo && !hpInfo[turnIndex]) {
+        let healType;
+        if (berryUsed && healAmount > 0) {
+            healType = constantDamage > 0 ? 
+                'オボンのみ(使用済み)+やどりぎ回復' : 'オボンのみ(使用済み)';
+        } else {
+            healType = healAmount > 0 ? 'やどりぎ回復のみ' : 'オボンのみ(未発動)';
+        }
+        
+        hpInfo[turnIndex] = {
+            beforeHeal: hpAfterDamage,
+            afterHeal: finalHP,
+            healAmount: healAmount,
+            constantDamage: constantDamage,
+            netHealing: healAmount - constantDamage,
+            healType: healType,
+            berryActivated: false,
+            activationTurn: null,
+            maxHP: maxHP
+        };
+    }
+    
+    // 次のターンへ
+    calculateKORateWithSitrusBerryOranOnly(finalHP, maxHP, moveDataList, turnIndex + 1, berryUsed, probability, results, hpInfo);
+}
+
+// 急所ダメージKOパターン計算の修正版
+function calculateCriticalKOPatterns(critMinDamage, critMaxDamage, targetHP) {
+    let koPatterns = 0;
+    const damageList = [];
+    
+    console.log(`【急所KO計算】対象HP: ${targetHP}, 急所ダメージ範囲: ${critMinDamage}~${critMaxDamage}`);
+    
+    for (let i = 0; i < 16; i++) {
+        const critDamage = Math.floor(critMinDamage + (critMaxDamage - critMinDamage) * i / 15);
+        damageList.push(critDamage);
+        
+        if (critDamage >= targetHP) {
+            koPatterns++;
+            console.log(`  パターン${i+1}: ダメージ${critDamage} ≥ HP${targetHP} ✅KO`);
+        } else {
+            console.log(`  パターン${i+1}: ダメージ${critDamage} < HP${targetHP} ❌生存`);
+        }
+    }
+    
+    console.log(`【結果】急所KOパターン: ${koPatterns}/16`);
+    console.log(`【検証】ダメージ一覧: [${damageList.join(', ')}]`);
+    
+    return koPatterns;
+}
+
+// オボンのみ効果瀕死率ログ出力
+function logOranBerryKOCalculationGeneric(defenderHP, moveDataList, basicKOResult, itemKOResult) {
+    const defenderItem = defenderPokemon.item;
+    if (!defenderItem || defenderItem.name !== 'オボンのみ') {
+        return null;
+    }
+    
+    console.log(`=== オボンのみ効果瀕死率計算 ===`);
+    
+    // 基本情報
+    const maxHP = defenderHP;
+    const halfHP = Math.floor(maxHP / 2);
+    const oranThreshold = halfHP;
+    
+    console.log(`最大HP: ${maxHP}, オボン発動条件: HP ≤ ${oranThreshold}`);
+    
+    const maxTurns = Math.min(moveDataList.length, basicKOResult.rates.length);
+    const correctedRates = [...basicKOResult.rates];
+    
+    // HP状態分布を追跡
+    let hpStates = new Map();
+    hpStates.set(maxHP, 1.0); // 初期状態：満タンHP確率100%
+    
+    // ★修正: グローバルなoranUsedフラグではなく、HP状態ごとにオボン使用状況を管理
+    let hpStatesWithOranStatus = new Map();
+    hpStatesWithOranStatus.set(maxHP, { probability: 1.0, oranUsed: false });
+    
+    console.log(`=== 各ターンのオボン発動可能性分析 ===`);
+    
+    for (let turn = 0; turn < maxTurns; turn++) {
+        const moveData = moveDataList[turn];
+        if (!moveData) continue;
+        
+        console.log(`--- ${turn + 1}ターン目 ---`);
+        
+        const minDamage = moveData.minDamage || 0;
+        const maxDamage = moveData.maxDamage || 0;
+        const minCritDamage = moveData.minCritDamage || minDamage * 1.5;
+        const maxCritDamage = moveData.maxCritDamage || maxDamage * 1.5;
+        const accuracy = moveData.accuracy || 1.0;
+        
+        console.log(`ダメージ範囲: ${minDamage}~${maxDamage}（通常）, ${Math.floor(minCritDamage)}~${Math.floor(maxCritDamage)}（急所）`);
+        console.log(`【${turn + 1}ターン目分析】`);
+        
+        if (turn === 0) {
+            console.log(`- 開始HP: ${maxHP}`);
+            console.log(`- 通常攻撃後HP範囲: ${maxHP - maxDamage}~${maxHP - minDamage}`);
+            console.log(`- 急所攻撃後HP範囲: ${maxHP - Math.floor(maxCritDamage)}~${maxHP - Math.floor(minCritDamage)}`);
+            
+            if (maxHP - Math.floor(maxCritDamage) <= oranThreshold) {
+                console.log(`- オボン発動可能性: 急所攻撃のみ（HP ≤ ${oranThreshold}となる場合）`);
+            } else {
+                console.log(`- オボン発動可能性: なし（急所でもHP > ${oranThreshold}）`);
+            }
+        }
+        
+        let turnKORate = 0;
+        let oranActivationThisTurn = 0;
+        const newHpStatesWithOranStatus = new Map();
+        
+        const criticalRate = getCriticalRate();
+        const normalRate = 1 - criticalRate;
+        
+        // 各HP状態とオボン使用状況からのパターン計算
+        for (const [currentHP, stateInfo] of hpStatesWithOranStatus.entries()) {
+            if (currentHP <= 0 || stateInfo.probability <= 0) continue;
+            
+            const { probability: stateProb, oranUsed } = stateInfo;
+            
+            // 命中時の処理
+            for (let i = 0; i < 16; i++) {
+                // 通常ダメージパターン
+                const normalDamage = Math.floor(minDamage + (maxDamage - minDamage) * i / 15);
+                let hpAfterNormalDamage = currentHP - normalDamage;
+                
+                if (hpAfterNormalDamage <= 0) {
+                    turnKORate += stateProb * normalRate * accuracy * (1/16);
+                } else {
+                    let finalHP = hpAfterNormalDamage;
+                    let newOranUsed = oranUsed; // 現在の状態を継承
+                    
+                    // ★修正: このHP状態でまだオボンが使用されていない場合のみ発動判定
+                    if (!oranUsed && hpAfterNormalDamage <= oranThreshold && hpAfterNormalDamage > 0) {
+                        finalHP = Math.min(hpAfterNormalDamage + 30, maxHP);
+                        newOranUsed = true; // このパターンではオボンが使用される
+                        oranActivationThisTurn += stateProb * normalRate * accuracy * (1/16);
+                    }
+                    
+                    const patternProb = stateProb * normalRate * accuracy * (1/16);
+                    const key = `${finalHP}_${newOranUsed}`;
+                    
+                    if (!newHpStatesWithOranStatus.has(key)) {
+                        newHpStatesWithOranStatus.set(key, { 
+                            hp: finalHP, 
+                            probability: 0, 
+                            oranUsed: newOranUsed 
+                        });
+                    }
+                    newHpStatesWithOranStatus.get(key).probability += patternProb;
+                }
+                
+                // 急所ダメージパターン
+                const critDamage = Math.floor(minCritDamage + (maxCritDamage - minCritDamage) * i / 15);
+                let hpAfterCritDamage = currentHP - critDamage;
+                
+                if (hpAfterCritDamage <= 0) {
+                    turnKORate += stateProb * criticalRate * accuracy * (1/16);
+                } else {
+                    let finalHP = hpAfterCritDamage;
+                    let newOranUsed = oranUsed; // 現在の状態を継承
+                    
+                    // ★修正: このHP状態でまだオボンが使用されていない場合のみ発動判定
+                    if (!oranUsed && hpAfterCritDamage <= oranThreshold && hpAfterCritDamage > 0) {
+                        finalHP = Math.min(hpAfterCritDamage + 30, maxHP);
+                        newOranUsed = true; // このパターンではオボンが使用される
+                        oranActivationThisTurn += stateProb * criticalRate * accuracy * (1/16);
+                    }
+                    
+                    const patternProb = stateProb * criticalRate * accuracy * (1/16);
+                    const key = `${finalHP}_${newOranUsed}`;
+                    
+                    if (!newHpStatesWithOranStatus.has(key)) {
+                        newHpStatesWithOranStatus.set(key, { 
+                            hp: finalHP, 
+                            probability: 0, 
+                            oranUsed: newOranUsed 
+                        });
+                    }
+                    newHpStatesWithOranStatus.get(key).probability += patternProb;
+                }
+            }
+            
+            // 命中失敗時の処理
+            if (accuracy < 1.0) {
+                const missProb = stateProb * (1 - accuracy);
+                const key = `${currentHP}_${oranUsed}`;
+                
+                if (!newHpStatesWithOranStatus.has(key)) {
+                    newHpStatesWithOranStatus.set(key, { 
+                        hp: currentHP, 
+                        probability: 0, 
+                        oranUsed: oranUsed 
+                    });
+                }
+                newHpStatesWithOranStatus.get(key).probability += missProb;
+            }
+        }
+        
+        // ターン結果をログ出力
+        if (turn === 1) {
+            console.log(`- 1T通常攻撃後の想定HP: ${maxHP - maxDamage}~${maxHP - minDamage}`);
+            console.log(`- 2T通常攻撃後HP範囲: ${Math.max(0, maxHP - maxDamage * 2)}~${Math.max(0, maxHP - minDamage * 2)}`);
+            console.log(`- 2T累積ダメージ後HP範囲: ${Math.max(0, maxHP - maxDamage * 2)}~${Math.max(0, maxHP - minDamage * 2)}`);
+            
+            if (maxHP - minDamage * 2 <= oranThreshold) {
+                console.log(`- オボン発動: 確実（全パターンでHP ≤ ${oranThreshold}）`);
+            } else if (maxHP - maxDamage * 2 <= oranThreshold) {
+                console.log(`- オボン発動: 条件次第（一部パターンでHP ≤ ${oranThreshold}）`);
+            } else {
+                console.log(`- オボン発動: なし（全パターンでHP > ${oranThreshold}）`);
+            }
+            
+            console.log(`- 連続通常攻撃確率: ${(normalRate * 100).toFixed(1)}% × ${(normalRate * 100).toFixed(1)}% = ${(normalRate * normalRate * 100).toFixed(1)}%`);
+        }
+        
+        console.log(`${turn + 1}ターン目瀕死率: ${(turnKORate * 100).toFixed(3)}%`);
+        console.log(`${turn + 1}ターン目オボン発動確率: ${(oranActivationThisTurn * 100).toFixed(3)}%`);
+        
+        // 基本瀕死率との比較調整
+        if (turn > 0) {
+            const basicTurnKORate = basicKOResult.rates[turn];
+            const survivalContribution = basicTurnKORate - turnKORate;
+            
+            correctedRates[turn] = turnKORate;
+            
+            console.log(`基本瀕死率: ${(basicTurnKORate * 100).toFixed(3)}% → オボン考慮後: ${(turnKORate * 100).toFixed(3)}%`);
+            console.log(`オボンによる生存貢献: ${(survivalContribution * 100).toFixed(3)}%`);
+        }
+        
+        // ★修正: 次のターンへHP状態を更新（オボン使用状況込み）
+        hpStatesWithOranStatus.clear();
+        for (const [key, stateInfo] of newHpStatesWithOranStatus.entries()) {
+            hpStatesWithOranStatus.set(stateInfo.hp, {
+                probability: stateInfo.probability,
+                oranUsed: stateInfo.oranUsed
+            });
+        }
+        
+        // 表示用にHP分布をまとめる（オボン状況は内部管理）
+        const hpDistribution = new Map();
+        for (const [hp, stateInfo] of hpStatesWithOranStatus.entries()) {
+            if (!hpDistribution.has(hp)) {
+                hpDistribution.set(hp, 0);
+            }
+            hpDistribution.set(hp, hpDistribution.get(hp) + stateInfo.probability);
+        }
+        
+        console.log(`${turn + 1}ターン目終了時のHP分布: ${Array.from(hpDistribution.entries()).map(([hp, prob]) => `HP${hp}(${(prob*100).toFixed(1)}%)`).join(', ')}`);
+    }
+    
+    console.log(`=== 最終結果 ===`);
+    for (let i = 0; i < maxTurns; i++) {
+        console.log(`${i + 1}ターン目: ${(correctedRates[i] * 100).toFixed(1)}%`);
+    }
+    console.log(`=====================================`);
+    
+    return correctedRates;
+}
+
+// 生存率計算の詳細追跡用
+let totalSurvivalContribution = 0;
+let survivalPatternDetails = [];
+let allDamageAfterPatterns = []; // 全ダメージ後HPパターンを追跡
+
+// アイテム効果を考慮した複数ターン瀕死率計算
+function calculateMultiTurnKORateWithItems(defenderHP, turns) {
+    const defenderItem = defenderPokemon.item;
+    const itemName = defenderItem ? defenderItem.name : null;
+    
+    // ★オボンのみの場合はログ抑制フラグを設定
+    const suppressBasicLogs = (defenderItem && defenderItem.name === 'オボンのみ');
+    
+    if (!suppressBasicLogs) {
+        console.log(`=== 【デバッグ】アイテム効果瀕死率計算開始: ${itemName || 'なし'} ===`);
+    }
+    
+    // 各技のダメージ範囲を事前計算
+    const moveDataList = [];
+    for (let turn = 0; turn < turns; turn++) {
+        const move = turn === 0 ? currentMove : multiTurnMoves[turn];
+        
+        if (!move) {
+            const firstMove = currentMove;
+            if (firstMove) {
+                const damageData = calculateMoveDamageRange(firstMove, turn);
+                moveDataList.push(damageData);
+            } else {
+                moveDataList.push(null);
+            }
+            continue;
+        }
+        
+        const damageData = calculateMoveDamageRange(move, turn);
+        moveDataList.push(damageData);
+    }
+    
+    // ★修正：オボンのみの場合は基本瀕死率計算のログを抑制
+    const basicKOResult = calculateMultiTurnBasicKORateUnified(defenderHP, turns);
+    
+    // アイテム効果計算の結果配列を初期化
+    const results = Array(turns).fill(0);
+    const hpInfo = Array(turns).fill(null);
+    
+    try {
+        // アイテム効果を考慮した瀕死率計算
+        if (defenderItem.name === 'オボンのみ') {
+            // ★修正: オボン専用のログ抑制版を使用
+            calculateKORateWithSitrusBerryOranOnly(defenderHP, defenderHP, moveDataList, 0, false, 1.0, results, hpInfo);
+            
+            // オボンのみの理論計算結果を取得して適用（この部分は詳細ログを維持）
+            const correctedRates = logOranBerryKOCalculationGeneric(defenderHP, moveDataList, basicKOResult, { rates: results });
+            
+            if (correctedRates) {
+                for (let i = 0; i < correctedRates.length && i < results.length; i++) {
+                    results[i] = correctedRates[i];
+                }
+            }
+            
+        } else if (defenderItem.name === 'たべのこし') {
+            calculateKORateWithLeftovers(defenderHP, defenderHP, moveDataList, 0, 1.0, results, hpInfo, false);
+        } else if (defenderItem.name === 'くろいヘドロ') {
+            calculateKORateWithBlackSludge(defenderHP, defenderHP, moveDataList, 0, 1.0, results, hpInfo);
+        } else if (isFigyBerry(defenderItem.name)) {
+            calculateKORateWithFigyBerry(defenderHP, defenderHP, moveDataList, 0, 1.0, results, hpInfo);
+        } else {
+            for (let i = 0; i < turns; i++) {
+                results[i] = basicKOResult.rates[i] || 0;
+            }
+        }
+        
+        if (!suppressBasicLogs) {
+            console.log(`=== 【デバッグ】アイテム効果瀕死率計算完了: ${itemName || 'なし'} ===`);
+        }
+        
+        return {
+            rates: results,
+            hpInfo: hpInfo,
+            basis: basicKOResult.basis,
+            hpRanges: basicKOResult.hpRanges
+        };
+        
+    } catch (error) {
+        console.error('アイテム効果計算でエラー:', error);
+        throw error;
+    }
+}
+
+// ログ抑制版の基本瀕死率計算関数
+function calculateMultiTurnBasicKORateUnified(defenderHP, maxTurns, suppressLogs = false) {
+    turnCommonInfoDisplayed.clear();
+    const results = Array(maxTurns).fill(0);
+    const calculationBasis = Array(maxTurns).fill(null);
+    const remainingHPRanges = Array(maxTurns).fill(null);
+    
+    // ★修正: suppressLogsフラグでログ制御
+    if (!suppressLogs) {
+        console.log('=== 統合版基本瀕死率計算開始 ===');
+    }
+    
+    // moveDataListを構築
+    const moveDataList = [];
+    for (let turn = 0; turn < maxTurns; turn++) {
+        const move = turn === 0 ? currentMove : multiTurnMoves[turn];
+        
+        if (!move) {
+            const firstMove = currentMove;
+            if (firstMove) {
+                const damageData = calculateMoveDamageRange(firstMove, turn);
+                moveDataList.push(damageData);
+            } else {
+                moveDataList.push(null);
+            }
+            continue;
+        }
+        
+        const damageData = calculateMoveDamageRange(move, turn);
+        moveDataList.push(damageData);
+    }
+    
+    // ★修正: 計算根拠（basis）を正しく設定
+    for (let turn = 0; turn < maxTurns; turn++) {
+        if (moveDataList[turn]) {
+            const move = turn === 0 ? currentMove : multiTurnMoves[turn];
+            const moveData = moveDataList[turn];
+            
+            // ダメージ範囲を正確に取得
+            const minDamage = moveData.minDamage || 0;
+            const maxDamage = moveData.maxDamage || 0;
+            const accuracy = moveData.accuracy || 1.0;
+            
+            // 急所ダメージ範囲を取得（既に計算済み）
+            const minCritDamage = moveData.minCritDamage || Math.floor(minDamage * 1.5);
+            const maxCritDamage = moveData.maxCritDamage || Math.floor(maxDamage * 1.5);
+            
+            // ★修正: suppressLogsフラグでログ制御
+            if (!suppressLogs) {
+                console.log(`${turn + 1}ターン目計算根拠設定: ${move.name} ダメージ${minDamage}~${maxDamage} 急所${minCritDamage}~${maxCritDamage} 命中${Math.round(accuracy * 100)}%`);
+            }
+            
+            // 技クラスを判定
+            let isMultiHit = false;
+            if (move && move.class === 'multi_hit') {
+                isMultiHit = true;
+            }
+            
+            // 計算根拠オブジェクトを作成
+            calculationBasis[turn] = {
+                damageRange: `${minDamage}~${maxDamage}`,
+                accuracy: Math.round(accuracy * 100),
+                isMultiHit: isMultiHit,
+                moveName: move ? move.name : 'unknown',
+                statusEffects: []
+            };
+        }
+    }
+    
+    // 連続技処理の判定
+    const hasAnyMultiHit = moveDataList.some((moveData, index) => {
+        const move = index === 0 ? currentMove : multiTurnMoves[index];
+        return move && move.class === 'multi_hit';
+    });
+    
+    const multiHitTurns = new Set();
+    for (let turn = 0; turn < maxTurns; turn++) {
+        const move = turn === 0 ? currentMove : multiTurnMoves[turn];
+        if (move && move.class === 'multi_hit') {
+            multiHitTurns.add(turn);
+        }
+    }
+    
+    const leechSeed2Select = document.getElementById('leechSeed2Select');
+    const hasLeechSeedHeal = leechSeed2Select && leechSeed2Select.value !== 'none';
+    
+    if (hasAnyMultiHit) {
+        if (!suppressLogs) {
+            console.log('=== 連続技混在: 統合計算開始 ===');
+        }
+        
+        if (hasLeechSeedHeal) {
+            calculateKORateWithConstantDamage(defenderHP, defenderHP, moveDataList, 0, 1.0, results, null);
+        } else {
+            calculateMixedKORateProbability(defenderHP, moveDataList, 0, 0, 1.0, results);
+        }
+    } else {       
+        if (hasLeechSeedHeal) {
+            calculateKORateWithConstantDamage(defenderHP, defenderHP, moveDataList, 0, 1.0, results, null);
+        } else {
+            calculateKORateProbability(defenderHP, moveDataList, 0, 0, 1.0, results);
+        }
+    }
+    
+    // ★修正: suppressLogsフラグでログ制御
+    if (!suppressLogs) {
+        const resultSummary = results.map((rate, i) => `${i+1}T: ${(rate * 100).toFixed(1)}%`);
+        console.log('統合版最終瀕死率:', resultSummary);
+        console.log('=== 統合版基本瀕死率計算完了 ===');
+    }
+    
+    return {
+        rates: results,
+        basis: calculationBasis,
+        hpRanges: remainingHPRanges
+    };
+}
+
+// アイテム効果を考慮した複数ターン瀕死率計算（修正版）
+function calculateMultiTurnKORateWithItems(defenderHP, turns) {
+    const defenderItem = defenderPokemon.item;
+    const itemName = defenderItem ? defenderItem.name : null;
+    
+    // オボンのみの場合はログ抑制フラグを設定
+    const suppressBasicLogs = (defenderItem && defenderItem.name === 'オボンのみ');
+    
+    if (!suppressBasicLogs) {
+        console.log(`=== 【デバッグ】アイテム効果瀕死率計算開始: ${itemName || 'なし'} ===`);
+    }
+    
+    // 各技のダメージ範囲を事前計算
+    const moveDataList = [];
+    for (let turn = 0; turn < turns; turn++) {
+        const move = turn === 0 ? currentMove : multiTurnMoves[turn];
+        
+        if (!move) {
+            const firstMove = currentMove;
+            if (firstMove) {
+                const damageData = calculateMoveDamageRange(firstMove, turn);
+                moveDataList.push(damageData);
+            } else {
+                moveDataList.push(null);
+            }
+            continue;
+        }
+        
+        const damageData = calculateMoveDamageRange(move, turn);
+        moveDataList.push(damageData);
+    }
+    
+    // ★修正：基本瀕死率計算のログを抑制（2回目の呼び出しなので）
+    const basicKOResult = calculateMultiTurnBasicKORateUnified(defenderHP, turns, true); // suppressLogs = true
+    
+    // アイテム効果計算の結果配列を初期化
+    const results = Array(turns).fill(0);
+    const hpInfo = Array(turns).fill(null);
+    
+    try {
+        // アイテム効果を考慮した瀕死率計算
+        if (defenderItem.name === 'オボンのみ') {
+            // オボン専用のログ抑制版を使用
+            calculateKORateWithSitrusBerryOranOnly(defenderHP, defenderHP, moveDataList, 0, false, 1.0, results, hpInfo);
+            
+            // オボンのみの理論計算結果を取得して適用（この部分は詳細ログを維持）
+            const correctedRates = logOranBerryKOCalculationGeneric(defenderHP, moveDataList, basicKOResult, { rates: results });
+            
+            if (correctedRates) {
+                for (let i = 0; i < correctedRates.length && i < results.length; i++) {
+                    results[i] = correctedRates[i];
+                }
+            }
+            
+        } else if (defenderItem.name === 'たべのこし') {
+            calculateKORateWithLeftovers(defenderHP, defenderHP, moveDataList, 0, 1.0, results, hpInfo, false);
+        } else if (defenderItem.name === 'くろいヘドロ') {
+            calculateKORateWithBlackSludge(defenderHP, defenderHP, moveDataList, 0, 1.0, results, hpInfo);
+        } else if (isFigyBerry(defenderItem.name)) {
+            calculateKORateWithFigyBerry(defenderHP, defenderHP, moveDataList, 0, 1.0, results, hpInfo);
+        } else {
+            for (let i = 0; i < turns; i++) {
+                results[i] = basicKOResult.rates[i] || 0;
+            }
+        }
+        
+        if (!suppressBasicLogs) {
+            console.log(`=== 【デバッグ】アイテム効果瀕死率計算完了: ${itemName || 'なし'} ===`);
+        }
+        
+        return {
+            rates: results,
+            hpInfo: hpInfo,
+            basis: basicKOResult.basis,
+            hpRanges: basicKOResult.hpRanges
+        };
+        
+    } catch (error) {
+        console.error('アイテム効果計算でエラー:', error);
+        throw error;
+    }
+}
+
+// 統合版瀕死率表示HTML生成（修正版）
+function generateUnifiedKORateHTML(koRates, actualTurns, moveInfo, evasionRankText = '', isMultiTurn = false) {
+    if (!koRates || !koRates.basic) return '';
+    
+    const defenderItem = defenderPokemon.item;
+    const hasItemEffect = defenderItem && (
+        defenderItem.name === 'たべのこし' || 
+        defenderItem.name === 'オボンのみ' ||
+        defenderItem.name === 'くろいヘドロ' ||
+        isFigyBerry(defenderItem.name)
+    );
+    
+    let html = '<div class="ko-rate-section"><h4>瀕死率詳細</h4>';
+    
+    // 計算条件の説明
+    html += '<div class="calculation-conditions" style="text-align: center; margin-bottom: 10px; font-size: 11px; color: #666;">';
+    html += '急所率1/16を考慮';
+    if (evasionRankText) {
+        html += evasionRankText;
+    }
+    html += '</div>';
+    
+    // アイテム情報の表示
+    if (hasItemEffect) {
+        html += `<div class="item-info" style="text-align: center; margin-bottom: 10px; font-size: 12px; color: #666;">
+            持ち物: ${defenderItem.name}
+        </div>`;
+    }
+    
+    // ターン数分だけ表示（単発の場合は1ターンのみ）
+    const displayTurns = isMultiTurn ? actualTurns : 1;
+    
+    for (let turn = 0; turn < displayTurns; turn++) {
+        const turnNumber = turn + 1;
+        
+        // 1ターン目は「常に」基本瀕死率を使用
+        let displayRate;
+        if (turnNumber === 1) {
+            displayRate = koRates.basic[turn];
+        } else {
+            // 2ターン目以降：アイテム効果を考慮した瀕死率
+            if (hasItemEffect && koRates.withItems && koRates.withItems[turn] !== undefined) {
+                displayRate = koRates.withItems[turn];
+            } else {
+                displayRate = koRates.basic[turn];
+            }
+        }
+        
+        // ★修正: 計算根拠を生成（basis情報が正しく設定されている前提）
+        let basis = '';
+        if (koRates.basis && koRates.basis[turn]) {
+            const b = koRates.basis[turn];
+            
+            // ダメージ範囲を取得（undefinedチェック付き）
+            const damageRange = b.damageRange || 'unknown';
+            
+            let moveName;
+            if (isMultiTurn && moveInfo && moveInfo[turn]) {
+                // 複数ターンの場合：定数ダメージ名も追加
+                const constantDamageNames = getConstantDamageNamesForTurn(turnNumber);
+                moveName = moveInfo[turn].name;
+                if (constantDamageNames.length > 0) {
+                    moveName += '+' + constantDamageNames.join('+');
+                }
+            } else {
+                // 単発の場合：技名のみ
+                moveName = currentMove ? currentMove.name : b.moveName || 'unknown';
+            }
+            
+            // ダメージ範囲を含む基本情報
+            basis = `[${moveName} (ダメージ:${damageRange})]<br>`;
+            
+            // 説明文
+            if (turnNumber === 1) {
+                if (b.isMultiHit) {
+                    basis += `連続技各回数の発生確率と外れ時の両方を考慮<br>`;
+                } else {
+                    basis += `命中時と外れ時の両方を考慮<br>`;
+                }
+            } else {
+                basis += `前ターンの結果を考慮した累積計算<br>`;
+            }
+            
+            // 命中率情報
+            const weather = document.getElementById('weatherSelect').value;
+            const hasHarikiri = document.getElementById('harikiriCheck')?.checked;
+            
+            let accText = `命中${b.accuracy}%`;
+            if (weather === 'rain' && (isMultiTurn ? moveInfo[turn].name : currentMove.name) === 'かみなり') {
+                accText = '必中（雨天）';
+            } else if (b.accuracy === 100 || b.accuracy === 0) {
+                if (b.accuracy === 100) {
+                    accText = `命中${b.accuracy}%`;
+                } else {
+                    accText = '必中';
+                }
+            } else if (hasHarikiri && (isMultiTurn ? moveInfo[turn].category : currentMove.category) === '物理') {
+                accText += '（はりきり補正済）';
+            }
+            
+            // 状態異常効果
+            if (b.statusEffects && b.statusEffects.length > 0) {
+                const statusModifiers = [];
+                b.statusEffects.forEach(effect => {
+                    if (effect.includes('ひかりのこな')) {
+                        statusModifiers.push('ひかりのこな');
+                    } else if (effect.includes('まひ')) {
+                        statusModifiers.push('まひ');
+                    } else if (effect.includes('こんらん')) {
+                        statusModifiers.push('こんらん');
+                    }
+                });
+                if (statusModifiers.length > 0) {
+                    accText += `×${statusModifiers.join('×')}`;
+                }
+            }
+            
+            basis += `×${accText}`;
+        } else {
+            // basisが設定されていない場合のフォールバック
+            const moveName = isMultiTurn && moveInfo && moveInfo[turn] ? 
+                moveInfo[turn].name : 
+                (currentMove ? currentMove.name : 'unknown');
+            
+            basis = `[${moveName} (ダメージ:計算中)]<br>`;
+            basis += turnNumber === 1 ? '命中時と外れ時の両方を考慮<br>' : '前ターンの結果を考慮した累積計算<br>';
+            basis += '×命中率取得中';
+        }
+
+        html += `<div class="ko-rate-row">`;
+        
+        // ターン番号と瀕死率
+        html += `<div class="ko-rate-header">`;
+        html += `<span class="ko-turn">${turnNumber}ターン:</span>`;
+        html += `<span class="ko-basic">${(displayRate * 100).toFixed(1)}%</span>`;
+        html += `</div>`;
+        
+        // 計算根拠
+        html += `<div class="ko-basis">${basis}</div>`;
+        
+        html += `</div>`;
+    }
+    
+    // 単発かつアイテム効果がある場合の注釈
+    if (!isMultiTurn && hasItemEffect) {
+        html += `<div class="item-note" style="margin-top: 10px; font-size: 11px; color: #888;">
+            ※ ${defenderItem.name}の効果は1ターン目では発動しません
+        </div>`;
+    }
+    
+    html += '</div>';
+    return html;
+}
+
+
+// 確率計算関数
+function calculateKORateProbability(remainingHP, moveDataList, turnIndex, totalDamage, currentProbability, results) {
+    if (remainingHP <= 0) {
         for (let i = turnIndex; i < results.length; i++) {
             results[i] += currentProbability;
         }
@@ -8310,95 +9485,95 @@ function calculateKORateWithSitrusBerry(currentHP, maxHP, moveDataList, turnInde
     
     const moveData = moveDataList[turnIndex];
     if (!moveData) {
-        // ターン終了時の定数ダメージ処理
-        const constantDamage = calculateTotalConstantDamage(maxHP, defenderPokemon.types, turnIndex + 1);
-        const finalHP = Math.max(0, currentHP - constantDamage);
-        
-        if (hpInfo) {
-            hpInfo[turnIndex] = {
-                beforeHeal: currentHP,
-                afterHeal: finalHP,
-                healAmount: 0,
-                constantDamage: constantDamage,
-                netHealing: -constantDamage,
-                healType: berryUsed ? 'オボンのみ(使用済み)' : 'オボンのみ(未発動)',
-                maxHP: maxHP,
-                berryActivated: false
-            };
+        calculateKORateProbability(remainingHP, moveDataList, turnIndex + 1, totalDamage, currentProbability, results);
+        return;
+    }
+    
+    const criticalRate = getCriticalRate();
+    const normalRate = 1 - criticalRate;
+    
+    // ★修正: ターン開始時の情報のみ表示（logOranBerryKOCalculationGeneric スタイル）
+    if (!turnCommonInfoDisplayed.has(turnIndex)) {
+        turnCommonInfoDisplayed.add(turnIndex);
+    }
+    
+    // ★修正: 重要なパターンのみログ出力（確率0.1%以上、logOranBerryKOCalculationGeneric スタイル）
+    const shouldLog = currentProbability >= 0.001;
+    
+    if (shouldLog) {
+        // 通常ダメージで倒せるパターン数を計算
+        let normalKOPatterns = 0;
+        for (let i = 0; i < 16; i++) {
+            const normalDamage = Math.floor(moveData.minDamage + (moveData.maxDamage - moveData.minDamage) * i / 15);
+            if (normalDamage >= remainingHP) {
+                normalKOPatterns++;
+            }
         }
         
-        calculateKORateWithSitrusBerry(finalHP, maxHP, moveDataList, turnIndex + 1, berryUsed, currentProbability, results, hpInfo);
-        return;
+        // 急所ダメージで倒せるパターン数を計算
+        let critKOPatterns = 0;
+        for (let i = 0; i < 16; i++) {
+            const critDamage = Math.floor(moveData.minCritDamage + (moveData.maxCritDamage - moveData.minCritDamage) * i / 15);
+            if (critDamage >= remainingHP) {
+                critKOPatterns++;
+            }
+        }
     }
     
     // 技が外れた場合
     const missProbability = 1 - moveData.accuracy;
     if (missProbability > 0) {
-        // ターン終了時の定数ダメージ適用
-        const constantDamage = calculateTotalConstantDamage(maxHP, defenderPokemon.types, turnIndex + 1);
-        const finalHP = Math.max(0, currentHP - constantDamage);
-        calculateKORateWithSitrusBerry(finalHP, maxHP, moveDataList, turnIndex + 1, berryUsed, currentProbability * missProbability, results, hpInfo);
+        calculateKORateProbability(remainingHP, moveDataList, turnIndex + 1, totalDamage, currentProbability * missProbability, results);
     }
     
-    // 瀕死率計算
-    processKORateCalculation(currentHP, maxHP, moveData, turnIndex, currentProbability, results, hpInfo, 
-        (remainingHP, prob) => {
-            // 瀕死になった場合はアイテム効果なし
-            if (remainingHP <= 0) {
-                for (let i = turnIndex; i < results.length; i++) {
-                    results[i] += prob;
+    // 命中した場合の処理
+    const hitProbability = moveData.accuracy;
+    if (hitProbability > 0) {
+        // 各ダメージパターンを処理
+        for (let i = 0; i < 16; i++) {
+            // 通常ダメージ
+            const normalDamage = Math.floor(moveData.minDamage + (moveData.maxDamage - moveData.minDamage) * i / 15);
+            const normalProb = (1/16) * normalRate;
+            
+            if (normalDamage >= remainingHP) {
+                const koProb = currentProbability * hitProbability * normalProb;
+                for (let j = turnIndex; j < results.length; j++) {
+                    results[j] += koProb;
                 }
-                return;
+            } else {
+                const surviveProb = currentProbability * hitProbability * normalProb;
+                calculateKORateProbability(
+                    remainingHP - normalDamage,
+                    moveDataList,
+                    turnIndex + 1,
+                    totalDamage + normalDamage,
+                    surviveProb,
+                    results
+                );
             }
             
-            // オボンのみ発動チェック（HP50%以下で30回復、1回のみ、瀕死でない場合のみ）
-            if (!berryUsed && remainingHP <= maxHP / 2) {
-                const healAmount = 30;
-                let healedHP = Math.min(remainingHP + healAmount, maxHP);
-                
-                // 定数ダメージを適用
-                const constantDamage = calculateTotalConstantDamage(maxHP, defenderPokemon.types, turnIndex + 1);
-                const finalHP = Math.max(0, healedHP - constantDamage);
-                const netHealing = healAmount - constantDamage;
-                
-                if (hpInfo && !hpInfo[turnIndex]) {
-                    hpInfo[turnIndex] = {
-                        beforeHeal: remainingHP,
-                        afterHeal: finalHP,
-                        healAmount: healAmount,
-                        constantDamage: constantDamage,
-                        netHealing: netHealing,
-                        healType: 'オボンのみ',
-                        berryActivated: true,
-                        activationTurn: turnIndex + 1,
-                        maxHP: maxHP
-                    };
+            // 急所ダメージ
+            const critDamage = Math.floor(moveData.minCritDamage + (moveData.maxCritDamage - moveData.minCritDamage) * i / 15);
+            const critProb = (1/16) * criticalRate;
+            
+            if (critDamage >= remainingHP) {
+                const koProb = currentProbability * hitProbability * critProb;
+                for (let j = turnIndex; j < results.length; j++) {
+                    results[j] += koProb;
                 }
-                
-                calculateKORateWithSitrusBerry(finalHP, maxHP, moveDataList, turnIndex + 1, true, prob, results, hpInfo);
             } else {
-                // きのみ使用済みまたは発動条件を満たさない
-                const constantDamage = calculateTotalConstantDamage(maxHP, defenderPokemon.types, turnIndex + 1);
-                const finalHP = Math.max(0, remainingHP - constantDamage);
-                
-                if (hpInfo && !hpInfo[turnIndex]) {
-                    hpInfo[turnIndex] = {
-                        beforeHeal: remainingHP,
-                        afterHeal: finalHP,
-                        healAmount: 0,
-                        constantDamage: constantDamage,
-                        netHealing: -constantDamage,
-                        healType: berryUsed ? 'オボンのみ(使用済み)' : 'オボンのみ(未発動)',
-                        berryActivated: false,
-                        activationTurn: null,
-                        maxHP: maxHP
-                    };
-                }
-                
-                calculateKORateWithSitrusBerry(finalHP, maxHP, moveDataList, turnIndex + 1, berryUsed, prob, results, hpInfo);
+                const surviveProb = currentProbability * hitProbability * critProb;
+                calculateKORateProbability(
+                    remainingHP - critDamage,
+                    moveDataList,
+                    turnIndex + 1,
+                    totalDamage + critDamage,
+                    surviveProb,
+                    results
+                );
             }
         }
-    );
+    }
 }
 
 // フィラ系きのみ効果を考慮した確率計算
@@ -8441,73 +9616,144 @@ function calculateKORateWithFigyBerry(currentHP, maxHP, moveDataList, turnIndex,
     // 技が外れた場合
     const missProbability = 1 - moveData.accuracy;
     if (missProbability > 0) {
-        // ターン終了時の定数ダメージ適用
         const constantDamage = calculateTotalConstantDamage(maxHP, defenderPokemon.types, turnIndex + 1);
         const finalHP = Math.max(0, currentHP - constantDamage);
         calculateKORateWithFigyBerry(finalHP, maxHP, moveDataList, turnIndex + 1, berryUsed, currentProbability * missProbability, results, hpInfo);
     }
     
-    // 瀕死率計算
-    processKORateCalculation(currentHP, maxHP, moveData, turnIndex, currentProbability, results, hpInfo, 
-        (remainingHP, prob) => {
-            // 瀕死になった場合はアイテム効果なし
-            if (remainingHP <= 0) {
-                for (let i = turnIndex; i < results.length; i++) {
-                    results[i] += prob;
-                }
-                return;
-            }
+    // 技が命中した場合の処理
+    const hitProbability = moveData.accuracy;
+    
+    if (hitProbability > 0) {
+        let totalKOProbability = 0;
+        
+        // 全16パターンの通常ダメージを個別計算
+        for (let i = 0; i < 16; i++) {
+            const normalDamage = Math.floor(moveData.minDamage + (moveData.maxDamage - moveData.minDamage) * i / 15);
+            const normalPatternProb = (1/16) * (15/16);
             
-            // フィラ系きのみ発動チェック（HP50%以下で最大HPの1/8回復、1回のみ、瀕死でない場合のみ）
-            if (!berryUsed && remainingHP <= maxHP / 2) {
-                const healAmount = Math.floor(maxHP / 8);
-                let healedHP = Math.min(remainingHP + healAmount, maxHP);
-                
-                // 定数ダメージを適用
-                const constantDamage = calculateTotalConstantDamage(maxHP, defenderPokemon.types, turnIndex + 1);
-                const finalHP = Math.max(0, healedHP - constantDamage);
-                const netHealing = healAmount - constantDamage;
-                const berryName = defenderPokemon.item ? defenderPokemon.item.name : 'フィラ系きのみ';
-                
-                if (hpInfo) {
-                    hpInfo[turnIndex] = {
-                        beforeHeal: remainingHP,
-                        afterHeal: finalHP,
-                        healAmount: healAmount,
-                        constantDamage: constantDamage,
-                        netHealing: netHealing,
-                        healType: berryName,
-                        berryActivated: true,
-                        activationTurn: turnIndex + 1,
-                        maxHP: maxHP
-                    };
-                }
-                
-                calculateKORateWithFigyBerry(finalHP, maxHP, moveDataList, turnIndex + 1, true, prob, results, hpInfo);
+            // ★重要：瀞死判定は攻撃ダメージのみで行う
+            if (normalDamage >= currentHP) {
+                totalKOProbability += normalPatternProb;
             } else {
-                // きのみ使用済みまたは発動条件を満たさない
-                const constantDamage = calculateTotalConstantDamage(maxHP, defenderPokemon.types, turnIndex + 1);
-                const finalHP = Math.max(0, remainingHP - constantDamage);
-                const berryName = defenderPokemon.item ? defenderPokemon.item.name : 'フィラ系きのみ';
-                
-                if (hpInfo && !hpInfo[turnIndex]) {
-                    hpInfo[turnIndex] = {
-                        beforeHeal: remainingHP,
-                        afterHeal: finalHP,
-                        healAmount: 0,
-                        constantDamage: constantDamage,
-                        netHealing: -constantDamage,
-                        healType: berryUsed ? `${berryName}(使用済み)` : `${berryName}(未発動)`,
-                        berryActivated: false,
-                        activationTurn: null,
-                        maxHP: maxHP
-                    };
-                }
-                
-                calculateKORateWithFigyBerry(finalHP, maxHP, moveDataList, turnIndex + 1, berryUsed, prob, results, hpInfo);
+                const hpAfterDamage = currentHP - normalDamage;
+                const surviveProb = currentProbability * hitProbability * normalPatternProb;
+                processPostDamageFigyHealingFixed(hpAfterDamage, maxHP, berryUsed, surviveProb, turnIndex, moveDataList, results, hpInfo);
             }
         }
-    );
+        
+        // 全16パターンの急所ダメージを個別計算
+        for (let i = 0; i < 16; i++) {
+            const critDamage = Math.floor(moveData.minCritDamage + (moveData.maxCritDamage - moveData.minCritDamage) * i / 15);
+            const critPatternProb = (1/16) * (1/16);
+            
+            // ★重要：瀞死判定は攻撃ダメージのみで行う
+            if (critDamage >= currentHP) {
+                totalKOProbability += critPatternProb;
+            } else {
+                const hpAfterDamage = currentHP - critDamage;
+                const surviveProb = currentProbability * hitProbability * critPatternProb;
+                processPostDamageFigyHealingFixed(hpAfterDamage, maxHP, berryUsed, surviveProb, turnIndex, moveDataList, results, hpInfo);
+            }
+        }
+        
+        // このターンで瀞死する確率を結果に加算
+        const koThisTurn = currentProbability * hitProbability * totalKOProbability;
+        if (koThisTurn > 0) {
+            for (let i = turnIndex; i < results.length; i++) {
+                results[i] += koThisTurn;
+            }
+        }
+    }
+}
+
+//フィラ系きのみのダメージ後回復処理
+function processPostDamageFigyHealingFixed(hpAfterDamage, maxHP, berryUsed, probability, turnIndex, moveDataList, results, hpInfo) {
+    // ★重要: 攻撃ダメージで瀕死になった場合はフィラ系きのみは発動しない
+    if (hpAfterDamage <= 0) {
+        // 瀕死の場合はアイテム効果なし
+        for (let i = turnIndex; i < results.length; i++) {
+            results[i] += probability;
+        }
+        return;
+    }
+    
+    // 生存している場合のみフィラ系きのみ発動チェック
+    if (!berryUsed && hpAfterDamage > 0 && hpAfterDamage <= maxHP / 2) {
+        const healAmount = Math.floor(maxHP / 8);
+        let healedHP = Math.min(hpAfterDamage + healAmount, maxHP);
+        
+        // やどりぎ回復量を追加
+        let additionalHeal = 0;
+        const leechSeed2Select = document.getElementById('leechSeed2Select');
+        if (leechSeed2Select) {
+            const leechSeed2StartTurn = parseInt(leechSeed2Select.value);
+            if (!isNaN(leechSeed2StartTurn) && turnIndex + 1 >= leechSeed2StartTurn) {
+                additionalHeal = calculateLeechSeed2HealAmount(maxHP);
+                healedHP = Math.min(healedHP + additionalHeal, maxHP);
+            }
+        }
+        
+        const constantDamage = calculateTotalConstantDamage(maxHP, defenderPokemon.types, turnIndex + 1);
+        const finalHP = Math.max(0, healedHP - constantDamage);
+        const totalHealAmount = healAmount + additionalHeal;
+        const netHealing = totalHealAmount - constantDamage;
+        const berryName = defenderPokemon.item ? defenderPokemon.item.name : 'フィラ系きのみ';
+        
+        if (hpInfo) {
+            hpInfo[turnIndex] = {
+                beforeHeal: hpAfterDamage,
+                afterHeal: finalHP,
+                healAmount: totalHealAmount,
+                constantDamage: constantDamage,
+                netHealing: netHealing,
+                healType: additionalHeal > 0 ? `${berryName}+やどりぎ回復` : berryName,
+                berryActivated: true,
+                activationTurn: turnIndex + 1,
+                maxHP: maxHP
+            };
+        }
+        
+        calculateKORateWithFigyBerry(finalHP, maxHP, moveDataList, turnIndex + 1, true, probability, results, hpInfo);
+    } else {
+        // やどりぎ回復のみチェック
+        let healAmount = 0;
+        const leechSeed2Select = document.getElementById('leechSeed2Select');
+        if (leechSeed2Select) {
+            const leechSeed2StartTurn = parseInt(leechSeed2Select.value);
+            if (!isNaN(leechSeed2StartTurn) && turnIndex + 1 >= leechSeed2StartTurn) {
+                healAmount = calculateLeechSeed2HealAmount(maxHP);
+            }
+        }
+        
+        const constantDamage = calculateTotalConstantDamage(maxHP, defenderPokemon.types, turnIndex + 1);
+        const finalHP = Math.max(0, hpAfterDamage + healAmount - constantDamage);
+        const netHealing = healAmount - constantDamage;
+        const berryName = defenderPokemon.item ? defenderPokemon.item.name : 'フィラ系きのみ';
+        
+        if (hpInfo && !hpInfo[turnIndex]) {
+            let healType;
+            if (berryUsed) {
+                healType = healAmount > 0 ? `${berryName}(使用済み)+やどりぎ回復` : `${berryName}(使用済み)`;
+            } else {
+                healType = healAmount > 0 ? 'やどりぎ回復のみ' : `${berryName}(未発動)`;
+            }
+            
+            hpInfo[turnIndex] = {
+                beforeHeal: hpAfterDamage,
+                afterHeal: finalHP,
+                healAmount: healAmount,
+                constantDamage: constantDamage,
+                netHealing: netHealing,
+                healType: healType,
+                berryActivated: false,
+                activationTurn: null,
+                maxHP: maxHP
+            };
+        }
+        
+        calculateKORateWithFigyBerry(finalHP, maxHP, moveDataList, turnIndex + 1, berryUsed, probability, results, hpInfo);
+    }
 }
 
 // 共通の瀕死率計算処理
@@ -8658,11 +9904,30 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
         }
     }
     
-    // ★修正: 連続技の場合の表示用ダメージ範囲計算（リスト選択対応）
-    let displayMinDamage = minDamage;
-    let displayMaxDamage = maxDamage;
+    // ★修正: 表示用ダメージ範囲は防御側アイテム効果を除外した値を使用
+    let displayMinDamage, displayMaxDamage;
     
-    // 連続技の場合はリストの選択に応じて表示範囲を計算
+    // 防御側のアイテムを一時的に除外してダメージ計算
+    const originalDefenderItem = defenderPokemon.item;
+    defenderPokemon.item = null; // 防御側アイテムのみ除外
+    
+    const [baseDisplayMin, baseDisplayMax] = calculateDamage(
+        attackerOffensiveStat,
+        defenderDefensiveStat,
+        attackerPokemon.level,
+        currentMove.power || 0,
+        currentMove.category,
+        currentMove.type,
+        attackerPokemon.types,
+        defenderPokemon.types,
+        atkRank,
+        defRank
+    );
+    
+    // 防御側アイテムを元に戻す
+    defenderPokemon.item = originalDefenderItem;
+    
+    // 連続技の場合の表示用ダメージ範囲計算
     if (currentMove && currentMove.class === 'multi_hit') {
         const hitCountSelect = document.getElementById('multiHitCount');
         const selectedHitCount = hitCountSelect ? hitCountSelect.value : '2-5';
@@ -8670,22 +9935,20 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
         
         if (selectedHitCount === '2-5') {
             // 2-5回の場合
-            displayMinDamage = minDamage * 2 + constantDamage;
-            displayMaxDamage = maxDamage * 5 + constantDamage;
-            //console.log(`連続技表示用ダメージ範囲: ${displayMinDamage}~${displayMaxDamage} (2~5回)`);
+            displayMinDamage = baseDisplayMin * 2 + constantDamage;
+            displayMaxDamage = baseDisplayMax * 5 + constantDamage;
         } else {
             // 固定回数の場合
             const hitCount = parseInt(selectedHitCount);
-            displayMinDamage = minDamage * hitCount + constantDamage;
-            displayMaxDamage = maxDamage * hitCount + constantDamage;
-            //console.log(`連続技表示用ダメージ範囲: ${displayMinDamage}~${displayMaxDamage} (${hitCount}回)`);
+            displayMinDamage = baseDisplayMin * hitCount + constantDamage;
+            displayMaxDamage = baseDisplayMax * hitCount + constantDamage;
         }
     } else if (currentMove && currentMove.class === 'two_hit') {
-        displayMinDamage = minDamage * 2;
-        displayMaxDamage = maxDamage * 2;
-        //console.log(`2回攻撃表示用ダメージ範囲: ${displayMinDamage}~${displayMaxDamage}`);
+        displayMinDamage = baseDisplayMin * 2;
+        displayMaxDamage = baseDisplayMax * 2;
     } else {
-        //console.log(`通常技表示用ダメージ範囲: ${displayMinDamage}~${displayMaxDamage}`);
+        displayMinDamage = baseDisplayMin;
+        displayMaxDamage = baseDisplayMax;
     }
     
     // 現在の技から命中率を取得
@@ -8706,40 +9969,86 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
         koRatesTurns = Math.max(actualTurns, maxStatusTurn, 2);
     }
 
-    // ★修正: 連続技の場合は瀕死率計算を先に実行し、その結果を乱数表示でも使用
+    // ★★★ 根本修正: 瀕死率計算を分離し、1ターン目は必ず基本瀕死率のみ使用 ★★★
     let basicRand;
-    let koRates;
+    let koRates = null;
     
+    // 1. 基本的な乱数計算（表示用）
     if (currentMove && currentMove.class === 'multi_hit' && !isMultiTurn) {
         const hitCountSelect = document.getElementById('multiHitCount');
         const selectedHitCount = hitCountSelect ? hitCountSelect.value : '2-5';
 
         if (selectedHitCount === '2-5') {
-            // 2-5回の場合：純粋なダメージ範囲での判定
             basicRand = calculateSimpleRandText(displayMinDamage, displayMaxDamage, currentHP, isSubstitute, "2-5");
         } else {
-            // 固定回数の場合：純粋なダメージ範囲での判定
             const hitCount = parseInt(selectedHitCount);
             basicRand = calculateSimpleRandText(displayMinDamage, displayMaxDamage, currentHP, isSubstitute, hitCount);
         }
-
-        // 瀕死率計算は別途実行（急所・命中率込みの詳細計算用）
-        koRates = calculateMultiTurnKORate(totalHP, koRatesTurns);
-    }
-    else {
-        // 通常技の場合も乱数計算を実行
+    } else {
         basicRand = calculateRandText(displayMinDamage, displayMaxDamage, totalHP, currentMove);
-        // 瀕死率計算も実行
-        koRates = calculateMultiTurnKORate(totalHP, koRatesTurns);
     }
     
-    // 平均ダメージ（定数ダメージ込み）- 表示用ダメージを使用
+    // 2. 瀕死率計算（詳細表示用）
+    try {
+        // ★修正: 基本瀕死率のみを計算
+        const basicKOResult = calculateMultiTurnBasicKORateUnified(totalHP, koRatesTurns);
+        
+        // アイテム効果を考慮した瀕死率を計算（2ターン目以降用）
+        let itemKOResult = null;
+        const defenderItem = defenderPokemon.item;
+        const hasItemEffect = defenderItem && (
+            defenderItem.name === 'たべのこし' || 
+            defenderItem.name === 'オボンのみ' ||
+            defenderItem.name === 'くろいヘドロ' ||
+            isFigyBerry(defenderItem.name)
+        );
+        
+        if (hasItemEffect && koRatesTurns > 1) {
+            try {
+                itemKOResult = calculateMultiTurnKORateWithItems(totalHP, koRatesTurns);
+            } catch (itemError) {
+                console.error('アイテム効果計算でエラー:', itemError);
+                itemKOResult = null;
+            }
+        }
+        
+        // ★重要: koRatesオブジェクトを手動で構築し、1ターン目は必ず基本瀕死率を使用
+        koRates = {
+            basic: basicKOResult.rates.map(rate => rate), // 基本瀕死率をコピー
+            withItems: null, // 初期化
+            hpInfo: itemKOResult ? itemKOResult.hpInfo : null,
+            basis: basicKOResult.basis,
+            hpRanges: basicKOResult.hpRanges
+        };
+        
+        // ★修正: アイテム効果ありの場合でも、1ターン目は基本瀕死率を強制使用
+        if (itemKOResult && itemKOResult.rates) {
+            koRates.withItems = [...itemKOResult.rates]; // アイテム考慮瀕死率をコピー
+            
+            // ★★★ 最重要: 1ターン目は必ず基本瀕死率で上書き ★★★
+            koRates.withItems[0] = basicKOResult.rates[0];
+
+        }
+        
+    } catch (error) {
+        console.error('瀕死率計算でエラー:', error);
+        // エラー時は基本的な瀕死率のみ
+        koRates = {
+            basic: [basicRand.percent ? parseFloat(basicRand.percent) : 0],
+            withItems: null,
+            hpInfo: null,
+            basis: null,
+            hpRanges: null
+        };
+    }
+    
+    // 平均ダメージ（定数ダメージ込み）
     const avgDamage = (displayMinDamage + displayMaxDamage) / 2;
     
-    // ★修正: HPバー作成（表示用ダメージ範囲で作成）
+    // HPバー作成
     const hpBarHtml = createHPBar(displayMinDamage, displayMaxDamage, totalHP, false);
     
-    // 設定された技の情報を取得（威力計算を修正）
+    // 設定された技の情報を取得
     const moveInfo = [];
     for (let i = 0; i < actualTurns; i++) {
         if (multiTurnMoves[i]) {
@@ -8788,21 +10097,19 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
     const evasionRankText = (evasionRank !== '±0' && evasionRank !== '0') ? ` / 回避ランク${evasionRank}` : '';
     
     // 瀕死率表示のHTML生成
-    const koRateHtml = isMultiTurn ? 
-        generateEnhancedMultiTurnKORateHTML(koRates, actualTurns, moveInfo, evasionRankText) :
-        generateSingleTurnKORateHTML(koRates, moveAccuracy, evasionRankText);
+    const koRateHtml = generateUnifiedKORateHTML(koRates, actualTurns, moveInfo, evasionRankText, isMultiTurn);
     
     // タイトルを条件分岐
     const title = isMultiTurn ? '複数ターン瀕死率計算結果' : 'ダメージ計算結果';
     
-    // ダメージ範囲の表記（複数ターンかどうかで変更）
+    // ダメージ範囲の表記
     const damageRangeLabel = isMultiTurn ? '1発目のダメージ範囲' : 'ダメージ範囲';
     
     // ステータス表記の生成
     const offenseStatLabel = isPhysical ? 'A' : 'C';
     const defenseStatLabel = isPhysical ? 'B' : 'D';
     
-    // 防御側HP表記の生成（現在HPベース）
+    // 防御側HP表記の生成
     let defenderHPDisplay = '';
     if (isSubstitute) {
         defenderHPDisplay = `H${currentHP}(みがわり)`;
@@ -8812,10 +10119,9 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
         defenderHPDisplay = `H${currentHP}/${totalHP}`;
     }
     
-    // ★修正: 連続技の場合の表示調整（リスト選択対応）
+    // 技表示テキストの生成
     let moveDisplayText = '';
     if (currentMove && currentMove.class === 'multi_hit') {
-        // 連続技の場合はリストの選択に応じて表示
         const hitCountSelect = document.getElementById('multiHitCount');
         const selectedHitCount = hitCountSelect ? hitCountSelect.value : '2-5';
         
@@ -8826,10 +10132,8 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
             moveDisplayText = `${currentMove.name} (威力${calculatePower(currentMove)}×${hitCount}発, ${currentMove.type}, ${currentMove.category === 'Physical' ? '物理' : '特殊'}${accuracyText})`;
         }
     } else if (currentMove && currentMove.class === 'two_hit') {
-        // 2回攻撃の場合
         moveDisplayText = `${currentMove.name} (威力${calculatePower(currentMove)}×2発, ${currentMove.type}, ${currentMove.category === 'Physical' ? '物理' : '特殊'}${accuracyText})`;
     } else {
-        // 通常技の場合
         moveDisplayText = `${currentMove.name} (威力${calculatePower(currentMove)}, ${currentMove.type}, ${currentMove.category === 'Physical' ? '物理' : '特殊'}${accuracyText})`;
     }
     
@@ -9023,8 +10327,8 @@ function displaySingleTurnResult(minDamage, maxDamage, totalHP) {
     displayUnifiedResults(minDamage, maxDamage, totalHP, false);
 }
 
-// 複数ターン瀕死率表示HTML生成
-function generateEnhancedMultiTurnKORateHTML(koRates, actualTurns, moveInfo, evasionRankText = '') {
+// 統合版瀕死率表示HTML生成（単発・複数ターン対応）
+function generateUnifiedKORateHTML(koRates, actualTurns, moveInfo, evasionRankText = '', isMultiTurn = false) {
     if (!koRates || !koRates.basic) return '';
     
     const defenderItem = defenderPokemon.item;
@@ -9035,11 +10339,19 @@ function generateEnhancedMultiTurnKORateHTML(koRates, actualTurns, moveInfo, eva
         isFigyBerry(defenderItem.name)
     );
     
+    const criticalRate = getCriticalRate();
+    let criticalRateText;
+    if(criticalRate == 1/16){
+        criticalRateText = '1/16';
+    }
+    else if(criticalRate == 1/8){
+        criticalRateText = '1/8';
+    }
     let html = '<div class="ko-rate-section"><h4>瀕死率詳細</h4>';
     
     // 計算条件の説明
     html += '<div class="calculation-conditions" style="text-align: center; margin-bottom: 10px; font-size: 11px; color: #666;">';
-    html += '急所率1/16を考慮';
+    html += '急所率' + criticalRateText + 'を考慮';
     if (evasionRankText) {
         html += evasionRankText;
     }
@@ -9052,59 +10364,75 @@ function generateEnhancedMultiTurnKORateHTML(koRates, actualTurns, moveInfo, eva
         </div>`;
     }
     
-    // 天候情報の表示（雨天時のかみなりの場合）
-    const weather = document.getElementById('weatherSelect').value;
-    const hasWeatherEffect = weather === 'rain' && moveInfo.some(move => move.name === 'かみなり');
-    if (hasWeatherEffect) {
-        html += `<div class="weather-info" style="text-align: center; margin-bottom: 10px; font-size: 12px; color: #17a2b8;">
-            天候: あめ（かみなり必中）
-        </div>`;
-    }
+    // ターン数分だけ表示（単発の場合は1ターンのみ）
+    const displayTurns = isMultiTurn ? actualTurns : 1;
     
-    // はりきり情報の表示
-    const hasHarikiri = document.getElementById('harikiriCheck')?.checked;
-    if (hasHarikiri) {
-        html += `<div class="ability-info" style="text-align: center; margin-bottom: 10px; font-size: 12px; color: #dc3545;">
-            特性: はりきり（命中率0.8倍）
-        </div>`;
-    }
-    
-    // 実際に設定されたターン数分だけ表示
-    for (let turn = 0; turn < actualTurns; turn++) {
+    for (let turn = 0; turn < displayTurns; turn++) {
         const turnNumber = turn + 1;
-        const basicRate = koRates.basic[turn];
-        const itemRate = koRates.withItems ? koRates.withItems[turn] : null;
         
-        // 各ターンの定数ダメージ名を取得
-        const constantDamageNames = getConstantDamageNamesForTurn(turnNumber);
-        
-        // 各ターンのダメージ範囲を定数ダメージ込みで計算
-        const damageWithConstant = calculateDamageWithConstantForTurn(turn, moveInfo[turn]);
+        // ★修正: 1ターン目は「常に」基本瀕死率を使用
+        let displayRate;
+        if (turnNumber === 1) {
+            // 1ターン目：オボンのみ等は瀕死を回避できないため、必ず基本瀕死率
+            displayRate = koRates.basic[turn];
+        } else {
+            // 2ターン目以降：アイテム効果を考慮した瀕死率
+            if (hasItemEffect && koRates.withItems && koRates.withItems[turn] !== undefined) {
+                displayRate = koRates.withItems[turn];
+            } else {
+                displayRate = koRates.basic[turn];
+            }
+        }
         
         // 計算根拠を生成
         let basis = '';
         if (koRates.basis && koRates.basis[turn]) {
             const b = koRates.basis[turn];
-            const move = moveInfo[turn];
-            let acc = b.accuracy;
             
-            // 技名に定数ダメージ名を追加
-            let moveNameWithConstantDamage = move.name;
-            if (constantDamageNames.length > 0) {
-                moveNameWithConstantDamage += '+' + constantDamageNames.join('+');
+            // ★修正: koRates.basisから正しいダメージ範囲を取得
+            const correctDamageRange = b.damageRange;
+            
+            let moveName;
+            if (isMultiTurn && moveInfo && moveInfo[turn]) {
+                // 複数ターンの場合：定数ダメージ名も追加
+                const constantDamageNames = getConstantDamageNamesForTurn(turnNumber);
+                moveName = moveInfo[turn].name;
+                if (constantDamageNames.length > 0) {
+                    moveName += '+' + constantDamageNames.join('+');
+                }
+            } else {
+                // 単発の場合：技名のみ
+                moveName = currentMove.name;
             }
             
-            // 特殊な命中率の説明を追加
-            let accText = `命中${acc}%`;
-            if (weather === 'rain' && move.name === 'かみなり') {
+            // ★修正: 正しいダメージ範囲を使用
+            basis = `[${moveName} (ダメージ:${correctDamageRange})]<br>`;
+            
+            // 説明文
+            if (turnNumber === 1) {
+                if (b.isMultiHit) {
+                    basis += `連続技各回数の発生確率と外れ時の両方を考慮<br>`;
+                } else {
+                    basis += `命中時と外れ時の両方を考慮<br>`;
+                }
+            } else {
+                basis += `前ターンの結果を考慮した累積計算<br>`;
+            }
+            
+            // 命中率情報
+            const weather = document.getElementById('weatherSelect').value;
+            const hasHarikiri = document.getElementById('harikiriCheck')?.checked;
+            
+            let accText = `命中${b.accuracy}%`;
+            if (weather === 'rain' && (isMultiTurn ? moveInfo[turn].name : currentMove.name) === 'かみなり') {
                 accText = '必中（雨天）';
-            } else if (move.accuracy === 0) {
+            } else if (b.accuracy === 0) {
                 accText = '必中';
-            } else if (hasHarikiri && move.category === '物理') {
+            } else if (hasHarikiri && (isMultiTurn ? moveInfo[turn].category : currentMove.category) === '物理') {
                 accText += '（はりきり補正済）';
             }
             
-            // 状態異常効果を「×」区切りで表示
+            // 状態異常効果
             if (b.statusEffects && b.statusEffects.length > 0) {
                 const statusModifiers = [];
                 b.statusEffects.forEach(effect => {
@@ -9121,272 +10449,36 @@ function generateEnhancedMultiTurnKORateHTML(koRates, actualTurns, moveInfo, eva
                 }
             }
             
-            basis = `[${moveNameWithConstantDamage} (ダメージ:${damageWithConstant.min}~${damageWithConstant.max})]<br>`;
-            
-            // ★修正: 連続技かどうかで表示テキストを変更
-            if (b.isMultiHit) {
-                basis += `連続技各回数の発生確率と外れ時の両方を考慮<br>`;
-            } else {
-                if (turn === 0) {
-                    basis += `命中時と外れ時の両方を考慮<br>`;
-                } else {
-                    basis += `前ターンの結果を考慮した累積計算<br>`;
-                }
-            }
-            
             basis += `×${accText}`;
         }
 
         html += `<div class="ko-rate-row">`;
         
-        // 1行目: ターン番号と瀕死率
+        // ターン番号と瀕死率
         html += `<div class="ko-rate-header">`;
         html += `<span class="ko-turn">${turnNumber}ターン:</span>`;
-        
-        // アイテム効果がある場合は、アイテム考慮の瀕死率を表示
-        if (hasItemEffect && itemRate !== null) {
-            html += `<span class="ko-basic">${Math.floor(itemRate * 10) / 10}%</span>`;
-        } else {
-            html += `<span class="ko-basic">${Math.floor(basicRate * 10) / 10}%</span>`;
-        }
+        html += `<span class="ko-basic">${(displayRate * 100).toFixed(1)}%</span>`;
         html += `</div>`;
         
-        // 2行目: 計算根拠
+        // 計算根拠
         html += `<div class="ko-basis">${basis}</div>`;
         
-        // 3行目以降: 残HP範囲の表示
-        if (koRates.hpRanges && koRates.hpRanges[turn]) {
-            const hpRange = koRates.hpRanges[turn];
-            html += `<div class="hp-range-row">`;
-            if (hpRange.min === 0 && hpRange.max === 0) {
-                html += `<span class="hp-range-text">残HP範囲: 0/${hpRange.initial}</span>`;
-            } else {
-                let hpText = `残HP範囲: ${hpRange.min}~${hpRange.max}/${hpRange.initial}`;
-                
-                // 回復効果の表示
-                if (hpRange.healType && hpRange.healAmount > 0) {
-                    hpText += ` (${hpRange.healType} +${hpRange.healAmount})`;
-                }
-                
-                // 定数ダメージの表示
-                if (hpRange.constantDamage && hpRange.constantDamage > 0) {
-                    const damageDetails = [];
-                    
-                    // 状態異常ダメージ
-                    const statusType = document.getElementById('statusDamageSelect').value;
-                    if (statusType !== 'none') {
-                        const statusNames = {
-                            'burn': 'やけど',
-                            'poison': 'どく', 
-                            'badlypoison': 'もうどく'
-                        };
-                        const statusDamage = calculateStatusDamage(hpRange.maxHP || defenderPokemon.maxHP, statusType, turn + 1);
-                        if (statusDamage > 0) {
-                            damageDetails.push(`${statusNames[statusType]} -${statusDamage}`);
-                        }
-                    }
-                    
-                    // まきびしダメージ
-                    const spikesLevel = parseInt(document.getElementById('spikesLevel').value) || 0;
-                    const spikesDamage = calculateSpikesDamage(hpRange.maxHP || defenderPokemon.maxHP, spikesLevel, turn + 1);
-                    if (spikesDamage > 0) {
-                        damageDetails.push(`まきびし -${spikesDamage}`);
-                    }
-                    
-                    // のろいダメージ
-                    const curseSelect = document.getElementById('curseSelect');
-                    if (curseSelect && curseSelect.value !== 'none') {
-                        const curseStartTurn = parseInt(curseSelect.value);
-                        if (!isNaN(curseStartTurn) && turn + 1 >= curseStartTurn) {
-                            const curseDamage = calculateCurseDamage(hpRange.maxHP || defenderPokemon.maxHP);
-                            damageDetails.push(`のろい -${curseDamage}`);
-                        }
-                    }
-                    
-                    // あくむダメージ
-                    const nightmareSelect = document.getElementById('nightmareSelect');
-                    if (nightmareSelect && nightmareSelect.value !== 'none') {
-                        const nightmareStartTurn = parseInt(nightmareSelect.value);
-                        if (!isNaN(nightmareStartTurn) && turn + 1 >= nightmareStartTurn) {
-                            const nightmareDamage = calculateNightmareDamage(hpRange.maxHP || defenderPokemon.maxHP);
-                            damageDetails.push(`あくむ -${nightmareDamage}`);
-                        }
-                    }
-                    
-                    // やどりぎダメージ
-                    const leechSeedSelect = document.getElementById('leechSeedSelect');
-                    if (leechSeedSelect && leechSeedSelect.value !== 'none') {
-                        const leechSeedStartTurn = parseInt(leechSeedSelect.value);
-                        if (!isNaN(leechSeedStartTurn) && turn + 1 >= leechSeedStartTurn) {
-                            const leechSeedDamage = calculateLeechSeedDamage(hpRange.maxHP || defenderPokemon.maxHP);
-                            damageDetails.push(`やどりぎ -${leechSeedDamage}`);
-                        }
-                    }
-                    
-                    // やどりぎダメージ
-                    const leechSeed2Select = document.getElementById('leechSeed2Select');
-                    if (leechSeed2Select && leechSeed2Select.value !== 'none') {
-                        const leechSeed2StartTurn = parseInt(leechSeed2Select.value);
-                        if (!isNaN(leechSeed2StartTurn) && turn + 1 >= leechSeed2StartTurn) {
-                            const leechSeed2HealAmount = calculateLeechSeed2HealAmount(hpRange.maxHP || defenderPokemon.maxHP);
-                            damageDetails.push(`やどりぎ回復 +${leechSeed2HealAmount}`);
-                        }
-                    }
-
-                    // 天候ダメージ
-                    const weather = document.getElementById('weatherSelect').value;
-                    const weatherDamage = calculateWeatherDamage(hpRange.maxHP || defenderPokemon.maxHP, defenderPokemon.types, weather);
-                    if (weatherDamage > 0) {
-                        const weatherNames = {
-                            'sandstorm': 'すなあらし',
-                            'hail': 'あられ'
-                        };
-                        damageDetails.push(`${weatherNames[weather]} -${weatherDamage}`);
-                    }
-                    
-                    if (damageDetails.length > 0) {
-                        hpText += ` (${damageDetails.join(', ')})`;
-                    }
-                }
-                
-                // 正味の効果表示
-                if (hpRange.netHealing !== undefined && hpRange.netHealing !== 0) {
-                    const netText = hpRange.netHealing > 0 ? `+${hpRange.netHealing}` : `${hpRange.netHealing}`;
-                    hpText += ` [正味: ${netText}]`;
-                }
-                
-                html += `<span class="hp-range-text">${hpText}</span>`;
-            }
-            html += `</div>`;
-        }
-        
         html += `</div>`;
     }
     
-    html += '</div>';
-    return html;
-}
-
-// 単発ターン瀕死率表示HTML生成
-function generateSingleTurnKORateHTML(koRates, moveAccuracy, evasionRankText = '') {
-    if (!koRates || !koRates.basic) return '';
-    
-    const defenderItem = defenderPokemon.item;
-    const hasItemEffect = defenderItem && (
-        defenderItem.name === 'たべのこし' || 
-        defenderItem.name === 'オボンのみ' ||
-        defenderItem.name === 'くろいヘドロ' ||
-        isFigyBerry(defenderItem.name)
-    );
-    
-    let html = '<div class="ko-rate-section"><h4>瀕死率詳細</h4>';
-    
-    // 計算条件の説明
-    html += '<div class="calculation-conditions" style="text-align: center; margin-bottom: 10px; font-size: 11px; color: #666;">';
-    html += '急所率1/16を考慮';
-    if (evasionRankText) {
-        html += evasionRankText;
-    }
-    html += '</div>';
-    
-    // アイテム情報の表示
-    if (hasItemEffect) {
-        html += `<div class="item-info" style="text-align: center; margin-bottom: 10px; font-size: 12px; color: #666;">
-            持ち物: ${defenderItem.name}
-        </div>`;
-    }
-    
-    // 天候情報の表示（雨天時のかみなりの場合）
-    const weather = document.getElementById('weatherSelect').value;
-    const hasWeatherEffect = weather === 'rain' && currentMove.name === 'かみなり';
-    if (hasWeatherEffect) {
-        html += `<div class="weather-info" style="text-align: center; margin-bottom: 10px; font-size: 12px; color: #17a2b8;">
-            天候: あめ（かみなり必中）
-        </div>`;
-    }
-    
-    // はりきり情報の表示
-    const hasHarikiri = document.getElementById('harikiriCheck')?.checked;
-    if (hasHarikiri) {
-        html += `<div class="ability-info" style="text-align: center; margin-bottom: 10px; font-size: 12px; color: #dc3545;">
-            特性: はりきり（命中率0.8倍）
-        </div>`;
-    }
-    
-    // 瀕死率の表示
-    const basicRate = koRates.basic[0];
-    const itemRate = koRates.withItems ? koRates.withItems[0] : null;
-    
-    // ★修正: 連続技の場合の表示を変更
-    let moveNameWithDamage, considerationText;
-    
-    if (currentMove && currentMove.class === 'multi_hit') {
-        // 連続技の場合：総ダメージ範囲を表示
-        const attackerStats = calculateStats(attackerPokemon);
-        const defenderStats = calculateStats(defenderPokemon);
-        
-        const isPhysical = currentMove.category === "Physical";
-        const attackValue = isPhysical ? attackerStats.a : attackerStats.c;
-        const defenseValue = isPhysical ? defenderStats.b : defenderStats.d;
-        
-        const atkRankElement = document.getElementById('attackerAtkRank');
-        const defRankElement = document.getElementById('defenderDefRank');
-        const atkRank = atkRankElement ? atkRankElement.value : '±0';
-        const defRank = defRankElement ? defRankElement.value : '±0';
-        
-        const [singleMin, singleMax] = calculateDamage(
-            attackValue, defenseValue, attackerPokemon.level,
-            currentMove.power || 0, currentMove.category, currentMove.type,
-            attackerPokemon.types, defenderPokemon.types, atkRank, defRank
-        );
-        
-        // ★修正: 1発分のダメージを表示（総ダメージではなく）
-        moveNameWithDamage = `${currentMove.name} (ダメージ:${singleMin}~${singleMax})`;
-        considerationText = '連続技各回数の発生確率と外れ時の両方を考慮';
-    } else {
-        // 通常技の場合
-        if (koRates.basis && koRates.basis[0]) {
-            const damageRange = koRates.basis[0].damageRange;
-            moveNameWithDamage = `${currentMove.name} (ダメージ:${damageRange})`;
+    // 単発かつアイテム効果がある場合の注釈
+    if (!isMultiTurn && hasItemEffect) {
+        html += `<div class="item-effect-note" style="font-size: 11px; color: #666; margin-top: 10px; text-align: center;">`;
+        if (defenderItem.name === 'オボンのみ' || isFigyBerry(defenderItem.name)) {
+            html += `※ ${defenderItem.name}は瀕死を回避できないため、1ターン瀕死率には影響しません`;
+        } else if (defenderItem.name === 'たべのこし') {
+            html += `※ ${defenderItem.name}は瀕死を回避できないため、1ターン瀕死率には影響しません`;
         } else {
-            moveNameWithDamage = currentMove.name;
+            html += `※ ${defenderItem.name}の効果は1ターン瀕死率に影響しません`;
         }
-        considerationText = '命中時と外れ時の両方を考慮';
+        html += `</div>`;
     }
     
-    // 計算根拠を生成
-    let basis = '';
-    if (koRates.basis && koRates.basis[0]) {
-        const b = koRates.basis[0];
-        let acc = b.accuracy;
-        
-        // 特殊な命中率の説明を追加
-        let accText = `命中${acc}%`;
-        if (weather === 'rain' && currentMove.name === 'かみなり') {
-            accText = '必中（雨天）';
-        } else if (currentMove.accuracy === 0) {
-            accText = '必中';
-        } else if (hasHarikiri && currentMove.category === 'Physical') {
-            accText += '（はりきり補正済）';
-        }
-        
-        basis = `[${moveNameWithDamage}]<br>`;
-        basis += `${considerationText}<br>`;
-        basis += `×${accText}`;
-    }
-    
-    html += `<div class="ko-rate-row">`;
-    html += `<span class="ko-turn">1ターン:</span>`;
-    html += `<div class="ko-basis">${basis}</div>`;
-    
-    // アイテム効果がある場合は、アイテム考慮の瀕死率を表示
-    if (hasItemEffect && itemRate !== null) {
-        html += `<span class="ko-basic">${itemRate.toFixed(1)}%</span>`;
-    } else {
-        html += `<span class="ko-basic">${basicRate.toFixed(1)}%</span>`;
-    }
-    
-    html += `</div>`;
     html += '</div>';
     return html;
 }
@@ -9770,112 +10862,117 @@ function setupMultiTurnMoveDropdown(inputId, turn) {
     });
     
     input.addEventListener('input', function() {
-        // 入力中もリアルタイムでチェック
-        if (this.value.trim() === '') {
-            multiTurnMoves[turn] = null;
-        }
         filterMoveListForTurn(this.value, dropdown, input, turn);
     });
     
+    // ★修正：完全一致チェックを追加（HP入力欄表示のため）
     input.addEventListener('blur', function() {
-        // フォーカスアウト時に確定
-        setTimeout(() => {
-            checkExactMoveMatchForTurn(this.value, turn);
-        }, 200); // ドロップダウンクリック用の遅延
+        checkExactMoveMatchForTurn(this.value, turn, inputId);
     });
     
-    input.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            checkExactMoveMatchForTurn(this.value, turn);
-            dropdown.style.display = 'none';
-        }
-    });
-    
-    // 外部クリック時にドロップダウンを閉じる
+    // グローバルクリックで閉じる
     document.addEventListener('click', function(e) {
-        if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+        if (!dropdown.contains(e.target) && e.target !== input) {
             dropdown.style.display = 'none';
         }
     });
 }
 
 function showMoveListForTurn(dropdown, input, turn) {
-   dropdown.innerHTML = '';
-   
-   const rect = input.getBoundingClientRect();
-   dropdown.style.top = (rect.bottom + window.scrollY) + 'px';
-   dropdown.style.left = (rect.left + window.scrollX) + 'px';
-   dropdown.style.width = rect.width + 'px';
-   
-   const displayItems = moveData.slice(0, 30);
-   
-   displayItems.forEach(move => {
-       const item = createDropdownItem(move.name, () => {
-           input.value = move.name;
-           dropdown.style.display = 'none';
-           selectMultiTurnMove(turn, move.name);
-       });
-       dropdown.appendChild(item);
-   });
-   
-   dropdown.style.display = 'block';
+    dropdown.innerHTML = '';
+    
+    const rect = input.getBoundingClientRect();
+    dropdown.style.top = (rect.bottom + window.scrollY) + 'px';
+    dropdown.style.left = (rect.left + window.scrollX) + 'px';
+    dropdown.style.width = rect.width + 'px';
+    
+    const displayItems = moveData.slice(0, 30);
+    
+    displayItems.forEach(move => {
+        const item = createDropdownItem(move.name, () => {
+            console.log(`ドロップダウンから${turn + 1}ターン目技選択: ${move.name}`);
+            input.value = move.name;
+            dropdown.style.display = 'none';
+            
+            // ★修正：即座にHP入力欄を表示
+            multiTurnMoves[turn] = move;
+            selectMoveForTurn(move.name, turn);
+            
+            // ★重要：blur イベントを防ぐためにフラグを設定
+            input._preventBlur = true;
+            setTimeout(() => { input._preventBlur = false; }, 300);
+        });
+        dropdown.appendChild(item);
+    });
+    
+    dropdown.style.display = 'block';
 }
 
+// 複数ターン技用の技フィルタリング
 function filterMoveListForTurn(searchText, dropdown, input, turn) {
-   if (!searchText) {
-       dropdown.style.display = 'none';
-       return;
-   }
-   
-   dropdown.innerHTML = '';
-   
-   const search = searchText.toLowerCase();
-   
-   const toHiragana = (text) => {
-       return text.replace(/[\u30A1-\u30F6]/g, function(match) {
-           return String.fromCharCode(match.charCodeAt(0) - 0x60);
-       });
-   };
-   
-   const toKatakana = (text) => {
-       return text.replace(/[\u3041-\u3096]/g, function(match) {
-           return String.fromCharCode(match.charCodeAt(0) + 0x60);
-       });
-   };
-   
-   const hiraganaSearch = toHiragana(search);
-   const katakanaSearch = toKatakana(search);
-   
-   const filtered = moveData.filter(move => {
-       const name = move.name ? move.name.toLowerCase() : '';
-       const hiragana = move.hiragana ? move.hiragana.toLowerCase() : '';
-       const romaji = move.romaji ? move.romaji.toLowerCase() : '';
-       
-       return name.includes(search) || 
-              name.includes(hiraganaSearch) ||
-              name.includes(katakanaSearch) ||
-              hiragana.includes(search) ||
-              hiragana.includes(hiraganaSearch) ||
-              romaji.includes(search);
-   });
-   
-   const displayItems = filtered.slice(0, 30);
-   
-   displayItems.forEach(move => {
-       const item = createDropdownItem(move.name, () => {
-           input.value = move.name;
-           dropdown.style.display = 'none';
-           selectMultiTurnMove(turn, move.name);
-       });
-       dropdown.appendChild(item);
-   });
-   
-   const rect = input.getBoundingClientRect();
-   dropdown.style.top = (rect.bottom + window.scrollY) + 'px';
-   dropdown.style.left = (rect.left + window.scrollX) + 'px';
-   dropdown.style.width = rect.width + 'px';
-   
-   dropdown.style.display = displayItems.length > 0 ? 'block' : 'none';
+    if (!searchText) {
+        dropdown.style.display = 'none';
+        return;
+    }
+    
+    dropdown.innerHTML = '';
+    
+    const search = searchText.toLowerCase();
+    
+    // カタカナ・ひらがな変換
+    const toHiragana = (text) => {
+        return text.replace(/[\u30A1-\u30F6]/g, function(match) {
+            return String.fromCharCode(match.charCodeAt(0) - 0x60);
+        });
+    };
+    
+    const toKatakana = (text) => {
+        return text.replace(/[\u3041-\u3096]/g, function(match) {
+            return String.fromCharCode(match.charCodeAt(0) + 0x60);
+        });
+    };
+    
+    const hiraganaSearch = toHiragana(search);
+    const katakanaSearch = toKatakana(search);
+    
+    const filtered = moveData.filter(move => {
+        const name = move.name ? move.name.toLowerCase() : '';
+        const hiragana = move.hiragana ? move.hiragana.toLowerCase() : '';
+        const romaji = move.romaji ? move.romaji.toLowerCase() : '';
+        
+        // 前方一致検索
+        return name.includes(search) || 
+               name.includes(hiraganaSearch) ||
+               name.includes(katakanaSearch) ||
+               hiragana.includes(search) ||
+               hiragana.includes(hiraganaSearch) ||
+               romaji.includes(search);
+    });
+    
+    const displayItems = filtered.slice(0, 30);
+    
+    displayItems.forEach(move => {
+        const item = createDropdownItem(move.name, () => {
+            input.value = move.name;
+            dropdown.style.display = 'none';
+            
+            // ★修正：即座にHP入力欄を表示
+            multiTurnMoves[turn] = move;
+            selectMoveForTurn(move.name, turn);
+            
+            // ★重要：blur イベントを防ぐためにフラグを設定
+            input._preventBlur = true;
+            setTimeout(() => { input._preventBlur = false; }, 300);
+        });
+        dropdown.appendChild(item);
+    });
+    
+    const rect = input.getBoundingClientRect();
+    dropdown.style.top = (rect.bottom + window.scrollY) + 'px';
+    dropdown.style.left = (rect.left + window.scrollX) + 'px';
+    dropdown.style.width = rect.width + 'px';
+    
+    dropdown.style.display = displayItems.length > 0 ? 'block' : 'none';
 }
 
 function checkExactMatch(inputText, side) {
@@ -9937,11 +11034,16 @@ function initializeMobileControls() {
     setupMobileControlListeners();
 }
 
+function isTabletOrMobile() {
+    // 768px以下、または1100px-1199pxの場合にタブレット/モバイル機能を有効化
+    return window.innerWidth <= 768 || 
+           (window.innerWidth >= 1100 && window.innerWidth <= 1199);
+}
+
 /**
  * 数値入力欄のイベントリスナーを設定
  */
 function setupMobileInputListeners() {
-    // 対象となる数値入力欄を特定
     const targetInputs = [
         // 攻撃側実数値
         'attackerRealA', 'attackerRealC',
@@ -9980,11 +11082,10 @@ function setupMobileInputListeners() {
     targetInputs.forEach(inputId => {
         const input = document.getElementById(inputId);
         if (input) {
-            // ★修正：既存のイベントリスナーを削除せずに、モバイル専用のイベントを追加
-            
+            // ★修正：判定関数を使用
             // モバイル専用のタッチイベント
             input.addEventListener('touchstart', function(e) {
-                if (window.innerWidth <= 768) {
+                if (isTabletOrMobile()) {
                     // タッチデバイスでは既存機能を無効化してモバイルコントロールを使用
                     e.preventDefault();
                     activateMobileControl(this);
@@ -9992,7 +11093,7 @@ function setupMobileInputListeners() {
             }, { passive: false });
             
             input.addEventListener('touchend', function(e) {
-                if (window.innerWidth <= 768) {
+                if (isTabletOrMobile()) {
                     e.preventDefault();
                     if (mobileControlState.activeInput !== this) {
                         activateMobileControl(this);
@@ -10000,9 +11101,9 @@ function setupMobileInputListeners() {
                 }
             }, { passive: false });
             
-            // ★重要：デスクトップでは既存機能を維持するため、フォーカスイベントは条件付きで追加
+            // ★修正：フォーカスイベントも判定関数を使用
             const originalFocusHandler = function(e) {
-                if (window.innerWidth <= 768) {
+                if (isTabletOrMobile()) {
                     setTimeout(() => {
                         if (mobileControlState.activeInput !== this) {
                             activateMobileControl(this);
@@ -10012,9 +11113,9 @@ function setupMobileInputListeners() {
             };
             input.addEventListener('focus', originalFocusHandler);
             
-            // クリック時（モバイルのみ）
+            // ★修正：クリック時も判定関数を使用
             input.addEventListener('click', function(e) {
-                if (window.innerWidth <= 768) {
+                if (isTabletOrMobile()) {
                     e.preventDefault();
                     if (mobileControlState.activeInput !== this) {
                         activateMobileControl(this);
@@ -10025,9 +11126,9 @@ function setupMobileInputListeners() {
         }
     });
     
-    // 画面外タップ検知
+    // ★修正：画面外タップ検知も判定関数を使用
     document.addEventListener('touchstart', function(e) {
-        if (window.innerWidth <= 768 && 
+        if (isTabletOrMobile() && 
             mobileControlState.isActive &&
             !e.target.closest('.mobile-control-bar') && 
             !e.target.closest('.mobile-control-content') &&
@@ -10037,6 +11138,7 @@ function setupMobileInputListeners() {
         }
     }, { passive: false });
 }
+
 /**
  * 実数値入力管理クラスの初期化関数を修正
  */
@@ -10271,11 +11373,22 @@ function getFieldInfo(input) {
         side = '防御側';
     }
     
-    // ステータスを判定
+    // ステータス判定を詳細に
     if (id.includes('HP') || id.includes('Hp')) {
-    stat = 'H';
+        stat = 'H';
+    } else if (id.endsWith('A') || id.includes('RealA')) {
+        stat = 'A';
+    } else if (id.endsWith('B') || id.includes('RealB')) {
+        stat = 'B';
+    } else if (id.endsWith('C') || id.includes('RealC')) {
+        stat = 'C';
+    } else if (id.endsWith('D') || id.includes('RealD')) {
+        stat = 'D';
+    } else if (id.endsWith('S') || id.includes('RealS')) {
+        stat = 'S';
     } else {
-        const lastChar = id.slice(-1);  // 末尾の1文字を取得
+        // フォールバック：末尾の1文字
+        const lastChar = id.slice(-1);
         if (['A', 'B', 'C', 'D', 'S'].includes(lastChar)) {
             stat = lastChar;
         }
@@ -10300,60 +11413,19 @@ function getFieldInfo(input) {
             }
         }
         step = 1;
+        displayName = `${side}${stat}実数値`;
     } else if (id.includes('Iv')) {
         type = 'iv';
         min = 0;
         max = 31;
         step = 1;
+        displayName = `${side}${stat}個体値`;
     } else if (id.includes('Ev')) {
         type = 'ev';
         min = 0;
         max = 252;
-        
-        // 努力値のステップを個体値に応じて決定
-        const statKey = stat.toLowerCase();
-        const pokemon = side === '攻撃側' ? attackerPokemon : defenderPokemon;
-        
-        if (statKey && pokemon && pokemon.ivValues) {
-            const currentIV = pokemon.ivValues[statKey];
-
-            if (currentIV === 31) {
-                step = 4; // 個体値31の場合：8n-4ずつ（4, 12, 20, 28, ...）
-                max = 252;
-            } else if (currentIV === 30) {
-                step = 8; // 個体値30の場合：8nずつ（8, 16, 24, 32, ...）
-                max = 248;
-            } else {
-                step = 4; // その他は従来通り
-            }
-        } else {
-            step = 4;
-        }
-    } else if (id === 'defenderCurrentHP') {
-        type = 'currentHP';
-        min = 1;
-        max = parseInt(input.getAttribute('max')) || 999;
-        step = 1;
-    } else {
-        // その他の数値入力欄
-        type = 'other';
-        min = parseInt(input.getAttribute('min')) || 0;
-        max = parseInt(input.getAttribute('max')) || 100;
-        step = 1;
-    }
-    
-    // 表示名を生成
-    if (type === 'currentHP') {
-        displayName = '現在HP';
-    } else if (type === 'other') {
-        displayName = input.placeholder || 'レベル';
-    } else {
-        const typeNames = {
-            'real': '実数値',
-            'iv': '個体値',
-            'ev': '努力値'
-        };
-        displayName = `${side}${stat}${typeNames[type]}`;
+        step = 4;
+        displayName = `${side}${stat}努力値`;
     }
     
     return { type, stat, side, displayName, min, max, step };
@@ -10412,35 +11484,80 @@ function updateMobileControlBar() {
  * 値を調整
  */
 function adjustMobileValue(direction) {
-    if (!mobileControlState.isActive || !mobileControlState.activeInput) return;
     
     const input = mobileControlState.activeInput;
     const fieldInfo = mobileControlState.fieldInfo;
-    const currentValue = parseInt(input.value) || fieldInfo.min;
+    const currentValue = parseInt(input.value) || 0;
+    const step = fieldInfo.step || 1;
+    const newValue = Math.max(fieldInfo.min, Math.min(fieldInfo.max, currentValue + (direction * step)));
     
-    let newValue;
-    
-    if (fieldInfo.type === 'ev') {
-        // 努力値の場合は特殊な調整
-        newValue = adjustEVValue(input, currentValue, direction);
-    } else {
-        // その他は通常の調整
-        newValue = currentValue + (direction * fieldInfo.step);
-        newValue = Math.max(fieldInfo.min, Math.min(fieldInfo.max, newValue));
+    if (newValue !== currentValue) {
+        // 値を更新
+        if (input.updateValueSilently) {
+            input.updateValueSilently(newValue);
+        } else {
+            input.value = newValue;
+        }
+        
+        // ★重要：正しいパラメータでhandleRealStatChangeを呼び出す
+        if (fieldInfo.type === 'real') {
+            const config = {
+                id: input.id,
+                side: fieldInfo.side === '攻撃側' ? 'attacker' : 'defender',
+                stat: fieldInfo.stat.toLowerCase(),
+                type: 'detail' // 詳細設定として扱う
+            };
+            
+            console.log(`[DEBUG] Calling handleRealStatChange with config:`, config);
+            handleRealStatChange(config, newValue, direction);
+        } else if (fieldInfo.type === 'iv') {
+            // 個体値の処理
+            const side = fieldInfo.side === '攻撃側' ? 'attacker' : 'defender';
+            const stat = fieldInfo.stat.toLowerCase();
+            updateIVValue(side, stat, newValue);
+        } else if (fieldInfo.type === 'ev') {
+            // 努力値の処理
+            const side = fieldInfo.side === '攻撃側' ? 'attacker' : 'defender';
+            const stat = fieldInfo.stat.toLowerCase();
+            updateEVValue(side, stat, newValue);
+        }
+        
+        // 表示を更新
+        updateMobileControlBar();
+        
+        // change イベントを発火
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        input.dispatchEvent(new Event('change', { bubbles: true }));
     }
-    
-    // 実数値入力欄の場合は既存のスピンボタン機能を再現
-    if (fieldInfo.type === 'real') {
-        handleRealStatChangeFromMobile(input, newValue, direction);
-    } else {
-        // 個体値・努力値の場合は直接設定
-        setValueAndTriggerEvents(input, newValue);
-    }
-    
-    // コントロールバーを更新
-    updateMobileControlValue();
 }
 
+// 個体値の更新関数
+function updateIVValue(side, stat, value) {
+    const pokemon = side === 'attacker' ? attackerPokemon : defenderPokemon;
+    pokemon.ivValues[stat] = value;
+    
+    // 対応するメイン画面の個体値も更新
+    const mainIvInput = document.getElementById(`${side}Iv${stat.toUpperCase()}`);
+    if (mainIvInput) {
+        mainIvInput.value = value;
+    }
+    
+    updateStats(side);
+}
+
+// 努力値の更新関数
+function updateEVValue(side, stat, value) {
+    const pokemon = side === 'attacker' ? attackerPokemon : defenderPokemon;
+    pokemon.evValues[stat] = value;
+    
+    // 対応するメイン画面の努力値も更新
+    const mainEvInput = document.getElementById(`${side}Ev${stat.toUpperCase()}`);
+    if (mainEvInput) {
+        mainEvInput.value = value;
+    }
+    
+    updateStats(side);
+}
 /**
  * スライダーから値を更新
  */
@@ -10663,90 +11780,88 @@ function updateMobileControlValue() {
 }
 
 /**
- * 実数値変更の統一処理（修正版）
- */
-function handleRealStatChange(config, targetValue, direction) {
-    const pokemon = config.side === 'attacker' ? attackerPokemon : defenderPokemon;
-    const currentRealStat = calculateCurrentStat(pokemon, config.stat);
-    
-    // 基本的な制限チェック
-    if (targetValue === currentRealStat) return;
-    
-    // 個体値1→0の特別処理
-    if (handleSpecialIV1to0CaseFixed(pokemon, config, targetValue, direction)) {
-        return;
-    }
-    
-    // 個体値優先の最適化処理
-    const result = findOptimalStatsIVFirstFixed(pokemon, config.stat, targetValue, direction);
-    if (result) {
-        applyStatResultFixed(pokemon, config, result);
-    }
-
-    // HP実数値が変更された場合は現在HPも更新
-    if (config.side === 'defender' && config.stat === 'hp') {
-        setTimeout(() => {
-            updateCurrentHPFromRealHP();
-        }, 100);
-    }
-}
-
-/**
  * 実数値変更時の処理（スピンボタン機能の再現）
  */
 function handleRealStatChangeFromMobile(input, targetValue, direction) {
     const inputId = input.id;
     let side, stat;
-    
+   
     // サイドとステータスを判定
     if (inputId.includes('attacker')) {
         side = 'attacker';
     } else if (inputId.includes('defender')) {
         side = 'defender';
     }
-    
+   
+    // ★修正：ステータス判定を末尾文字で行うように変更
     if (inputId.includes('HP') || inputId.includes('Hp')) {
         stat = 'hp';
-    } else if (inputId.includes('A')) {
-        stat = 'a';
-    } else if (inputId.includes('B')) {
-        stat = 'b';
-    } else if (inputId.includes('C')) {
-        stat = 'c';
-    } else if (inputId.includes('D')) {
-        stat = 'd';
-    } else if (inputId.includes('S')) {
-        stat = 's';
+    } else {
+        // 末尾の1文字でステータスを判定（より確実）
+        const lastChar = inputId.slice(-1);
+        switch (lastChar) {
+            case 'A':
+                stat = 'a';
+                break;
+            case 'B':
+                stat = 'b';
+                break;
+            case 'C':
+                stat = 'c';
+                break;
+            case 'D':
+                stat = 'd';
+                break;
+            case 'S':
+                stat = 's';
+                break;
+            default:
+                // フォールバック：元の方法だが順序を修正
+                if (inputId.includes('RealS') || inputId.endsWith('S')) {
+                    stat = 's';
+                } else if (inputId.includes('RealD') || inputId.endsWith('D')) {
+                    stat = 'd';
+                } else if (inputId.includes('RealC') || inputId.endsWith('C')) {
+                    stat = 'c';
+                } else if (inputId.includes('RealB') || inputId.endsWith('B')) {
+                    stat = 'b';
+                } else if (inputId.includes('RealA') || inputId.endsWith('A')) {
+                    stat = 'a';
+                }
+                break;
+        }
     }
-    
+   
+    console.log(`[DEBUG] handleRealStatChangeFromMobile: inputId=${inputId}, side=${side}, stat=${stat}`);
+   
     if (!side || !stat) {
         // 現在HPなど特殊な場合は直接設定
         setValueAndTriggerEvents(input, targetValue);
         return;
     }
-    
+   
     // 既存のスピンボタン処理を利用
     const pokemon = side === 'attacker' ? attackerPokemon : defenderPokemon;
     const currentRealStat = calculateCurrentStat(pokemon, stat);
     const limits = calculateStatLimits(pokemon.baseStats[stat], pokemon.level, stat === 'hp');
-    
+   
     // 制限チェック
     if (targetValue < limits.min || targetValue > limits.max) {
         setValueAndTriggerEvents(input, Math.max(limits.min, Math.min(limits.max, targetValue)));
         return;
     }
-    
+   
     // 個体値1→0の特殊処理
     if (targetValue < currentRealStat && pokemon.ivValues[stat] === 1 && direction < 0) {
         const statWith0IV = calculateStatWithParams(
-            pokemon.baseStats[stat], 
-            pokemon.level, 
-            0, 
-            pokemon.evValues[stat], 
-            pokemon.natureModifiers[stat], 
+            pokemon.baseStats[stat],
+            pokemon.level,
+            0,
+            pokemon.evValues[stat],
+            pokemon.natureModifiers[stat],
             stat === 'hp'
         );
-        
+       
         if (statWith0IV <= targetValue) {
             pokemon.ivValues[stat] = 0;
             updateIVEVInputs(side, stat, 0, pokemon.evValues[stat]);
@@ -10754,7 +11869,7 @@ function handleRealStatChangeFromMobile(input, targetValue, direction) {
             return;
         }
     }
-    
+   
     // 個体値優先の最適化処理
     const result = findOptimalStatsIVFirst(pokemon, stat, targetValue, direction);
     if (result && isValidResult(result, targetValue, pokemon.baseStats[stat], pokemon.level, stat === 'hp')) {
@@ -10948,18 +12063,60 @@ function setValueAndTriggerEvents(input, value) {
 function setupSpinButtonHandlingFixed(input, config) {
     // キーボード操作（矢印キー）- デスクトップのみ
     input.addEventListener('keydown', function(e) {
-        if (window.innerWidth > 768 && e.key === 'ArrowDown') {
+        if (!isTabletOrMobile() && e.key === 'ArrowDown') {
             setTimeout(() => handleSpinButtonDownFixed(config), 10);
         }
     });
 
     // マウス操作（スピンボタンクリック）- デスクトップのみ
     input.addEventListener('mousedown', function(e) {
-        if (window.innerWidth > 768 && isSpinButtonDownClickFixed(e, input)) {
+        if (!isTabletOrMobile() && isSpinButtonDownClickFixed(e, input)) {
             setTimeout(() => handleSpinButtonDownFixed(config), 10);
         }
     });
 }
+
+// ★修正：実数値入力の変更ハンドラーも判定関数を使用
+function setupRealStatInputFixed({ id, side, stat, type }) {
+    const input = document.getElementById(id);
+    if (!input) return;
+
+    const updateKey = `${side}_${stat}`;
+    let previousValue = parseInt(input.value) || 0;
+
+    const mobileChangeHandler = function(e) {
+        if (mobileControlState.isActive && mobileControlState.activeInput === this) {
+            return;
+        }
+        
+        // ★修正：判定関数を使用
+        if (!isTabletOrMobile()) {
+            const currentValue = parseInt(e.target.value) || 0;
+            if (currentValue !== previousValue) {
+                if (realStatManager && realStatManager.isUpdating) {
+                    realStatManager.isUpdating.add(updateKey);
+                }
+                handleRealStatChange({ id, side, stat, type }, currentValue, 0);
+                if (realStatManager && realStatManager.isUpdating) {
+                    realStatManager.isUpdating.delete(updateKey);
+                }
+                previousValue = currentValue;
+            }
+        }
+    };
+
+    input.addEventListener('change', mobileChangeHandler);
+
+    // ★修正：スピンボタンの特殊処理も保持
+    setupSpinButtonHandlingFixed(input, { id, side, stat, type });
+}
+
+window.addEventListener('resize', function() {
+    // リサイズ時に判定し直して必要に応じてモバイルコントロールを非表示
+    if (!isTabletOrMobile() && mobileControlState.isActive) {
+        deactivateMobileControl();
+    }
+});
 
 /**
  * スピンボタン下向きクリックかどうか判定（修正版）
