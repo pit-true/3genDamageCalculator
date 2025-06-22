@@ -212,13 +212,25 @@
             </div>
             <!-- きしかいせい・じたばた用HP入力 -->
             <div class="pinchUpContainer" style="display: none;">
-              <label>現在HP: <input type="number" id="pinchUp_currentHP" min="1" value="1"></label>
-              <label>最大HP: <input type="number" id="pinchUp_maxHP" min="1" value="100"></label>
+              <div class="hp-input-group">
+                <label for="pinchUp_currentHP">現在HP:</label>
+                <input type="number" id="pinchUp_currentHP" min="1" value="1">
+              </div>
+              <div class="hp-input-group">
+                <label for="pinchUp_maxHP">最大HP:</label>
+                <input type="number" id="pinchUp_maxHP" min="1" value="100">
+              </div>
             </div>
             <!-- しおふき・ふんか用HP入力 -->
             <div class="pinchDownContainer" style="display: none;">
-              <label>現在HP: <input type="number" id="pinchDown_currentHP" min="1" value="100"></label>
-              <label>最大HP: <input type="number" id="pinchDown_maxHP" min="1" value="100"></label>
+              <div class="hp-input-group">
+                <label for="pinchDown_currentHP">現在HP:</label>
+                <input type="number" id="pinchDown_currentHP" min="1" value="1">
+              </div>
+              <div class="hp-input-group">
+                <label for="pinchDown_maxHP">最大HP:</label>
+                <input type="number" id="pinchDown_maxHP" min="1" value="100">
+              </div>
             </div>
             <!-- 攻撃側の特性チェックボックス -->
             <div class="attackerAbilityContainer ability-container" style="display: none;">
