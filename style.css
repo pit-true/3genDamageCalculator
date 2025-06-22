@@ -341,6 +341,39 @@ input[type="number"]::-webkit-inner-spin-button {
     flex-shrink: 0;
 }
 
+.pinchUpContainer, .pinchDownContainer {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin: 10px 0;
+    padding: 8px;
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+}
+
+.hp-input-group {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.hp-input-group label {
+    font-size: 13px;
+    font-weight: bold;
+    color: #495057;
+    white-space: nowrap;
+}
+
+.hp-input-group input[type="number"] {
+    width: 60px;
+    padding: 4px 6px;
+    border: 1px solid #ced4da;
+    border-radius: 3px;
+    font-size: 13px;
+    text-align: center;
+}
+
 /* ========================
    7. みがわり仮定チェックボックス
    ======================== */
@@ -2079,5 +2112,269 @@ body.mobile-control-active {
         width: 42px;
         height: 42px;
         font-size: 18px;
+    }
+}
+
+/* iPad横幅1194px対応の修正CSS */
+
+/* 1. stat-rowの崩れを修正 */
+@media (min-width: 1100px) and (max-width: 1199px) {
+    .stat-row {
+        display: flex;
+        gap: 1px;
+        align-items: center;
+        margin-left: -18px;
+        margin-bottom: 8px;
+    }
+    
+    .stat-row .stat-label {
+        min-width: 12px;
+        font-size: 10px;
+        margin-left: 0px;
+        margin-right: -6px;
+    }
+    
+    .stat-row .stat-input {
+        width: 50px;
+        min-height: 30px;
+        font-size: 14px;
+        padding: 3px;
+    }
+    
+    .stat-row .iv-input {
+        width: 40px;
+        min-height: 30px;
+        font-size: 12px;
+        padding: 2px;
+    }
+    
+    .stat-row .ev-input {
+        width: 45px;
+        min-height: 30px;
+        font-size: 12px;
+        padding: 2px;
+    }
+    
+    .stat-row .iv-quick-btn,
+    .stat-row .ev-quick-btn {
+        min-width: 30px !important;
+        max-width: 30px !important;
+        height: 30px;
+        font-size: 12px;
+        padding: 0;
+    }
+    
+    .stat-row .nature-checkbox-container {
+        gap: 1px;
+    }
+    
+    .stat-row .nature-checkbox-container span {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .stat-row .nature-checkbox-container input[type="checkbox"] {
+        width: 12px;
+        height: 12px;
+    }
+
+    .current-hp-label {
+        margin: 0;
+    }
+
+    input[type="number"] {
+        min-width: 45px;
+        min-height: 16px;
+    }
+}
+
+/* 2. スライダー表示の調整 */
+@media (min-width: 1100px) and (max-width: 1199px) {
+    /* スピンボタンを無効化してスライダーを表示 */
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+        display: none;
+    }
+    /* モバイルコントロール機能を有効化 */
+    .mobile-control-bar {
+        display: block;
+    }
+    
+    /* タッチ対応の改善 */
+    .stat-input,
+    .iv-input,
+    .ev-input {
+        -webkit-user-select: none;
+        user-select: none;
+        cursor: pointer;
+    }
+    
+    /* スライダースタイルを適用 */
+    .mobile-slider {
+        width: 100%;
+        height: 5px;
+        -webkit-appearance: none;
+        appearance: none;
+        background: #dcdcdc;
+        border-radius: 10px;
+        outline: none;
+        transition: background 0.3s ease;
+        -webkit-tap-highlight-color: transparent;
+        pointer-events: auto;
+    }
+    
+    .mobile-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        cursor: pointer;
+        border: 3px solid white;
+        box-shadow: 
+            0 4px 12px rgba(0, 123, 255, 0.4),
+            0 2px 4px rgba(0, 0, 0, 0.2),
+            inset 0 1px 3px rgba(255, 255, 255, 0.3);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+}
+
+/* 3. 詳細ステータス行の調整 */
+@media (min-width: 1100px) and (max-width: 1199px) {
+    .detail-stat-row {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        margin-bottom: 6px;
+        padding-bottom: 2px;
+        margin-left: -7px;
+    }
+    
+    .detail-stat-row .stat-label {
+        min-width: 18px;
+        font-size: 11px;
+        flex-shrink: 0;
+    }
+    
+    .detail-stat-row .stat-input {
+        min-width: 45px;
+        max-width: 45px;
+        font-size: 12px;
+        flex-shrink: 0;
+    }
+    
+    .detail-stat-row .iv-input,
+    .detail-stat-row .ev-input {
+        width: 35px;
+        height: 13px;
+        font-size: 12px;
+        flex-shrink: 0;
+    }
+    
+    .detail-stat-row .iv-quick-btn,
+    .detail-stat-row .ev-quick-btn {
+        min-width: 35px !important;
+        max-width: 35px !important;
+        height: 28px;
+        font-size: 12px;
+        flex-shrink: 0;
+    }
+    
+    .detail-stat-row .nature-checkbox-container {
+        flex-shrink: 0;
+        gap: 2px;
+    }
+    
+    .detail-stat-row .nature-checkbox-container span {
+        width: 25px;
+        height: 25px;
+    }
+}
+
+/* 4. コンテナの幅調整 */
+@media (min-width: 1100px) and (max-width: 1199px) {
+    .pokemon-container {
+        max-width: 580px;
+        padding: 10px;
+    }
+    
+    .stats-container {
+        max-width: 100%;
+        overflow-x: auto;
+    }
+    
+    .detail-stats {
+        min-width: 550px;
+    }
+}
+
+/* 5. レスポンシブ判定の調整 */
+@media (min-width: 1100px) and (max-width: 1199px) {
+    /* JavaScriptでの判定用：この画面サイズでもモバイル機能を有効化 */
+    body::before {
+        content: "tablet-mode";
+        display: none;
+    }
+
+    .mobile-control-bar {
+        /* 既存の設定を上書きして正しい位置に表示 */
+        position: fixed !important;
+        left: 20px !important;
+        right: 20px !important;
+        bottom: 30px !important; /* 画面下から30px上に表示 */
+        height: 90px !important;
+        z-index: 1000 !important;
+        display: none !important; /* 初期状態は非表示 */
+        transform: translateY(0) !important; /* 変形なし */
+    }
+    
+    /* iPad 1194px専用：表示状態 */
+    .mobile-control-bar.show {
+        display: flex !important;
+        opacity: 1 !important;
+    }
+    
+    /* iPad 1194px専用：コンテンツ調整 */
+    .mobile-control-content {
+        max-width: 600px !important;
+        margin: 0 auto !important;
+        padding: 15px 20px !important;
+        gap: 15px !important;
+    }
+    
+    /* iPad 1194px専用：ボタンサイズ */
+    .mobile-minus-btn,
+    .mobile-plus-btn {
+        width: 55px !important;
+        height: 55px !important;
+        font-size: 24px !important;
+    }
+    
+    /* iPad 1194px専用：情報表示エリア */
+    .mobile-control-info {
+        min-width: 100px !important;
+        font-size: 14px !important;
+    }
+    
+    .mobile-control-info .field-name {
+        font-size: 15px !important;
+    }
+    
+    .mobile-control-info .current-value {
+        font-size: 18px !important;
+    }
+    
+    /* iPad 1194px専用：スライダー調整 */
+    .mobile-slider {
+        width: 100% !important;
+        height: 6px !important;
+    }
+    
+    .mobile-slider::-webkit-slider-thumb {
+        width: 30px !important;
+        height: 30px !important;
     }
 }
