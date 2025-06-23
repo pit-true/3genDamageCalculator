@@ -8865,11 +8865,29 @@ function logOranBerryKOCalculationGeneric(defenderHP, moveDataList, basicKOResul
             console.log(`- 開始HP: ${maxHP}`);
             console.log(`- 通常攻撃後HP範囲: ${maxHP - maxDamage}~${maxHP - minDamage}`);
             console.log(`- 急所攻撃後HP範囲: ${maxHP - Math.floor(maxCritDamage)}~${maxHP - Math.floor(minCritDamage)}`);
-            
-            if (maxHP - Math.floor(maxCritDamage) <= oranThreshold) {
+
+            // ★修正：通常攻撃と急所攻撃の両方を正しく判定
+            const normalMinHP = maxHP - maxDamage;  // 通常攻撃最大ダメージ後のHP（最小HP）
+            const normalMaxHP = maxHP - minDamage;  // 通常攻撃最小ダメージ後のHP（最大HP）
+            const critMinHP = maxHP - Math.floor(maxCritDamage);  // 急所最大ダメージ後のHP
+            const critMaxHP = maxHP - Math.floor(minCritDamage);  // 急所最小ダメージ後のHP
+
+            const normalCanActivate = normalMinHP > 0 && normalMinHP <= oranThreshold;  // 通常攻撃でもオボン発動可能
+            const normalAllActivate = normalMaxHP <= oranThreshold;  // 通常攻撃で必ず発動
+            const critCanActivate = critMinHP > 0 && critMinHP <= oranThreshold;      // 急所でオボン発動可能
+            const critAllActivate = critMaxHP <= oranThreshold;      // 急所で必ず発動
+
+            // ログ表示を正確に分類
+            if (normalAllActivate && critAllActivate) {
+                console.log(`- オボン発動可能性: 確実（全パターンでHP ≤ ${oranThreshold}）`);
+            } else if (normalCanActivate && critCanActivate) {
+                console.log(`- オボン発動可能性: 通常・急所両方（一部パターンでHP ≤ ${oranThreshold}）`);
+            } else if (normalCanActivate && !critCanActivate) {
+                console.log(`- オボン発動可能性: 通常攻撃のみ（一部パターンでHP ≤ ${oranThreshold}）`);
+            } else if (!normalCanActivate && critCanActivate) {
                 console.log(`- オボン発動可能性: 急所攻撃のみ（HP ≤ ${oranThreshold}となる場合）`);
             } else {
-                console.log(`- オボン発動可能性: なし（急所でもHP > ${oranThreshold}）`);
+                console.log(`- オボン発動可能性: なし（全パターンでHP > ${oranThreshold}）`);
             }
         }
         
