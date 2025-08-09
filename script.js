@@ -5101,5 +5101,3 @@ function toggleDetail(side) {
     }
 }
 console.log("✅ script.js実行完了 - performDamageCalculationEnhanced:", typeof performDamageCalculationEnhanced);
-}
-}
