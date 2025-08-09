@@ -3059,6 +3059,10 @@ function setupStepInputs() {
         input.step = 4;
         input.addEventListener('input', handleEVInput);
         
+        // 初期値をpreviousValueとして設定
+        const initialValue = parseInt(input.value) || 0;
+        input.dataset.previousValue = initialValue;
+        
         // 詳細設定の努力値入力欄の場合、change イベントも追加
         if (input.id.includes('Detail')) {
             input.addEventListener('change', function() {
@@ -3107,6 +3111,7 @@ function syncMainIV(side, stat) {
 function handleEVInput(event) {
     const input = event.target;
     let value = parseInt(input.value) || 0;
+    const previousValue = parseInt(input.dataset.previousValue) || parseInt(input.getAttribute('data-previous-value')) || 0;
     
     // サイドとステータスを判定して個体値対応の調整
     const inputId = input.id;
@@ -3123,40 +3128,24 @@ function handleEVInput(event) {
         const pokemon = side === 'attacker' ? attackerPokemon : defenderPokemon;
         const currentIV = pokemon.ivValues[stat];
         
-        if (currentIV === 31) {
-            // 個体値31：8n-4パターンに調整
-            if (value === 0) {
-                // 0はそのまま
-            } else if (value <= 4) {
-                value = 4;
-            } else {
-                // 最も近い8n-4値に調整
-                const base = Math.round((value + 4) / 8);
-                value = Math.max(4, Math.min(252, base * 8 - 4));
-            }
-            value = Math.max(0, Math.min(252, value));
-        } else if (currentIV === 30) {
-            // 個体値30：8nパターンに調整
-            if (value === 0) {
-                // 0はそのまま
-            } else if (value <= 8) {
-                value = 8;
-            } else {
-                // 最も近い8n値に調整
-                const base = Math.round(value / 8);
-                value = Math.max(8, Math.min(248, base * 8));
-            }
-            value = Math.max(0, Math.min(248, value));
-        } else {
-            // その他：4の倍数に調整
-            value = Math.round(value / 4) * 4;
-            value = Math.max(0, Math.min(252, value));
+        // 方向を検出
+        const direction = value > previousValue ? 1 : (value < previousValue ? -1 : 0);
+        
+        // 方向を考慮した専用関数を呼び出し
+        if (direction !== 0) {
+            const adjustedValue = getAdjustedEVValue(currentIV, previousValue, value, direction);
+            value = adjustedValue;
         }
+        
+        value = Math.max(0, Math.min(252, value));
     } else {
         // 判定できない場合は4の倍数に調整
         value = Math.round(value / 4) * 4;
         value = Math.max(0, Math.min(252, value));
     }
+    
+    // 前回の値を保存
+    input.dataset.previousValue = value;
     
     input.value = value;
     
@@ -3179,6 +3168,60 @@ function handleEVInput(event) {
         
         // ステータス更新
         updateStats(side);
+    }
+}
+
+// 方向を考慮したEV値調整関数
+function getAdjustedEVValue(currentIV, previousValue, targetValue, direction) {
+    if (currentIV === 31) {
+        // 個体値31：8n-4パターンに調整
+        if (targetValue === 0) {
+            return 0;
+        } else if (targetValue <= 4) {
+            return direction > 0 ? 4 : 0;
+        } else {
+            if (direction > 0) {
+                // 増加方向：上の8n-4値
+                const base = Math.ceil((targetValue + 4) / 8);
+                return Math.max(4, Math.min(252, base * 8 - 4));
+            } else {
+                // 減少方向：下の8n-4値
+                const base = Math.floor((targetValue + 4) / 8);
+                let candidate = base * 8 - 4;
+                if (candidate >= targetValue) {
+                    candidate = Math.max(0, (base - 1) * 8 - 4);
+                }
+                return candidate === -4 ? 0 : Math.max(0, Math.min(252, candidate));
+            }
+        }
+    } else if (currentIV === 30) {
+        // 個体値30：8nパターンに調整
+        if (targetValue === 0) {
+            return 0;
+        } else if (targetValue <= 8) {
+            return direction > 0 ? 8 : 0;
+        } else {
+            if (direction > 0) {
+                // 増加方向：上の8n値
+                const base = Math.ceil(targetValue / 8);
+                return Math.max(8, Math.min(248, base * 8));
+            } else {
+                // 減少方向：下の8n値
+                const base = Math.floor(targetValue / 8);
+                let candidate = base * 8;
+                if (candidate >= targetValue) {
+                    candidate = Math.max(0, (base - 1) * 8);
+                }
+                return Math.max(0, Math.min(248, candidate));
+            }
+        }
+    } else {
+        // その他：4の倍数に調整（方向を考慮）
+        if (direction > 0) {
+            return Math.ceil(targetValue / 4) * 4;
+        } else {
+            return Math.floor(targetValue / 4) * 4;
+        }
     }
 }
 
@@ -4442,62 +4485,11 @@ function calculateOptimalIVEV(targetRealStat, baseStat, level, natureModifier, i
     return null;
   }
   
-  // 特殊ケース1: 性格補正1.0、個体値31、努力値252から実数値を上げる場合
-  if (!isHP && natureModifier === 1.0 && currentIV === 31 && currentEV === 252 && targetRealStat > currentRealStat) {
-    // 性格補正を1.1に変更して、努力値を減らして調整
-    for (let ev = 252; ev >= 0; ev -= 4) {
-      const stat = calculateStat(31, ev, 1.1);
-      if (stat === targetRealStat) {
-        const result = { iv: 31, ev: ev, natureMod: 1.1, changeNature: true };
-        return result;
-      }
-      if (stat < targetRealStat) {
-        // 目標値を超えた場合は一つ前の値を使用
-        if (ev < 252) {
-          return { iv: 31, ev: ev + 4, natureMod: 1.1, changeNature: true };
-        }
-        break;
-      }
-    }
-  }
+  // 特殊ケース1は削除（自動性格補正をしない）
   
-  // 特殊ケース2: 性格補正1.0、個体値0、努力値0から実数値を下げる場合
-  if (!isHP && natureModifier === 1.0 && currentIV === 0 && currentEV === 0 && targetRealStat < currentRealStat) {
-    // 性格補正を0.9に変更して、個体値を調整（努力値は0のまま）
-    for (let iv = 0; iv <= 31; iv++) {
-      const stat = calculateStat(iv, 0, 0.9);
-      if (stat === targetRealStat) {
-        return { iv: iv, ev: 0, natureMod: 0.9, changeNature: true };
-      }
-      if (stat > targetRealStat) {
-        // 目標値を下回った場合は一つ前の値を使用
-        if (iv > 0) {
-          return { iv: iv - 1, ev: 0, natureMod: 0.9, changeNature: true };
-        }
-        break;
-      }
-    }
-  }
+  // 特殊ケース2は削除（自動性格補正をしない）
   
-  // 新しい特殊ケース: 性格補正0.9、個体値31、努力値252から実数値を上げる場合
-  if (!isHP && natureModifier === 0.9 && currentIV === 31 && currentEV === 252 && targetRealStat > currentRealStat) {
-    // 性格補正を1.0に変更して、努力値を減らして調整
-    for (let ev = 252; ev >= 0; ev -= 4) {
-      const stat = calculateStat(31, ev, 1.0);
-      if (stat === targetRealStat) {
-        const result = { iv: 31, ev: ev, natureMod: 1.0, changeNature: true };
-        return result;
-      }
-      if (stat < targetRealStat) {
-        // 目標値を下回った場合は一つ前の値を使用
-        if (ev < 252) {
-          const result = { iv: 31, ev: ev + 4, natureMod: 1.0, changeNature: true };
-          return result;
-        }
-        break;
-      }
-    }
-  }
+  // 新しい特殊ケースも削除（自動性格補正をしない）
   
   // 特殊ケース3: 性格補正0.9で実数値を下げる場合（個体値1→0の処理）
 if (!isHP && natureModifier === 0.9 && targetRealStat < currentRealStat) { 
@@ -4745,6 +4737,28 @@ function calculateStatLimits(baseStat, level, isHP = false) {
     const maxLevel = Math.floor(maxBase * level / 100);
     const maxBeforeNature = maxLevel + 5;
     const maxStat = Math.floor(maxBeforeNature * 110 / 100); // 性格補正1.1
+
+    const result = { min: minStat, max: maxStat };
+    return result;
+  }
+}
+
+// 現在選択されている性格補正に基づいて制限を計算する関数
+function calculateStatLimitsWithNature(baseStat, level, natureMod, isHP = false) {
+  if (isHP) {
+    // HPの場合（性格補正なし）
+    return calculateStatLimits(baseStat, level, true);
+  } else {
+    // HP以外の場合、現在の性格補正でのみ計算
+    const minBase = baseStat * 2 + 0 + 0; // IV0, EV0
+    const minLevel = Math.floor(minBase * level / 100);
+    const minBeforeNature = minLevel + 5;
+    const minStat = Math.floor(minBeforeNature * natureMod);
+    
+    const maxBase = baseStat * 2 + 31 + Math.floor(252 / 4); // IV31, EV252
+    const maxLevel = Math.floor(maxBase * level / 100);
+    const maxBeforeNature = maxLevel + 5;
+    const maxStat = Math.floor(maxBeforeNature * natureMod);
 
     const result = { min: minStat, max: maxStat };
     return result;
@@ -11419,13 +11433,15 @@ function getFieldInfo(input) {
         min = parseInt(input.getAttribute('min')) || 1;
         max = parseInt(input.getAttribute('max')) || 999;
         
-        // min/maxが設定されていない場合、ポケモンデータから計算
+        // min/maxが設定されていない場合、ポケモンデータから計算（性格補正を考慮）
         if ((min === 1 && max === 999) || !min || !max) {
             const pokemon = side === '攻撃側' ? attackerPokemon : defenderPokemon;
             const statKey = stat.toLowerCase();
             
             if (pokemon && pokemon.baseStats && pokemon.baseStats[statKey]) {
-                const limits = calculateStatLimits(pokemon.baseStats[statKey], pokemon.level || 50, statKey === 'h');
+                const isHP = statKey === 'h' || statKey === 'hp';
+                const natureMod = isHP ? 1.0 : (pokemon.natureModifiers[statKey] || 1.0);
+                const limits = calculateStatLimitsWithNature(pokemon.baseStats[statKey], pokemon.level || 50, natureMod, isHP);
                 min = limits.min;
                 max = limits.max;
             }
@@ -11506,7 +11522,13 @@ function adjustMobileValue(direction) {
     const input = mobileControlState.activeInput;
     const fieldInfo = mobileControlState.fieldInfo;
     const currentValue = parseInt(input.value) || 0;
-    const step = fieldInfo.step || 1;
+    
+    // 努力値の場合は4刻みで調整
+    let step = fieldInfo.step || 1;
+    if (fieldInfo.type === 'ev') {
+        step = 4;
+    }
+    
     const newValue = Math.max(fieldInfo.min, Math.min(fieldInfo.max, currentValue + (direction * step)));
     
     if (newValue !== currentValue) {
@@ -11534,10 +11556,10 @@ function adjustMobileValue(direction) {
             const stat = fieldInfo.stat.toLowerCase();
             updateIVValue(side, stat, newValue);
         } else if (fieldInfo.type === 'ev') {
-            // 努力値の処理
+            // 努力値の処理（方向を考慮）
             const side = fieldInfo.side === '攻撃側' ? 'attacker' : 'defender';
             const stat = fieldInfo.stat.toLowerCase();
-            updateEVValue(side, stat, newValue);
+            updateEVValueWithDirection(side, stat, currentValue, newValue, direction);
         }
         
         // 表示を更新
@@ -11576,6 +11598,96 @@ function updateEVValue(side, stat, value) {
     
     updateStats(side);
 }
+
+// 方向を考慮した努力値の更新関数
+function updateEVValueWithDirection(side, stat, currentValue, targetValue, direction) {
+    const pokemon = side === 'attacker' ? attackerPokemon : defenderPokemon;
+    const currentIV = pokemon.ivValues[stat];
+    
+    
+    let adjustedValue = targetValue;
+    
+    if (currentIV === 31) {
+        // 個体値31：8n-4パターンに調整
+        if (targetValue === 0) {
+            adjustedValue = 0;
+        } else if (targetValue <= 4) {
+            adjustedValue = direction > 0 ? 4 : 0;
+        } else {
+            // 方向に応じて調整
+            if (direction > 0) {
+                // プラスボタン：上の8n-4値に調整
+                const base = Math.ceil((targetValue + 4) / 8);
+                adjustedValue = Math.max(4, Math.min(252, base * 8 - 4));
+            } else {
+                // マイナスボタン：下の8n-4値に調整
+                const base = Math.floor((targetValue + 4) / 8);
+                let candidate = base * 8 - 4;
+                if (candidate >= targetValue) {
+                    // 同じかそれより大きい場合は一つ下の8n-4値に
+                    candidate = Math.max(0, (base - 1) * 8 - 4);
+                }
+                adjustedValue = candidate === -4 ? 0 : Math.max(0, Math.min(252, candidate));
+            }
+        }
+    } else if (currentIV === 30) {
+        // 個体値30：8nパターンに調整
+        if (targetValue === 0) {
+            adjustedValue = 0;
+        } else if (targetValue <= 8) {
+            adjustedValue = direction > 0 ? 8 : 0;
+        } else {
+            // 方向に応じて調整
+            if (direction > 0) {
+                // プラスボタン：上の8n値に調整
+                const base = Math.ceil(targetValue / 8);
+                adjustedValue = Math.max(8, Math.min(248, base * 8));
+            } else {
+                // マイナスボタン：下の8n値に調整
+                const base = Math.floor(targetValue / 8);
+                let candidate = base * 8;
+                if (candidate >= targetValue) {
+                    // 同じかそれより大きい場合は一つ下の8n値に
+                    candidate = Math.max(0, (base - 1) * 8);
+                }
+                adjustedValue = Math.max(0, Math.min(248, candidate));
+            }
+        }
+    } else {
+        // その他：4の倍数に調整（方向を考慮）
+        if (direction > 0) {
+            adjustedValue = Math.ceil(targetValue / 4) * 4;
+        } else {
+            adjustedValue = Math.floor(targetValue / 4) * 4;
+        }
+    }
+    
+    adjustedValue = Math.max(0, Math.min(252, adjustedValue));
+    
+    
+    pokemon.evValues[stat] = adjustedValue;
+    
+    // 対応するメイン画面の努力値も更新
+    const mainEvInput = document.getElementById(`${side}Ev${stat.toUpperCase()}`);
+    if (mainEvInput) {
+        mainEvInput.value = adjustedValue;
+    }
+    
+    // モバイルコントロールの入力欄も更新
+    const input = mobileControlState.activeInput;
+    if (input && input.updateValueSilently) {
+        input.updateValueSilently(adjustedValue);
+    } else if (input) {
+        input.value = adjustedValue;
+    }
+    
+    updateStats(side);
+    
+    // モバイルコントロールバーの表示を更新
+    if (mobileControlState.isActive) {
+        updateMobileControlBar();
+    }
+}
 /**
  * スライダーから値を更新
  */
@@ -11590,9 +11702,13 @@ function updateValueFromSlider() {
     // 値が変更された場合のみ処理
     if (newValue === currentValue) return;
     
-    // 努力値の場合は特殊な調整
+    // 努力値の場合は特殊な調整（方向を考慮）
     if (mobileControlState.fieldInfo.type === 'ev') {
-        newValue = adjustEVValueToNearest(input, newValue);
+        const direction = newValue > currentValue ? 1 : -1;
+        const side = mobileControlState.fieldInfo.side === '攻撃側' ? 'attacker' : 'defender';
+        const stat = mobileControlState.fieldInfo.stat.toLowerCase();
+        updateEVValueWithDirection(side, stat, currentValue, newValue, direction);
+        return; // 専用処理なので早期リターン
     }
     
     // 実数値入力欄の場合は既存のスピンボタン機能を再現
@@ -11632,12 +11748,12 @@ function adjustEVValueToNearest(input, targetValue) {
     const currentIV = pokemon.ivValues[stat];
     
     if (currentIV === 31) {
-        // 個体値31：8n-4パターンの最も近い値
+        // 個体値31：8n-4パターンの最も近い値（下方向を優先）
         if (targetValue <= 2) return 0;
-        if (targetValue <= 8) return 4;
+        if (targetValue <= 6) return 4;
         
-        // 8n-4の値を計算
-        const base = Math.round((targetValue + 4) / 8);
+        // 8n-4の値を計算（下方向優先）
+        const base = Math.floor((targetValue + 4) / 8);
         const candidate = Math.max(0, Math.min(252, base * 8 - 4));
         
         // 0との距離も考慮
@@ -11647,10 +11763,10 @@ function adjustEVValueToNearest(input, targetValue) {
         return candidate;
         
     } else if (currentIV === 30) {
-        // 個体値30：8nパターンの最も近い値
+        // 個体値30：8nパターンの最も近い値（下方向を優先）
         if (targetValue <= 4) return 0;
         
-        const base = Math.round(targetValue / 8);
+        const base = Math.floor(targetValue / 8);
         const candidate = Math.max(0, Math.min(248, base * 8));
         
         // 0との距離も考慮
