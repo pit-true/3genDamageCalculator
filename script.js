@@ -1280,7 +1280,7 @@ function selectMoveForTurn(moveName, turn) {
     // 複数ターン技の配列に保存
     multiTurnMoves[turn] = moveData_found;
     
-    console.log(`${turn + 1}ターン目に技を設定: ${moveName} (class: ${moveData_found.class})`);
+    //console.log(`${turn + 1}ターン目に技を設定: ${moveName} (class: ${moveData_found.class})`);
     
     // HP入力欄の表示/非表示を制御
     const pinchUpContainer = document.querySelector('.pinchUpContainer');
@@ -1309,7 +1309,7 @@ function selectMoveForTurn(moveName, turn) {
             break;
             
         default:
-            console.log(`通常技のため特殊HP入力欄は表示しません: ${moveData_found.class}`);
+            //console.log(`通常技のため特殊HP入力欄は表示しません: ${moveData_found.class}`);
             break;
     }
 }
@@ -1326,7 +1326,7 @@ function checkExactMoveMatchForTurn(inputText, turn, inputId) {
     if (!inputText || inputText.trim() === '') {
         multiTurnMoves[turn] = null;
         hideAllMoveSpecialSettings(); // HP入力欄を非表示
-        console.log(`${turn + 1}ターン目の技をクリア`);
+        //console.log(`${turn + 1}ターン目の技をクリア`);
         return;
     }
     
@@ -1339,7 +1339,7 @@ function checkExactMoveMatchForTurn(inputText, turn, inputId) {
         // ★重要：selectMoveForTurnを呼んでHP入力欄を表示
         selectMoveForTurn(exactMatch.name, turn);
     } else {
-        console.log(`${turn + 1}ターン目に一致する技が見つかりません: "${inputText}"`);
+        //console.log(`${turn + 1}ターン目に一致する技が見つかりません: "${inputText}"`);
         multiTurnMoves[turn] = null;
         hideAllMoveSpecialSettings();
     }
@@ -9122,7 +9122,7 @@ function calculateMultiTurnKORateWithItems(defenderHP, turns) {
         } else if (defenderItem.name === 'くろいヘドロ') {
             calculateKORateWithBlackSludge(defenderHP, defenderHP, moveDataList, 0, 1.0, results, hpInfo);
         } else if (isFigyBerry(defenderItem.name)) {
-            calculateKORateWithFigyBerry(defenderHP, defenderHP, moveDataList, 0, 1.0, results, hpInfo);
+            calculateKORateWithFigyBerry(defenderHP, defenderHP, moveDataList, 0, false, 1.0, results, hpInfo);
         } else {
             for (let i = 0; i < turns; i++) {
                 results[i] = basicKOResult.rates[i] || 0;
@@ -9323,7 +9323,7 @@ function calculateMultiTurnKORateWithItems(defenderHP, turns) {
         } else if (defenderItem.name === 'くろいヘドロ') {
             calculateKORateWithBlackSludge(defenderHP, defenderHP, moveDataList, 0, 1.0, results, hpInfo);
         } else if (isFigyBerry(defenderItem.name)) {
-            calculateKORateWithFigyBerry(defenderHP, defenderHP, moveDataList, 0, 1.0, results, hpInfo);
+            calculateKORateWithFigyBerry(defenderHP, defenderHP, moveDataList, 0, false, 1.0, results, hpInfo);
         } else {
             for (let i = 0; i < turns; i++) {
                 results[i] = basicKOResult.rates[i] || 0;
@@ -10922,7 +10922,7 @@ function showMoveListForTurn(dropdown, input, turn) {
     
     displayItems.forEach(move => {
         const item = createDropdownItem(move.name, () => {
-            console.log(`ドロップダウンから${turn + 1}ターン目技選択: ${move.name}`);
+            //console.log(`ドロップダウンから${turn + 1}ターン目技選択: ${move.name}`);
             input.value = move.name;
             dropdown.style.display = 'none';
             
