@@ -144,13 +144,7 @@
   },
   {
     "name": "こころのしずく", 
-    "c": 1.5, 
-    "timing": "attackMod",
-    "description": "特殊攻撃と特殊防御が1.5倍になる（ラティオス/ラティアスが持った場合）",
-    "romaji":"kokoronosizuku"
-  },
-  {
-    "name": "こころのしずく", 
+    "c": 1.5,
     "d": 1.5,
     "timing": "attackMod",
     "description": "特殊攻撃と特殊防御が1.5倍になる（ラティオス/ラティアスが持った場合）",
