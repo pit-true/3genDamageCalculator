@@ -79,6 +79,112 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ========================
+// クリップボードコピー機能
+// ========================
+
+// 持ち物がダメージ計算に影響するかを判定
+function isItemEffectiveForMove(item, move) {
+    if (!item || !move) return false;
+    
+    const isPhysical = move.category === 'Physical';
+    const isSpecial = move.category === 'Special';
+    const pokemonName = attackerPokemon.name;
+    
+    // ポケモン専用アイテムの専用チェック
+    const exclusiveItems = {
+        'でんきだま': ['ピカチュウ'],
+        'こころのしずく': ['ラティオス', 'ラティアス'],
+        'しんかいのウロコ': ['パールル'],
+        'しんかいのキバ': ['パールル'],
+        'メタルパウダー': ['メタモン'],
+        'ふといホネ': ['カラカラ', 'ガラガラ']
+    };
+    
+    // 専用アイテムの場合、該当ポケモン以外は効果なし
+    if (exclusiveItems[item.name]) {
+        if (!exclusiveItems[item.name].includes(pokemonName)) {
+            return false;
+        }
+    }
+    
+    // 攻撃力補正系アイテム
+    if (item.timing === "attackMod") {
+        if (isPhysical && item.a && item.a !== 1.0) return true;
+        if (isSpecial && item.c && item.c !== 1.0) return true;
+    }
+    
+    // タイプ一致補正系アイテム
+    if (item.timing === "typeMod" && item.type === move.type) {
+        return true;
+    }
+    
+    // 威力補正系アイテム（特定技への補正）
+    if (item.timing === "powerMod") {
+        return true;
+    }
+    
+    return false;
+}
+
+// ========================
+
+function copyResult(button) {
+    // 結果テキストを親要素から抽出
+    const resultDiv = button.closest('.damage-result');
+    
+    // 全テキストを取得して行ごとに分割
+    const allText = resultDiv.textContent;
+    const allLines = allText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    
+    const lines = [];
+    
+    // 必要な行だけを抽出
+    let moveAdded = false;
+    for (let line of allLines) {
+        if (line.includes('攻撃側:') && !line.includes('ダメージ計算結果') && !line.includes('コピー')) {
+            lines.push(line);
+        } else if (line.includes('防御側:') && !line.includes('ダメージ計算結果') && !line.includes('コピー')) {
+            lines.push(line);
+        } else if (line.includes('使用技:')) {
+            lines.push(line);
+            moveAdded = true;
+            
+            // 攻撃側の持ち物がダメージに影響する場合は追加
+            if (attackerPokemon.item && currentMove && isItemEffectiveForMove(attackerPokemon.item, currentMove)) {
+                lines.push(`持ち物: ${attackerPokemon.item.name}`);
+            }
+        } else if (line.includes('ランク補正:')) {
+            lines.push(line);
+        } else if (line.includes('ダメージ範囲:')) {
+            lines.push(line);
+        } else if (line.includes('割合:') && line.includes('%')) {
+            lines.push(line);
+        } else if ((line.includes('確定') && line.includes('発')) || 
+                   (line.includes('乱数') && line.includes('発') && line.includes('%'))) {
+            lines.push(line);
+            break; // 乱数情報は最初の1つだけ
+        }
+    }
+    
+    const copyText = lines.join('\n');
+    
+    navigator.clipboard.writeText(copyText).then(function() {
+        // 成功時の表示
+        const originalText = button.textContent;
+        button.textContent = 'コピー完了';
+        button.style.backgroundColor = '#28a745';
+        
+        setTimeout(() => {
+            button.textContent = originalText;
+            button.style.backgroundColor = '#007bff';
+        }, 1500);
+    }).catch(function(err) {
+        console.error('コピーに失敗しました: ', err);
+        alert('コピーに失敗しました');
+    });
+}
+
+// ========================
 // ページ再読み込み時の入力値復元機能
 // ========================
 
@@ -1059,7 +1165,7 @@ function showPokemonList(dropdown, input, side) {
     dropdown.style.width = rect.width + 'px';
     
     // 最初の30件を表示
-    const displayItems = allPokemonData.slice(0, 30);
+    const displayItems = allPokemonData;
     
     displayItems.forEach(pokemon => {
         const item = createDropdownItem(pokemon.name, () => {
@@ -1114,7 +1220,7 @@ function filterPokemonList(searchText, dropdown, input, side) {
                romaji.startsWith(search);
     });
     
-    const displayItems = filtered.slice(0, 30);
+    const displayItems = filtered;
     
     displayItems.forEach(pokemon => {
         const item = createDropdownItem(pokemon.name, () => {
@@ -1346,6 +1452,32 @@ function checkExactMoveMatchForTurn(inputText, turn, inputId) {
 }
 
 
+// 現在選択されているポケモンが覚える技を取得
+function getAvailableMovesForCurrentPokemon() {
+    // 攻撃側のポケモンが選択されているかを確認
+    if (!attackerPokemon.name) {
+        // ポケモンが選択されていない場合は全ての技を返す
+        return moveData;
+    }
+    
+    // all_pokemon_dataから該当するポケモンを検索
+    const pokemonInfo = allPokemonData.find(p => p.name === attackerPokemon.name);
+    if (!pokemonInfo || !pokemonInfo.moves) {
+        // ポケモンの情報が見つからない場合は全ての技を返す
+        return moveData;
+    }
+    
+    // そのポケモンが覚える技名のリストを取得
+    const pokemonMoveNames = pokemonInfo.moves;
+    
+    // moveDataから該当する技のデータのみを抽出
+    const availableMoves = pokemonMoveNames.map(moveName => {
+        return moveData.find(move => move.name === moveName);
+    }).filter(move => move !== undefined); // 見つからない技は除外
+    
+    return availableMoves;
+}
+
 // 技リスト表示
 function showMoveList(dropdown, input) {
     dropdown.innerHTML = '';
@@ -1355,7 +1487,9 @@ function showMoveList(dropdown, input) {
     dropdown.style.left = (rect.left + window.scrollX) + 'px';
     dropdown.style.width = rect.width + 'px';
     
-    const displayItems = moveData.slice(0, 30);
+    // 現在選択されているポケモンの技のみを取得
+    const availableMoves = getAvailableMovesForCurrentPokemon();
+    const displayItems = availableMoves; // 制限なしで全て表示
     
     displayItems.forEach(move => {
         const item = createDropdownItem(move.name, () => {
@@ -1397,7 +1531,9 @@ function filterMoveList(searchText, dropdown, input) {
     const hiraganaSearch = toHiragana(search);
     const katakanaSearch = toKatakana(search);
     
-    const filtered = moveData.filter(move => {
+    // 現在選択されているポケモンの技のみを取得してフィルタリング
+    const availableMoves = getAvailableMovesForCurrentPokemon();
+    const filtered = availableMoves.filter(move => {
         const name = move.name ? move.name.toLowerCase() : '';
         const hiragana = move.hiragana ? move.hiragana.toLowerCase() : '';
         const romaji = move.romaji ? move.romaji.toLowerCase() : '';
@@ -1411,7 +1547,7 @@ function filterMoveList(searchText, dropdown, input) {
                romaji.includes(search);
     });
     
-    const displayItems = filtered.slice(0, 30);
+    const displayItems = filtered;
     
     displayItems.forEach(move => {
         const item = createDropdownItem(move.name, () => {
@@ -2365,6 +2501,10 @@ function selectMove(moveName) {
             // リストは表示しない（固定2回なので）
             break;
             
+        case 'three_hit':
+            // リストは表示しない（固定3回なので）
+            break;
+            
         case 'multi_hit':
             if (multiHitContainer) {
                 multiHitContainer.style.display = 'block';
@@ -2430,6 +2570,136 @@ function getMultiHitDisplayInfo(minDamage, maxDamage, totalHP, currentMove) {
         displayMinDamage,
         displayMaxDamage,
         moveDisplayText
+    };
+}
+
+// 3回攻撃技の乱数計算
+function calculateThreeHitRandText(minDamage, maxDamage, targetHP, isSubstitute) {
+    console.log(`3回攻撃技乱数計算開始: ${currentMove.name}`);
+    console.log(`ダメージ ${minDamage}~${maxDamage}, 対象HP ${targetHP}`);
+    
+    // 3回攻撃技の総ダメージ（既に3倍されている前提）
+    const totalMinDamage = minDamage;
+    const totalMaxDamage = maxDamage;
+    
+    console.log(`3回攻撃技の総ダメージ: ${totalMinDamage}~${totalMaxDamage}`);
+    
+    // 定数ダメージを加算
+    const constantDamage = calculateTotalConstantDamage(defenderPokemon.baseStats?.hp || targetHP, defenderPokemon.types, 1);
+    const effectiveMinDamage = totalMinDamage + constantDamage;
+    const effectiveMaxDamage = totalMaxDamage + constantDamage;
+    
+    console.log(`定数ダメージ込み: ${effectiveMinDamage}~${effectiveMaxDamage}`);
+    
+    // 確定1発判定
+    if (effectiveMinDamage >= targetHP) {
+        return {
+            hits: 1,
+            percent: null,
+            randLevel: "確定",
+            effectiveMinDamage: effectiveMinDamage,
+            effectiveMaxDamage: effectiveMaxDamage,
+            isSubstitute: isSubstitute,
+            targetHP: targetHP,
+            isThreeHit: true,
+            hitCount: 3
+        };
+    }
+    
+    // 乱数1発判定
+    if (effectiveMaxDamage >= targetHP) {
+        // 成功する乱数パターンを計算
+        const damageRange = effectiveMaxDamage - effectiveMinDamage + 1;
+        const successfulRange = effectiveMaxDamage - Math.max(effectiveMinDamage, targetHP) + 1;
+        const successRate = (successfulRange / damageRange) * 100;
+        
+        let randLevel = "";
+        if (successRate >= 93.75) {
+            randLevel = "超高乱数";
+        } else if (successRate >= 75.0) {
+            randLevel = "高乱数";
+        } else if (successRate >= 62.5) {
+            randLevel = "中高乱数";
+        } else if (successRate >= 50.0) {
+            randLevel = "中乱数";
+        } else if (successRate >= 37.5) {
+            randLevel = "中低乱数";
+        } else if (successRate >= 25.0) {
+            randLevel = "低乱数";
+        } else if (successRate >= 6.25) {
+            randLevel = "超低乱数";
+        } else {
+            randLevel = "最低乱数";
+        }
+        
+        return {
+            hits: 1,
+            percent: parseFloat(successRate.toFixed(1)),
+            randLevel: randLevel,
+            effectiveMinDamage: effectiveMinDamage * 3,
+            effectiveMaxDamage: effectiveMaxDamage * 3,
+            isSubstitute: isSubstitute,
+            targetHP: targetHP,
+            isThreeHit: true,
+            hitCount: 3
+        };
+    }
+    
+    // 2発で倒せるかチェック
+    if (effectiveMaxDamage * 2 >= targetHP) {
+        // 2発目で倒す確率を計算
+        const twoHitMinTotal = effectiveMinDamage * 2;
+        const twoHitMaxTotal = effectiveMaxDamage * 2;
+        const damageRange = twoHitMaxTotal - twoHitMinTotal + 1;
+        const successfulRange = twoHitMaxTotal - Math.max(twoHitMinTotal, targetHP) + 1;
+        const successRate = (successfulRange / damageRange) * 100;
+        
+        let randLevel = "";
+        if (successRate >= 100.0) {
+            randLevel = "確定";
+        } else if (successRate >= 93.75) {
+            randLevel = "超高乱数";
+        } else if (successRate >= 75.0) {
+            randLevel = "高乱数";
+        } else if (successRate >= 62.5) {
+            randLevel = "中高乱数";
+        } else if (successRate >= 50.0) {
+            randLevel = "中乱数";
+        } else if (successRate >= 37.5) {
+            randLevel = "中低乱数";
+        } else if (successRate >= 25.0) {
+            randLevel = "低乱数";
+        } else if (successRate >= 6.25) {
+            randLevel = "超低乱数";
+        } else {
+            randLevel = "最低乱数";
+        }
+        
+        return {
+            hits: 2,
+            percent: successRate >= 100.0 ? null : parseFloat(successRate.toFixed(1)),
+            randLevel: randLevel,
+            effectiveMinDamage: twoHitMinTotal,
+            effectiveMaxDamage: twoHitMaxTotal,
+            isSubstitute: isSubstitute,
+            targetHP: targetHP,
+            isThreeHit: true,
+            hitCount: 3
+        };
+    }
+    
+    // 3発以上必要な場合
+    const hitsNeeded = Math.ceil(targetHP / effectiveMaxDamage);
+    return {
+        hits: hitsNeeded,
+        percent: null,
+        randLevel: hitsNeeded + "発",
+        effectiveMinDamage: effectiveMinDamage,
+        effectiveMaxDamage: effectiveMaxDamage,
+        isSubstitute: isSubstitute,
+        targetHP: targetHP,
+        isThreeHit: true,
+        hitCount: 3
     };
 }
 
@@ -4917,8 +5187,36 @@ function calculatePower(move) {
     else if (move.class === 'awaken_power'){
         return calculateHiddenPowerBP();
     }
+    // けたぐり・くさむすび・じゅうりょくは
+    else if (move.class === 'weight_based') {
+        const defenderWeight = getDefenderWeight();
+        
+        if (defenderWeight < 10.0) return 20;
+        else if (defenderWeight < 25.0) return 40;
+        else if (defenderWeight < 50.0) return 60;
+        else if (defenderWeight < 100.0) return 80;
+        else if (defenderWeight < 200.0) return 100;
+        else return 120;
+    }
 
     return move.power || 0;
+}
+
+// 防御側ポケモンの重さを取得する関数
+function getDefenderWeight() {
+    const defenderName = defenderPokemon.name;
+    if (!defenderName) {
+        console.warn('防御側ポケモンが選択されていません');
+        return 50.0; // デフォルト値
+    }
+    
+    const pokemonData = allPokemonData.find(p => p.name === defenderName);
+    if (!pokemonData || !pokemonData.weight) {
+        console.warn(`ポケモン「${defenderName}」の重さが見つかりません`);
+        return 50.0; // デフォルト値
+    }
+    
+    return pokemonData.weight;
 }
 
 // めざめるパワーの威力計算
@@ -5179,6 +5477,7 @@ function calculateDamage(attack, defense, level, power, category, moveType, atta
   let finalDefense = defense;
   let finalPower = power;
   
+  
   // きしかいせい・じたばた
   if (currentMove && currentMove.class === "pinch_up"){
     const currentHP = parseInt(document.getElementById('pinchUp_currentHP').value) || 1;
@@ -5212,7 +5511,24 @@ function calculateDamage(attack, defense, level, power, category, moveType, atta
   // 3. もちもの補正
   if (attackerPokemon.item) {
       const item = attackerPokemon.item;
-      if (item.timing === "attackMod") {
+      
+      // ポケモン専用アイテムの専用チェック
+      const exclusiveItems = {
+          'でんきだま': ['ピカチュウ'],
+          'こころのしずく': ['ラティオス', 'ラティアス'],
+          'しんかいのウロコ': ['パールル'],
+          'しんかいのキバ': ['パールル'],
+          'メタルパウダー': ['メタモン'],
+          'ふといホネ': ['カラカラ', 'ガラガラ']
+      };
+      
+      // 専用アイテムの場合、該当ポケモン以外は効果なし
+      let isItemValid = true;
+      if (exclusiveItems[item.name]) {
+          isItemValid = exclusiveItems[item.name].includes(attackerPokemon.name);
+      }
+      
+      if (isItemValid && item.timing === "attackMod") {
           const modifier = category === "Physical" ? (item.a || 1.0) : (item.c || 1.0);
           finalAttack = Math.floor(finalAttack * modifier);
       }
@@ -5960,6 +6276,8 @@ function calculateRandText(displayMinDamage, displayMaxDamage, defenderHP, curre
             }
         } else if (currentMove.class === 'two_hit') {
             return calculateTwoHitRandText(displayMinDamage, displayMaxDamage, targetHP, isSubstitute);
+        } else if (currentMove.class === 'three_hit') {
+            return calculateThreeHitRandText(displayMinDamage, displayMaxDamage, targetHP, isSubstitute);
         }
     }
     
@@ -6116,6 +6434,8 @@ function calculateRandText(displayMinDamage, displayMaxDamage, defenderHP, curre
             }
         } else if (currentMove.class === 'two_hit') {
             return calculateTwoHitRandText(displayMinDamage, displayMaxDamage, targetHP, isSubstitute);
+        } else if (currentMove.class === 'three_hit') {
+            return calculateThreeHitRandText(displayMinDamage, displayMaxDamage, targetHP, isSubstitute);
         }
     }
     
@@ -6888,6 +7208,8 @@ function calculateRandTextIntegrated(minDamage, maxDamage, defenderHP) {
     if (currentMove) {
         if (currentMove.class === 'two_hit') {
             return calculateTwoHitRandText(minDamage, maxDamage, targetHP, isSubstitute);
+        } else if (currentMove.class === 'three_hit') {
+            return calculateThreeHitRandText(minDamage, maxDamage, targetHP, isSubstitute);
         } else if (currentMove.class === 'multi_hit') {
             // ★安全版統合関数を使用
             try {
@@ -7101,6 +7423,10 @@ function calculateDamageIntegrated(attack, defense, level, power, category, move
             // 2回攻撃: 固定2倍
             console.log('2回攻撃技のダメージ計算: 2倍');
             return [Math.max(1, baseDamageMin * 2), baseDamageMax * 2];
+        } else if (currentMove.class === 'three_hit') {
+            // 3回攻撃: 固定3倍
+            console.log('3回攻撃技のダメージ計算: 3倍');
+            return [Math.max(1, baseDamageMin * 3), baseDamageMax * 3];
         } else if (currentMove.class === 'multi_hit') {
             // 可変回数攻撃: 1発分のダメージをそのまま返す（乱数計算で発生確率を考慮）
             console.log(`可変回数攻撃技のダメージ計算: 1発分 ${baseDamageMin}~${baseDamageMax}`);
@@ -7651,7 +7977,7 @@ function calculateMultiHitKORateProbability(remainingHP, moveDataList, turnIndex
     // ★修正: オボンのみの場合は基本ログを抑制
     if (!isOranBerry) {
         // 通常の連続技ログ出力処理
-        if (turnIndex === 0 && (currentMove.class === 'multi_hit' || currentMove.class === 'two_hit')) {
+        if (turnIndex === 0 && (currentMove.class === 'multi_hit' || currentMove.class === 'two_hit' || currentMove.class === 'three_hit')) {
             if (!turnCommonInfoDisplayed.has(turnIndex)) {
                 console.log(`=== ${turnIndex + 1}ターン目 共通情報 ===`);
                 console.log(`通常ダメージ範囲: ${moveData.minDamage}~${moveData.maxDamage}`);
@@ -7668,6 +7994,8 @@ function calculateMultiHitKORateProbability(remainingHP, moveDataList, turnIndex
                     console.log(`連続技: ${currentMove.name} (${selectedHitCount}回)`);
                 } else if (currentMove.class === 'two_hit') {
                     console.log(`連続技: ${currentMove.name} (2回)`);
+                } else if (currentMove.class === 'three_hit') {
+                    console.log(`連続技: ${currentMove.name} (3回)`);
                 }
                 
                 console.log('--- 各HPパターンでの計算 ---');
@@ -7677,7 +8005,7 @@ function calculateMultiHitKORateProbability(remainingHP, moveDataList, turnIndex
     }
     
     // ★修正: 連続技計算処理はオボンのみに関係なく実行
-    if (turnIndex === 0 && (currentMove.class === 'multi_hit' || currentMove.class === 'two_hit')) {
+    if (turnIndex === 0 && (currentMove.class === 'multi_hit' || currentMove.class === 'two_hit' || currentMove.class === 'three_hit')) {
         // 連続技の計算処理
         const hitCountSelect = document.getElementById('multiHitCount');
         const selectedHitCount = hitCountSelect ? hitCountSelect.value : '2-5';
@@ -7798,7 +8126,7 @@ function calculateMoveDamageRange(move, turnIndex = 0) {
     
     // 威力計算
     let movePower = move.power || 0;
-    if (move.class === 'pinch_up' || move.class === 'pinch_down') {
+    if (move.class === 'pinch_up' || move.class === 'pinch_down' || move.class === 'weight_based') {
         movePower = calculatePower(move);
     }
 
@@ -7993,7 +8321,7 @@ function calculateMoveDamageRangeWithItems(move, turnIndex = 0) {
     
     // 威力計算
     let movePower = move.power || 0;
-    if (move.class === 'pinch_up' || move.class === 'pinch_down') {
+    if (move.class === 'pinch_up' || move.class === 'pinch_down' || move.class === 'weight_based') {
         movePower = calculatePower(move);
     }
 
@@ -8108,8 +8436,8 @@ function getCriticalRate() {
 // ターンごとの共通情報表示フラグを管理
 let turnCommonInfoDisplayed = new Set();
 
-// 再帰的に確率を計算
-function calculateKORateProbability(remainingHP, moveDataList, turnIndex, totalDamage, currentProbability, results) {
+// 再帰的に確率を計算（無効化された古い関数）
+function calculateKORateProbability_OLD_DISABLED(remainingHP, moveDataList, turnIndex, totalDamage, currentProbability, results) {
     if (turnIndex >= moveDataList.length) {
         return;
     }
@@ -8183,6 +8511,12 @@ function calculateKORateProbability(remainingHP, moveDataList, turnIndex, totalD
     // 命中した場合の処理
     const hitProbability = moveData.accuracy;
     if (hitProbability > 0) {
+        // 3回攻撃技の特別処理
+        if (currentMove && currentMove.class === 'three_hit') {
+            calculateThreeHitKORate(remainingHP, moveData, turnIndex, totalDamage, currentProbability * hitProbability, results, moveDataList);
+            return;
+        }
+        
         // 各ダメージパターンを処理
         for (let i = 0; i < 16; i++) {
             // 通常ダメージ
@@ -8228,6 +8562,126 @@ function calculateKORateProbability(remainingHP, moveDataList, turnIndex, totalD
             }
         }
     }
+}
+
+// 3回攻撃技の瀕死率計算
+function calculateThreeHitKORate(remainingHP, moveData, turnIndex, totalDamage, currentProbability, results, moveDataList) {
+    console.log(`=== 3回攻撃技の瀕死率計算開始 ===`);
+    console.log(`残HP: ${remainingHP}, 確率: ${(currentProbability * 100).toFixed(3)}%`);
+    console.log(`moveData:`, moveData);
+    console.log(`通常ダメージ: ${moveData.minDamage}~${moveData.maxDamage}`);
+    console.log(`急所ダメージ: ${moveData.minCritDamage}~${moveData.maxCritDamage}`);
+    console.log(`急所率: ${(getCriticalRate() * 100).toFixed(2)}%`);
+    
+    const criticalRate = getCriticalRate();
+    const normalRate = 1 - criticalRate;
+    
+    // 3回の各ヒットを独立して計算
+    function processThreeHits(hp, prob, hitIndex) {
+        if (hitIndex >= 3) {
+            // 3発撃ち終わったが生存している場合、次のターンへ
+            calculateKORateProbability(hp, moveDataList, turnIndex + 1, totalDamage, prob, results);
+            return;
+        }
+        
+        // 各ダメージパターンを処理
+        for (let i = 0; i < 16; i++) {
+            // 通常ダメージ
+            const normalDamage = Math.floor(moveData.minDamage + (moveData.maxDamage - moveData.minDamage) * i / 15);
+            const normalProb = (1/16) * normalRate;
+            
+            if (normalDamage >= hp) {
+                // このヒットで瀕死
+                const koProb = prob * normalProb;
+                for (let j = turnIndex; j < results.length; j++) {
+                    results[j] += koProb;
+                }
+            } else {
+                // 生存して次のヒットへ
+                processThreeHits(hp - normalDamage, prob * normalProb, hitIndex + 1);
+            }
+            
+            // 急所ダメージ
+            const critDamage = Math.floor(moveData.minCritDamage + (moveData.maxCritDamage - moveData.minCritDamage) * i / 15);
+            const critProb = (1/16) * criticalRate;
+            
+            if (critDamage >= hp) {
+                // このヒットで瀕死
+                const koProb = prob * critProb;
+                for (let j = turnIndex; j < results.length; j++) {
+                    results[j] += koProb;
+                }
+            } else {
+                // 生存して次のヒットへ
+                processThreeHits(hp - critDamage, prob * critProb, hitIndex + 1);
+            }
+        }
+    }
+    
+    processThreeHits(remainingHP, currentProbability, 0);
+    
+    console.log(`=== 3回攻撃技計算完了 ===`);
+    console.log(`1ターン目瀕死率: ${(results[turnIndex] * 100).toFixed(5)}%`);
+}
+
+// 2回攻撃技の瀕死率計算
+function calculateTwoHitKORate(remainingHP, moveData, turnIndex, totalDamage, currentProbability, results, moveDataList) {
+    console.log(`=== 2回攻撃技の瀕死率計算開始 ===`);
+    console.log(`残HP: ${remainingHP}, 確率: ${(currentProbability * 100).toFixed(3)}%`);
+    console.log(`moveData:`, moveData);
+    console.log(`通常ダメージ: ${moveData.minDamage}~${moveData.maxDamage}`);
+    console.log(`急所ダメージ: ${moveData.minCritDamage}~${moveData.maxCritDamage}`);
+    console.log(`急所率: ${(getCriticalRate() * 100).toFixed(2)}%`);
+    
+    const criticalRate = getCriticalRate();
+    const normalRate = 1 - criticalRate;
+    
+    // 2回の各ヒットを独立して計算
+    function processTwoHits(hp, prob, hitIndex) {
+        if (hitIndex >= 2) {
+            // 2発撃ち終わったが生存している場合、次のターンへ
+            calculateKORateProbability(hp, moveDataList, turnIndex + 1, totalDamage, prob, results);
+            return;
+        }
+        
+        // 各ダメージパターンを処理
+        for (let i = 0; i < 16; i++) {
+            // 通常ダメージ
+            const normalDamage = Math.floor(moveData.minDamage + (moveData.maxDamage - moveData.minDamage) * i / 15);
+            const normalProb = (1/16) * normalRate;
+            
+            if (normalDamage >= hp) {
+                // このヒットで瀕死
+                const koProb = prob * normalProb;
+                for (let j = turnIndex; j < results.length; j++) {
+                    results[j] += koProb;
+                }
+            } else {
+                // 生存して次のヒットへ
+                processTwoHits(hp - normalDamage, prob * normalProb, hitIndex + 1);
+            }
+            
+            // 急所ダメージ
+            const critDamage = Math.floor(moveData.minCritDamage + (moveData.maxCritDamage - moveData.minCritDamage) * i / 15);
+            const critProb = (1/16) * criticalRate;
+            
+            if (critDamage >= hp) {
+                // このヒットで瀕死
+                const koProb = prob * critProb;
+                for (let j = turnIndex; j < results.length; j++) {
+                    results[j] += koProb;
+                }
+            } else {
+                // 生存して次のヒットへ
+                processTwoHits(hp - critDamage, prob * critProb, hitIndex + 1);
+            }
+        }
+    }
+    
+    processTwoHits(remainingHP, currentProbability, 0);
+    
+    console.log(`=== 2回攻撃技計算完了 ===`);
+    console.log(`1ターン目瀕死率: ${(results[turnIndex] * 100).toFixed(5)}%`);
 }
 
 // フィラ系きのみかチェック
@@ -9205,8 +9659,17 @@ function calculateMultiTurnBasicKORateUnified(defenderHP, maxTurns, suppressLogs
             }
             
             // 計算根拠オブジェクトを作成
+            let displayDamageRange;
+            if (move && move.class === 'three_hit') {
+                displayDamageRange = `${minDamage * 3}~${maxDamage * 3}`;
+            } else if (move && move.class === 'two_hit') {
+                displayDamageRange = `${minDamage * 2}~${maxDamage * 2}`;
+            } else {
+                displayDamageRange = `${minDamage}~${maxDamage}`;
+            }
+            
             calculationBasis[turn] = {
-                damageRange: `${minDamage}~${maxDamage}`,
+                damageRange: displayDamageRange,
                 accuracy: Math.round(accuracy * 100),
                 isMultiHit: isMultiHit,
                 moveName: move ? move.name : 'unknown',
@@ -9252,7 +9715,11 @@ function calculateMultiTurnBasicKORateUnified(defenderHP, maxTurns, suppressLogs
     
     // ★修正: suppressLogsフラグでログ制御
     if (!suppressLogs) {
-        const resultSummary = results.map((rate, i) => `${i+1}T: ${(rate * 100).toFixed(1)}%`);
+        const resultSummary = results.map((rate, i) => {
+            const percent = rate * 100;
+            const decimals = percent < 1 ? 3 : 1;
+            return `${i+1}T: ${percent.toFixed(decimals)}%`;
+        });
         console.log('統合版最終瀕死率:', resultSummary);
         console.log('=== 統合版基本瀕死率計算完了 ===');
     }
@@ -9481,7 +9948,9 @@ function generateUnifiedKORateHTML(koRates, actualTurns, moveInfo, evasionRankTe
         // ターン番号と瀕死率
         html += `<div class="ko-rate-header">`;
         html += `<span class="ko-turn">${turnNumber}ターン:</span>`;
-        html += `<span class="ko-basic">${(displayRate * 100).toFixed(1)}%</span>`;
+        const percent = displayRate * 100;
+        const decimals = percent < 1 ? 3 : 1;
+        html += `<span class="ko-basic">${percent.toFixed(decimals)}%</span>`;
         html += `</div>`;
         
         // 計算根拠
@@ -9561,6 +10030,26 @@ function calculateKORateProbability(remainingHP, moveDataList, turnIndex, totalD
     // 命中した場合の処理
     const hitProbability = moveData.accuracy;
     if (hitProbability > 0) {
+        // 3回攻撃技の特別処理
+        console.log(`=== KORateProbability関数2(9897行): 3回攻撃技チェック ===`);
+        console.log(`currentMove:`, currentMove);
+        console.log(`currentMove.class:`, currentMove ? currentMove.class : 'undefined');
+        console.log(`moveData.minDamage:`, moveData.minDamage);
+        console.log(`moveData.maxDamage:`, moveData.maxDamage);
+        console.log(`moveData.minCritDamage:`, moveData.minCritDamage);
+        console.log(`moveData.maxCritDamage:`, moveData.maxCritDamage);
+        if (currentMove && currentMove.class === 'three_hit') {
+            console.log(`3回攻撃技として処理開始（関数2）`);
+            calculateThreeHitKORate(remainingHP, moveData, turnIndex, totalDamage, currentProbability * hitProbability, results, moveDataList);
+            return;
+        }
+        
+        if (currentMove && currentMove.class === 'two_hit') {
+            console.log(`2回攻撃技として処理開始（関数2）`);
+            calculateTwoHitKORate(remainingHP, moveData, turnIndex, totalDamage, currentProbability * hitProbability, results, moveDataList);
+            return;
+        }
+        
         // 各ダメージパターンを処理
         for (let i = 0; i < 16; i++) {
             // 通常ダメージ
@@ -9943,11 +10432,17 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
     const originalDefenderItem = defenderPokemon.item;
     defenderPokemon.item = null; // 防御側アイテムのみ除外
     
+    // 威力計算（weight_based技などに対応）
+    let displayPower = currentMove.power || 0;
+    if (currentMove.class === 'pinch_up' || currentMove.class === 'pinch_down' || currentMove.class === 'weight_based') {
+        displayPower = calculatePower(currentMove);
+    }
+    
     const [baseDisplayMin, baseDisplayMax] = calculateDamage(
         attackerOffensiveStat,
         defenderDefensiveStat,
         attackerPokemon.level,
-        currentMove.power || 0,
+        displayPower,
         currentMove.category,
         currentMove.type,
         attackerPokemon.types,
@@ -9978,6 +10473,9 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
     } else if (currentMove && currentMove.class === 'two_hit') {
         displayMinDamage = baseDisplayMin * 2;
         displayMaxDamage = baseDisplayMax * 2;
+    } else if (currentMove && currentMove.class === 'three_hit') {
+        displayMinDamage = baseDisplayMin * 3;
+        displayMaxDamage = baseDisplayMax * 3;
     } else {
         displayMinDamage = baseDisplayMin;
         displayMaxDamage = baseDisplayMax;
@@ -10165,16 +10663,21 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
         }
     } else if (currentMove && currentMove.class === 'two_hit') {
         moveDisplayText = `${currentMove.name} (威力${calculatePower(currentMove)}×2発, ${currentMove.type}, ${currentMove.category === 'Physical' ? '物理' : '特殊'}${accuracyText})`;
+    } else if (currentMove && currentMove.class === 'three_hit') {
+        moveDisplayText = `${currentMove.name} (威力${calculatePower(currentMove)}×3発, ${currentMove.type}, ${currentMove.category === 'Physical' ? '物理' : '特殊'}${accuracyText})`;
     } else {
         moveDisplayText = `${currentMove.name} (威力${calculatePower(currentMove)}, ${currentMove.type}, ${currentMove.category === 'Physical' ? '物理' : '特殊'}${accuracyText})`;
     }
     
     let resultHtml = `
         <div class="damage-result">
-            <h3>${title}</h3>
+            <div style="position: relative; margin-bottom: 10px;">
+                <h3 style="margin: 0; text-align: center;">${title}</h3>
+                <button onclick="copyResult(this)" style="position: absolute; top: 0; right: 0; padding: 3px 6px; background-color: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px; min-width: auto; width: auto;">コピー</button>
+            </div>
             <div class="result-info">
-                <p><strong>攻撃側:</strong> ${attackerPokemon.name} Lv.${attackerPokemon.level} ${offenseStatLabel}${attackerOffensiveStat}</p>
-                <p><strong>防御側:</strong> ${defenderPokemon.name} Lv.${defenderPokemon.level} ${defenderHPDisplay}-${defenseStatLabel}${defenderDefensiveStat}</p>
+                <p><strong>攻撃側:</strong> ${attackerPokemon.name} ${offenseStatLabel}${attackerOffensiveStat}</p>
+                <p><strong>防御側:</strong> ${defenderPokemon.name} ${defenderHPDisplay}-${defenseStatLabel}${defenderDefensiveStat}</p>
                 ${isMultiTurn ? `
                 <div class="move-sequence">
                     <strong>技構成:</strong>
@@ -10186,6 +10689,8 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
                 </div>
                 ` : `
                 <p><strong>使用技:</strong> ${moveDisplayText}</p>
+                ${attackerPokemon.item && currentMove && isItemEffectiveForMove(attackerPokemon.item, currentMove) ? 
+                    `<p><strong>持ち物:</strong> ${attackerPokemon.item.name}</p>` : ''}
                 ${rankText ? `<p><strong>ランク補正:</strong> ${rankText.substring(3)}</p>` : ''}
                 `}
             </div>
@@ -10489,7 +10994,9 @@ function generateUnifiedKORateHTML(koRates, actualTurns, moveInfo, evasionRankTe
         // ターン番号と瀕死率
         html += `<div class="ko-rate-header">`;
         html += `<span class="ko-turn">${turnNumber}ターン:</span>`;
-        html += `<span class="ko-basic">${(displayRate * 100).toFixed(1)}%</span>`;
+        const percent = displayRate * 100;
+        const decimals = percent < 1 ? 3 : 1;
+        html += `<span class="ko-basic">${percent.toFixed(decimals)}%</span>`;
         html += `</div>`;
         
         // 計算根拠
@@ -10918,7 +11425,7 @@ function showMoveListForTurn(dropdown, input, turn) {
     dropdown.style.left = (rect.left + window.scrollX) + 'px';
     dropdown.style.width = rect.width + 'px';
     
-    const displayItems = moveData.slice(0, 30);
+    const displayItems = moveData;
     
     displayItems.forEach(move => {
         const item = createDropdownItem(move.name, () => {
@@ -10981,7 +11488,7 @@ function filterMoveListForTurn(searchText, dropdown, input, turn) {
                romaji.includes(search);
     });
     
-    const displayItems = filtered.slice(0, 30);
+    const displayItems = filtered;
     
     displayItems.forEach(move => {
         const item = createDropdownItem(move.name, () => {
