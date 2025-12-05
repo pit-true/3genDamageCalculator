@@ -5641,8 +5641,8 @@ function calculateDamage(attack, defense, level, power, category, moveType, atta
   // 天候補正
   const weather = document.getElementById('weatherSelect').value;
   if (weather === 'rain' && moveType === 'みず') {
-   // あめがふりつづいている 水2倍
-   proc = Math.floor(proc * 2);
+   // あめがふりつづいている 水1.5倍
+   proc = Math.floor(proc * 3 / 2);
   } else if (weather === 'rain' && moveType === 'ほのお') {
    // あめがふりつづいている 炎半減
    proc = Math.floor(proc / 2);
@@ -5650,8 +5650,8 @@ function calculateDamage(attack, defense, level, power, category, moveType, atta
    // あめがふりつづいている ソーラービーム半減
    proc = Math.floor(proc / 2);
   } else if (weather === 'sunny' && moveType === 'ほのお') {
-   // ひざしがつよい 炎2倍
-   proc = Math.floor(proc * 2);
+   // ひざしがつよい 炎1.5倍
+   proc = Math.floor(proc * 3 / 2);
   } else if (weather === 'sunny' && moveType === 'みず') {
    // ひざしがつよい 水半減
    proc = Math.floor(proc / 2);
