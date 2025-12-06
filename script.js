@@ -11955,7 +11955,14 @@ function getFieldInfo(input) {
     }
     
     // 入力欄のタイプを判定
-    if (id.includes('CurrentHP') || id === 'defenderCurrentHP') {
+    if (id.includes('Level') || id === 'attackerLevel' || id === 'defenderLevel') {
+        // レベル
+        type = 'level';
+        min = 1;
+        max = 100;
+        step = 1;
+        displayName = `${side}レベル`;
+    } else if (id.includes('CurrentHP') || id === 'defenderCurrentHP') {
         // 現在HP
         type = 'currentHP';
         min = parseInt(input.getAttribute('min')) || 1;
