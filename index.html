@@ -384,13 +384,13 @@
             <!-- H実数値・個体値・努力値 -->
             <div class="stat-row">
                 <label class="stat-label">H:</label>
-                <input type="number" class="stat-input" id="defenderRealHP">
+                <input type="number" class="stat-input" id="defenderRealHP" min="1" max="714">
                 <input type="number" class="iv-input" id="defenderIvHP" value="31" min="0" max="31">
                 <button class="iv-quick-btn" onclick="setIV('defender', 'hp', 30)">30</button>
                 <input type="number" class="ev-input" id="defenderEvHP" value="0" min="0" max="252" onchange="updateStats('defender')">
                 <button class="ev-quick-btn" onclick="setEV('defender', 'hp', 252)">252</button>
                 <label class="current-hp-label">現在HP:</label>
-                <input type="number" class="current-hp-input" id="defenderCurrentHP" min="1">
+                <input type="number" class="current-hp-input" id="defenderCurrentHP" min="1" max="999">
             </div>
             
             <!-- B実数値・個体値・努力値・性格補正 -->
