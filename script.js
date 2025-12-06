@@ -3738,13 +3738,6 @@ function updateStats(side) {
                 // 計算されたHP実数値を使用
                 const newMaxHP = stats.hp;
 
-                console.log('[DEBUG] 現在HP上限更新:', {
-                    pokemon: defenderPokemon.name,
-                    statsHP: stats.hp,
-                    newMaxHP: newMaxHP,
-                    currentMax: currentHPInput.getAttribute('max')
-                });
-
                 // 前回の最大HPを取得
                 const previousMaxHP = parseInt(currentHPInput.getAttribute('data-max-hp')) || 0;
                 const currentValue = parseInt(currentHPInput.value) || 0;
@@ -3759,13 +3752,16 @@ function updateStats(side) {
                 currentHPInput.setAttribute('max', newMaxHP);
                 currentHPInput.setAttribute('min', 1);
 
-                // モバイルスライダーの最大値も更新
-                const mobileSlider = document.getElementById('mobileSlider');
-                if (mobileSlider) {
-                    mobileSlider.setAttribute('max', newMaxHP);
-                    const mobileMaxLabel = document.getElementById('mobileMaxLabel');
-                    if (mobileMaxLabel) {
-                        mobileMaxLabel.textContent = newMaxHP;
+                // モバイルスライダーの最大値も更新（現在HPがアクティブな場合のみ）
+                if (mobileControlState.isActive &&
+                    mobileControlState.activeInput === currentHPInput) {
+                    const mobileSlider = document.getElementById('mobileSlider');
+                    if (mobileSlider) {
+                        mobileSlider.setAttribute('max', newMaxHP);
+                        const mobileMaxLabel = document.getElementById('mobileMaxLabel');
+                        if (mobileMaxLabel) {
+                            mobileMaxLabel.textContent = newMaxHP;
+                        }
                     }
                 }
 
@@ -11801,7 +11797,7 @@ function activateMobileControl(input) {
     
     // フィールド情報を取得
     const fieldInfo = getFieldInfo(input);
-    
+
     // 状態を更新
     mobileControlState.activeInput = input;
     mobileControlState.fieldInfo = fieldInfo;
@@ -12072,7 +12068,7 @@ function adjustMobileValue(direction) {
     }
     
     const newValue = Math.max(fieldInfo.min, Math.min(fieldInfo.max, currentValue + (direction * step)));
-    
+
     if (newValue !== currentValue) {
         // 値を更新
         if (input.updateValueSilently) {
@@ -12102,8 +12098,16 @@ function adjustMobileValue(direction) {
             const side = fieldInfo.side === '攻撃側' ? 'attacker' : 'defender';
             const stat = fieldInfo.stat.toLowerCase();
             updateEVValueWithDirection(side, stat, currentValue, newValue, direction);
+        } else if (fieldInfo.type === 'level') {
+            // レベルの処理
+            const side = fieldInfo.side === '攻撃側' ? 'attacker' : 'defender';
+            const pokemon = side === 'attacker' ? attackerPokemon : defenderPokemon;
+            pokemon.level = newValue;
+            updateStats(side);
+        } else if (fieldInfo.type === 'currentHP') {
+            // 現在HPの処理（特に追加処理は不要）
         }
-        
+
         // 表示を更新
         updateMobileControlBar();
         
@@ -12235,12 +12239,18 @@ function updateEVValueWithDirection(side, stat, currentValue, targetValue, direc
  */
 function updateValueFromSlider() {
     if (!mobileControlState.isActive || !mobileControlState.activeInput) return;
-    
+
     const slider = document.getElementById('mobileSlider');
     const input = mobileControlState.activeInput;
     let newValue = parseInt(slider.value);
     const currentValue = parseInt(input.value) || 0;
-    
+
+    // fieldInfoのmin/maxで値を制限
+    const fieldInfo = mobileControlState.fieldInfo;
+    if (fieldInfo && fieldInfo.min !== undefined && fieldInfo.max !== undefined) {
+        newValue = Math.max(fieldInfo.min, Math.min(fieldInfo.max, newValue));
+    }
+
     // 値が変更された場合のみ処理
     if (newValue === currentValue) return;
     
@@ -12252,15 +12262,25 @@ function updateValueFromSlider() {
         updateEVValueWithDirection(side, stat, currentValue, newValue, direction);
         return; // 専用処理なので早期リターン
     }
-    
+
     // 実数値入力欄の場合は既存のスピンボタン機能を再現
     if (mobileControlState.fieldInfo.type === 'real') {
         handleRealStatChangeFromMobile(input, newValue, newValue > currentValue ? 1 : -1);
+    } else if (mobileControlState.fieldInfo.type === 'level') {
+        // レベルの処理
+        const side = mobileControlState.fieldInfo.side === '攻撃側' ? 'attacker' : 'defender';
+        const pokemon = side === 'attacker' ? attackerPokemon : defenderPokemon;
+        pokemon.level = newValue;
+        input.value = newValue;
+        updateStats(side);
+    } else if (mobileControlState.fieldInfo.type === 'currentHP') {
+        // 現在HPの処理
+        input.value = newValue;
     } else {
         // 個体値・努力値の場合は直接設定
         setValueAndTriggerEvents(input, newValue);
     }
-    
+
     // 現在値表示を更新
     document.getElementById('mobileCurrentValue').textContent = newValue;
 }
