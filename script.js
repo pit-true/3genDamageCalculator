@@ -3732,35 +3732,43 @@ function updateStats(side) {
     // ★修正: 防御側のHP実数値が変更された場合の現在HP同期処理を強化
     if (side === 'defender') {
         setTimeout(() => {
-            const maxHPInput = document.getElementById('defenderRealHP');
             const currentHPInput = document.getElementById('defenderCurrentHP');
-            const detailMaxHPInput = document.getElementById('defenderDetailRealHP');
 
-            if (maxHPInput && currentHPInput) {
-                // メイン画面とdetail画面の両方からHP実数値を取得
-                let newMaxHP = stats.hp;
-                
-                // メイン画面の実数値入力欄から値を取得（優先）
-                if (maxHPInput.value && !isNaN(parseInt(maxHPInput.value))) {
-                    newMaxHP = parseInt(maxHPInput.value);
-                } else if (detailMaxHPInput && detailMaxHPInput.value && !isNaN(parseInt(detailMaxHPInput.value))) {
-                    newMaxHP = parseInt(detailMaxHPInput.value);
-                }
-                
+            if (currentHPInput && stats.hp) {
+                // 計算されたHP実数値を使用
+                const newMaxHP = stats.hp;
+
+                console.log('[DEBUG] 現在HP上限更新:', {
+                    pokemon: defenderPokemon.name,
+                    statsHP: stats.hp,
+                    newMaxHP: newMaxHP,
+                    currentMax: currentHPInput.getAttribute('max')
+                });
+
                 // 前回の最大HPを取得
                 const previousMaxHP = parseInt(currentHPInput.getAttribute('data-max-hp')) || 0;
                 const currentValue = parseInt(currentHPInput.value) || 0;
-                
+
                 // ★重要: HP実数値が変更された場合は必ず現在HPを同期
                 if (newMaxHP !== previousMaxHP || currentValue === 0 || currentValue > newMaxHP) {
                     currentHPInput.value = newMaxHP;
                 }
-                
+
                 // 新しい最大HPを記録し、制限を設定
                 currentHPInput.setAttribute('data-max-hp', newMaxHP);
                 currentHPInput.setAttribute('max', newMaxHP);
                 currentHPInput.setAttribute('min', 1);
-                
+
+                // モバイルスライダーの最大値も更新
+                const mobileSlider = document.getElementById('mobileSlider');
+                if (mobileSlider) {
+                    mobileSlider.setAttribute('max', newMaxHP);
+                    const mobileMaxLabel = document.getElementById('mobileMaxLabel');
+                    if (mobileMaxLabel) {
+                        mobileMaxLabel.textContent = newMaxHP;
+                    }
+                }
+
                 // ポケモン名も記録（ポケモン変更検知用）
                 const currentPokemonName = defenderPokemon.name;
                 currentHPInput.setAttribute('data-pokemon-name', currentPokemonName);
@@ -4223,13 +4231,26 @@ class RealStatInputManager {
         if (!pokemon.baseStats[stat] || pokemon.baseStats[stat] === 0) {
             return; // ポケモンが選択されていない場合は何もしない
         }
-        
+
         const limits = calculateStatLimits(pokemon.baseStats[stat], pokemon.level, stat === 'hp');
-        
+
+        // HPの場合は、現在の実数値をmaxに設定
+        if (stat === 'hp') {
+            const currentHPValue = calculateStatWithParams(
+                pokemon.baseStats[stat],
+                pokemon.level,
+                pokemon.ivValues[stat],
+                pokemon.evValues[stat],
+                1.0, // HPに性格補正なし
+                true // isHP
+            );
+            limits.max = currentHPValue;
+        }
+
         // メイン入力欄
         const mainId = `${side}Real${stat.toUpperCase()}`;
         this.setInputLimits(mainId, limits);
-        
+
         // 詳細入力欄
         const detailId = `${side}DetailReal${stat.toUpperCase()}`;
         this.setInputLimits(detailId, limits);
@@ -11934,17 +11955,24 @@ function getFieldInfo(input) {
     }
     
     // 入力欄のタイプを判定
-    if (id.includes('Real')) {
+    if (id.includes('CurrentHP') || id === 'defenderCurrentHP') {
+        // 現在HP
+        type = 'currentHP';
+        min = parseInt(input.getAttribute('min')) || 1;
+        max = parseInt(input.getAttribute('max')) || 999;
+        step = 1;
+        displayName = '現在HP';
+    } else if (id.includes('Real')) {
         type = 'real';
         // 実数値の場合は、ポケモンデータから制限を取得
         min = parseInt(input.getAttribute('min')) || 1;
         max = parseInt(input.getAttribute('max')) || 999;
-        
+
         // min/maxが設定されていない場合、ポケモンデータから計算（性格補正を考慮）
         if ((min === 1 && max === 999) || !min || !max) {
             const pokemon = side === '攻撃側' ? attackerPokemon : defenderPokemon;
             const statKey = stat.toLowerCase();
-            
+
             if (pokemon && pokemon.baseStats && pokemon.baseStats[statKey]) {
                 const isHP = statKey === 'h' || statKey === 'hp';
                 const natureMod = isHP ? 1.0 : (pokemon.natureModifiers[statKey] || 1.0);
