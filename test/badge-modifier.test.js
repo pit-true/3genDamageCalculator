@@ -20,3 +20,10 @@ test('攻撃側と防御側に独立したバッジ補正チェックを表示�
   assert.match(html, /攻撃1\.1倍/);
   assert.match(html, /防御1\.1倍/);
 });
+
+test('防御側の持ち物補正は攻撃値ではなく防御値へ掛ける', () => {
+  const script = fs.readFileSync(path.join(__dirname, '..', 'script.js'), 'utf8');
+
+  assert.match(script, /finalDefense = Math\.floor\(finalDefense \* modifier\)/);
+  assert.doesNotMatch(script, /finalDefense = Math\.floor\(finalAttack \* modifier\)/);
+});

@@ -5831,7 +5831,7 @@ function calculateDamage(attack, defense, level, power, category, moveType, atta
   if (defenderPokemon.item) {
       const item = defenderPokemon.item;
       const modifier = category === "Physical" ? (item.b || 1.0) : (item.d || 1.0);
-      finalDefense = Math.floor(finalAttack * modifier);
+      finalDefense = Math.floor(finalDefense * modifier);
   }
           
   // 4. 特性 (実数値補正系)
