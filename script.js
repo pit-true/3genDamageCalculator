@@ -2554,6 +2554,10 @@ function selectMove(moveName) {
         case 'fury_cutter':
             document.getElementById('furyCutterSettings').style.display = 'flex';
             break;
+
+        case 'present':
+            document.getElementById('presentSettings').style.display = 'flex';
+            break;
     }
 }
 
@@ -5229,6 +5233,28 @@ function calculateSpitUpDamage(baseDamage, stockpileCount) {
     return baseDamage * boundedCount;
 }
 
+function calculatePsywaveDamageValues(level) {
+    const boundedLevel = Math.max(1, Math.min(100, parseInt(level) || 1));
+    return Array.from({ length: 11 }, (_value, index) => {
+        return Math.max(1, Math.floor(boundedLevel * (50 + index * 10) / 100));
+    });
+}
+
+function getPresentOutcomes(defenderMaxHP) {
+    const healAmount = Math.max(1, Math.floor(defenderMaxHP / 4));
+    return [
+        { kind: 'damage', power: 40, probability: 0.4 },
+        { kind: 'damage', power: 80, probability: 0.3 },
+        { kind: 'damage', power: 120, probability: 0.1 },
+        { kind: 'heal', amount: healAmount, probability: 0.2 }
+    ];
+}
+
+function isPresentHealingSelected(move) {
+    return move && move.class === 'present' &&
+           document.getElementById('presentOutcome')?.value === 'heal';
+}
+
 function calculatePower(move) {
     // きしかいせい・じたばた
     if (move.class === 'pinch_up') {
@@ -5273,6 +5299,10 @@ function calculatePower(move) {
     else if (move.class === 'fury_cutter') {
         const successCount = document.getElementById('furyCutterCount')?.value || 1;
         return calculateFuryCutterPower(successCount);
+    }
+    else if (move.class === 'present') {
+        const outcome = document.getElementById('presentOutcome')?.value || '40';
+        return outcome === 'heal' ? 0 : parseInt(outcome);
     }
 
     return move.power || 0;
@@ -5549,11 +5579,20 @@ function getRankMultiplier(rankValue) {
 }
 
 // ダメージ計算本体
-function calculateDamage(attack, defense, level, power, category, moveType, attackerTypes, defenderTypes, atkRank, defRank) {
+function calculateDamage(attack, defense, level, power, category, moveType, attackerTypes, defenderTypes, atkRank, defRank, move = currentMove) {
   let finalAttack = attack;
   let finalDefense = defense;
   let finalPower = power;
   let effectiveAtkRank = atkRank;
+
+  if (move && move.class === 'psywave') {
+      const damageValues = calculatePsywaveDamageValues(level);
+      return [damageValues[0], damageValues[damageValues.length - 1]];
+  }
+
+  if (isPresentHealingSelected(move)) {
+      return [0, 0];
+  }
   
   
   // きしかいせい・じたばた
@@ -5577,7 +5616,7 @@ function calculateDamage(attack, defense, level, power, category, moveType, atta
     }
   }
 
-  if (currentMove && currentMove.class === 'rage') {
+  if (move && move.class === 'rage') {
     const rageHitCount = document.getElementById('rageHitCount')?.value || 0;
     effectiveAtkRank = calculateRageAttackRank(atkRank, rageHitCount);
   }
@@ -5750,14 +5789,14 @@ function calculateDamage(attack, defense, level, power, category, moveType, atta
   proc += 2;
 
   // はきだすは通常のダメージ計算後に、たくわえた回数を掛ける
-  if (currentMove && currentMove.class === 'spit_up') {
+  if (move && move.class === 'spit_up') {
       const stockpileCount = document.getElementById('stockpileCount')?.value || 1;
       proc = calculateSpitUpDamage(proc, stockpileCount);
   }
 
   // 急所
   const isCritical = document.getElementById('criticalCheck').checked;
-  if (isCritical && (!currentMove || currentMove.class !== 'spit_up')) {
+  if (isCritical && (!move || move.class !== 'spit_up')) {
       proc = Math.floor(proc * 2);
   }
 
@@ -8233,7 +8272,8 @@ function calculateMoveDamageRange(move, turnIndex = 0) {
         attackerPokemon.types,
         defenderPokemon.types,
         atkRank,
-        defRank
+        defRank,
+        move
     );
     
     // 防御側アイテムのみを元に戻す
@@ -8260,7 +8300,8 @@ function calculateMoveDamageRange(move, turnIndex = 0) {
         attackerPokemon.types,
         defenderPokemon.types,
         atkRank,
-        defRank
+        defRank,
+        move
     );
     
     // 元の状態に戻す
@@ -8419,7 +8460,8 @@ function calculateMoveDamageRangeWithItems(move, turnIndex = 0) {
         attackerPokemon.types,
         defenderPokemon.types,
         atkRank,
-        defRank
+        defRank,
+        move
     );
     
     let minDamage = baseDamageMin;
@@ -8440,7 +8482,8 @@ function calculateMoveDamageRangeWithItems(move, turnIndex = 0) {
         attackerPokemon.types,
         defenderPokemon.types,
         atkRank,
-        defRank
+        defRank,
+        move
     );
     
     criticalCheckbox.checked = originalCritical;
@@ -10430,9 +10473,38 @@ function displayEnhancedDamageResult(minDamage, maxDamage, totalHP) {
    displaySingleTurnResult(minDamage, maxDamage, totalHP);
 }
 
+function displayPresentHealingResult(resultDiv, totalHP) {
+    const currentHPInput = document.getElementById('defenderCurrentHP');
+    const currentHP = currentHPInput && currentHPInput.value ?
+        parseInt(currentHPInput.value) || totalHP :
+        totalHP;
+    const healOutcome = getPresentOutcomes(totalHP).find(outcome => outcome.kind === 'heal');
+    const actualHeal = Math.max(0, Math.min(healOutcome.amount, totalHP - currentHP));
+
+    resultDiv.innerHTML = `
+        <div class="damage-result">
+            <h3>プレゼント回復結果</h3>
+            <div class="result-info">
+                <p><strong>攻撃側:</strong> ${attackerPokemon.name}</p>
+                <p><strong>防御側:</strong> ${defenderPokemon.name} H${currentHP}/${totalHP}</p>
+                <p><strong>使用技:</strong> プレゼント (相手を1/4回復, 発生率20%)</p>
+            </div>
+            <div class="result-info2">
+                <p><strong>回復量:</strong> ${actualHeal} (最大${healOutcome.amount})</p>
+                <p><strong>回復後HP:</strong> ${currentHP + actualHeal}/${totalHP}</p>
+            </div>
+        </div>
+    `;
+}
+
 // 結果表示の統合関数
 function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = false, atkRank = '±0', defRank = '±0') {
     const resultDiv = document.getElementById('calculationResult');
+
+    if (isPresentHealingSelected(currentMove)) {
+        displayPresentHealingResult(resultDiv, totalHP);
+        return;
+    }
     
     // 1ターン目の技を設定
     multiTurnMoves[0] = currentMove;
@@ -10535,7 +10607,9 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
     defenderPokemon.item = originalDefenderItem;
     
     // 連続技の場合の表示用ダメージ範囲計算
-    if (currentMove && currentMove.class === 'multi_hit') {
+    if (currentMove && currentMove.class === 'psywave') {
+        moveDisplayText = `${currentMove.name} (Lvの50～150%, ${currentMove.type}, 特殊${accuracyText})`;
+    } else if (currentMove && currentMove.class === 'multi_hit') {
         const hitCountSelect = document.getElementById('multiHitCount');
         const selectedHitCount = hitCountSelect ? hitCountSelect.value : '2-5';
         const constantDamage = calculateTotalConstantDamage(totalHP, defenderPokemon.types, 1);
@@ -11198,7 +11272,8 @@ function calculateDamageWithConstantForTurn(turnIndex, moveInfo) {
         attackerPokemon.types,
         defenderPokemon.types,
         atkRank,
-        defRank
+        defRank,
+        move
     );
     
     // 定数ダメージを計算
