@@ -2596,6 +2596,10 @@ function selectMove(moveName) {
             document.getElementById('presentSettings').style.display = 'flex';
             break;
 
+        case 'triple_kick':
+            document.getElementById('tripleKickSettings').style.display = 'flex';
+            break;
+
         case 'beat_up':
             document.getElementById('beatUpSettings').style.display = 'flex';
             break;
@@ -5311,6 +5315,11 @@ function getTripleKickHitProbabilities(accuracy) {
     ];
 }
 
+function getSelectedTripleKickHitCount() {
+    const selected = parseInt(document.getElementById('tripleKickHits')?.value) || 3;
+    return Math.max(1, Math.min(3, selected));
+}
+
 function sumDamageRanges(ranges) {
     return ranges.reduce((total, range) => {
         total[0] += range[0];
@@ -5724,7 +5733,8 @@ function calculateDamage(attack, defense, level, power, category, moveType, atta
 
   if (move && move.class === 'triple_kick') {
       const singleHitMove = { ...move, class: 'triple_kick_hit' };
-      const hitRanges = getTripleKickPowers().map(hitPower => calculateDamage(
+      const hitCount = getSelectedTripleKickHitCount();
+      const hitRanges = getTripleKickPowers().slice(0, hitCount).map(hitPower => calculateDamage(
           attack,
           defense,
           level,
@@ -8504,7 +8514,8 @@ function calculateMoveDamageRange(move, turnIndex = 0) {
         }
 
         if (move.class === 'triple_kick') {
-            finalAccuracy = Math.pow(finalAccuracy, 3);
+            const hitCount = getSelectedTripleKickHitCount();
+            finalAccuracy = getTripleKickHitProbabilities(finalAccuracy * 100)[hitCount];
         }
 
         // まひの効果（1/4で行動不能）
@@ -8688,7 +8699,8 @@ function calculateMoveDamageRangeWithItems(move, turnIndex = 0) {
         }
 
         if (move.class === 'triple_kick') {
-            finalAccuracy = Math.pow(finalAccuracy, 3);
+            const hitCount = getSelectedTripleKickHitCount();
+            finalAccuracy = getTripleKickHitProbabilities(finalAccuracy * 100)[hitCount];
         }
 
         // まひの効果
@@ -10991,7 +11003,9 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
         moveDisplayText = `${currentMove.name} (威力10×${members.length}体, 各手持ちのLv・攻撃種族値を使用${accuracyText})`;
     } else if (currentMove && currentMove.class === 'triple_kick') {
         const probabilities = getTripleKickHitProbabilities(currentMove.accuracy || 100);
-        moveDisplayText = `${currentMove.name} (威力10→20→30, 各段命中${currentMove.accuracy}, 3段命中${(probabilities[3] * 100).toFixed(1)}%, ${currentMove.type}, 物理)`;
+        const hitCount = getSelectedTripleKickHitCount();
+        const powers = getTripleKickPowers().slice(0, hitCount).join('→');
+        moveDisplayText = `${currentMove.name} (威力${powers}, ${hitCount}段結果${(probabilities[hitCount] * 100).toFixed(1)}%, 各段命中${currentMove.accuracy}, ${currentMove.type}, 物理)`;
     } else if (currentMove && currentMove.class === 'multi_hit') {
         const hitCountSelect = document.getElementById('multiHitCount');
         const selectedHitCount = hitCountSelect ? hitCountSelect.value : '2-5';

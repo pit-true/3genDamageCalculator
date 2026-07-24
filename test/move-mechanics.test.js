@@ -115,6 +115,16 @@ test('トリプルキックは威力10・20・30で、各段ごとに命中判�
   );
 });
 
+test('トリプルキックは1・2・3段で止まる各結果を選択できる', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+
+  assert.match(html, /id="tripleKickSettings"/);
+  assert.match(html, /id="tripleKickHits"/);
+  assert.match(html, /value="1"/);
+  assert.match(html, /value="2"/);
+  assert.match(html, /value="3"/);
+});
+
 test('ふくろだたきは参加メンバーのLvと攻撃種族値を使う', () => {
   const script = loadScript();
   const members = JSON.parse(script.evaluate(
