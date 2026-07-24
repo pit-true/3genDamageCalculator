@@ -96,3 +96,21 @@ test('サイコウェーブとプレゼントを専用クラスと設定UIへ接
   assert.match(html, /id="presentSettings"/);
   assert.match(html, /id="presentOutcome"/);
 });
+
+test('トリプルキックは威力10・20・30で、各段ごとに命中判定する', () => {
+  const script = loadScript();
+
+  assert.deepEqual(Array.from(script.evaluate('getTripleKickPowers()')), [10, 20, 30]);
+  assert.deepEqual(
+    Array.from(script.evaluate(
+      'getTripleKickHitProbabilities(90).map(value => Math.round(value * 1000) / 1000)'
+    )),
+    [0.1, 0.09, 0.081, 0.729]
+  );
+  assert.deepEqual(
+    Array.from(script.evaluate(
+      'sumDamageRanges([[8, 10], [15, 20], [23, 30]])'
+    )),
+    [46, 60]
+  );
+});

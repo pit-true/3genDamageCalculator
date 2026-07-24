@@ -5255,6 +5255,29 @@ function isPresentHealingSelected(move) {
            document.getElementById('presentOutcome')?.value === 'heal';
 }
 
+function getTripleKickPowers() {
+    return [10, 20, 30];
+}
+
+function getTripleKickHitProbabilities(accuracy) {
+    const hitRate = Math.max(0, Math.min(100, Number(accuracy) || 0)) / 100;
+    const missRate = 1 - hitRate;
+    return [
+        missRate,
+        hitRate * missRate,
+        hitRate * hitRate * missRate,
+        hitRate * hitRate * hitRate
+    ];
+}
+
+function sumDamageRanges(ranges) {
+    return ranges.reduce((total, range) => {
+        total[0] += range[0];
+        total[1] += range[1];
+        return total;
+    }, [0, 0]);
+}
+
 function calculatePower(move) {
     // きしかいせい・じたばた
     if (move.class === 'pinch_up') {
@@ -5584,6 +5607,24 @@ function calculateDamage(attack, defense, level, power, category, moveType, atta
   let finalDefense = defense;
   let finalPower = power;
   let effectiveAtkRank = atkRank;
+
+  if (move && move.class === 'triple_kick') {
+      const singleHitMove = { ...move, class: 'triple_kick_hit' };
+      const hitRanges = getTripleKickPowers().map(hitPower => calculateDamage(
+          attack,
+          defense,
+          level,
+          hitPower,
+          category,
+          moveType,
+          attackerTypes,
+          defenderTypes,
+          atkRank,
+          defRank,
+          singleHitMove
+      ));
+      return sumDamageRanges(hitRanges);
+  }
 
   if (move && move.class === 'psywave') {
       const damageValues = calculatePsywaveDamageValues(level);
@@ -8339,7 +8380,11 @@ function calculateMoveDamageRange(move, turnIndex = 0) {
                 finalAccuracy = baseAccuracy;
             }
         }
-        
+
+        if (move.class === 'triple_kick') {
+            finalAccuracy = Math.pow(finalAccuracy, 3);
+        }
+
         // まひの効果（1/4で行動不能）
         const paralysisSelect = document.getElementById('paralysisSelect');
         const paralysisStartTurn = paralysisSelect ? parseInt(paralysisSelect.value) : null;
@@ -8519,7 +8564,11 @@ function calculateMoveDamageRangeWithItems(move, turnIndex = 0) {
                 finalAccuracy = baseAccuracy;
             }
         }
-        
+
+        if (move.class === 'triple_kick') {
+            finalAccuracy = Math.pow(finalAccuracy, 3);
+        }
+
         // まひの効果
         const paralysisSelect = document.getElementById('paralysisSelect');
         const paralysisStartTurn = paralysisSelect ? parseInt(paralysisSelect.value) : null;
@@ -10608,7 +10657,8 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
     
     // 連続技の場合の表示用ダメージ範囲計算
     if (currentMove && currentMove.class === 'psywave') {
-        moveDisplayText = `${currentMove.name} (Lvの50～150%, ${currentMove.type}, 特殊${accuracyText})`;
+        displayMinDamage = baseDisplayMin;
+        displayMaxDamage = baseDisplayMax;
     } else if (currentMove && currentMove.class === 'multi_hit') {
         const hitCountSelect = document.getElementById('multiHitCount');
         const selectedHitCount = hitCountSelect ? hitCountSelect.value : '2-5';
@@ -10805,7 +10855,12 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
     
     // 技表示テキストの生成
     let moveDisplayText = '';
-    if (currentMove && currentMove.class === 'multi_hit') {
+    if (currentMove && currentMove.class === 'psywave') {
+        moveDisplayText = `${currentMove.name} (Lvの50～150%, ${currentMove.type}, 特殊${accuracyText})`;
+    } else if (currentMove && currentMove.class === 'triple_kick') {
+        const probabilities = getTripleKickHitProbabilities(currentMove.accuracy || 100);
+        moveDisplayText = `${currentMove.name} (威力10→20→30, 各段命中${currentMove.accuracy}, 3段命中${(probabilities[3] * 100).toFixed(1)}%, ${currentMove.type}, 物理)`;
+    } else if (currentMove && currentMove.class === 'multi_hit') {
         const hitCountSelect = document.getElementById('multiHitCount');
         const selectedHitCount = hitCountSelect ? hitCountSelect.value : '2-5';
         
