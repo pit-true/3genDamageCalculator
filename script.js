@@ -1311,11 +1311,15 @@ function hideAllMoveSpecialSettings() {
     const pinchUpContainer = document.querySelector('.pinchUpContainer');
     const pinchDownContainer = document.querySelector('.pinchDownContainer');
     const twofoldContainer = document.getElementById('twofoldContainer');
-    
+    const moveSpecialSettings = document.querySelectorAll('.move-special-setting');
+
     if (multiHitContainer) multiHitContainer.style.display = 'none';
     if (pinchUpContainer) pinchUpContainer.style.display = 'none';
     if (pinchDownContainer) pinchDownContainer.style.display = 'none';
     if (twofoldContainer) twofoldContainer.style.display = 'none';
+    moveSpecialSettings.forEach(setting => {
+        setting.style.display = 'none';
+    });
 }
 
 // アイテムドロップダウンの設定を修正
@@ -2487,11 +2491,15 @@ function selectMove(moveName) {
     const pinchUpContainer = document.querySelector('.pinchUpContainer');
     const pinchDownContainer = document.querySelector('.pinchDownContainer');
     const twofoldContainer = document.getElementById('twofoldContainer');
-    
+    const moveSpecialSettings = document.querySelectorAll('.move-special-setting');
+
     if (multiHitContainer) multiHitContainer.style.display = 'none';
     if (pinchUpContainer) pinchUpContainer.style.display = 'none';
     if (pinchDownContainer) pinchDownContainer.style.display = 'none';
     if (twofoldContainer) twofoldContainer.style.display = 'none';
+    moveSpecialSettings.forEach(setting => {
+        setting.style.display = 'none';
+    });
     
     currentMove = moveData.find(m => m.name === moveName);
 
@@ -2529,6 +2537,22 @@ function selectMove(moveName) {
             if (twofoldContainer) {
                 twofoldContainer.style.display = 'flex';
             }
+            break;
+
+        case 'ice_ball':
+            document.getElementById('iceBallSettings').style.display = 'flex';
+            break;
+
+        case 'rage':
+            document.getElementById('rageSettings').style.display = 'flex';
+            break;
+
+        case 'spit_up':
+            document.getElementById('spitUpSettings').style.display = 'flex';
+            break;
+
+        case 'fury_cutter':
+            document.getElementById('furyCutterSettings').style.display = 'flex';
             break;
     }
 }
@@ -5179,6 +5203,32 @@ function clearRealStatInputLimits(side) {
 // ========================
 
 // 威力計算
+function calculateIceBallPower(turn, usedDefenseCurl) {
+    const boundedTurn = Math.max(1, Math.min(5, parseInt(turn) || 1));
+    const defenseCurlMultiplier = usedDefenseCurl ? 2 : 1;
+    return 30 * Math.pow(2, boundedTurn - 1) * defenseCurlMultiplier;
+}
+
+function calculateFuryCutterPower(successCount) {
+    const boundedCount = Math.max(1, Math.min(5, parseInt(successCount) || 1));
+    return 10 * Math.pow(2, boundedCount - 1);
+}
+
+function calculateRageAttackRank(baseRank, hitCount) {
+    const parsedRank = baseRank === '±0' ? 0 : parseInt(baseRank) || 0;
+    const boundedHitCount = Math.max(0, Math.min(6, parseInt(hitCount) || 0));
+    const finalRank = Math.max(-6, Math.min(6, parsedRank + boundedHitCount));
+
+    if (finalRank > 0) return `+${finalRank}`;
+    if (finalRank === 0) return '±0';
+    return finalRank.toString();
+}
+
+function calculateSpitUpDamage(baseDamage, stockpileCount) {
+    const boundedCount = Math.max(1, Math.min(3, parseInt(stockpileCount) || 1));
+    return baseDamage * boundedCount;
+}
+
 function calculatePower(move) {
     // きしかいせい・じたばた
     if (move.class === 'pinch_up') {
@@ -5214,6 +5264,15 @@ function calculatePower(move) {
         else if (defenderWeight < 100.0) return 80;
         else if (defenderWeight < 200.0) return 100;
         else return 120;
+    }
+    else if (move.class === 'ice_ball') {
+        const turn = document.getElementById('iceBallTurn')?.value || 1;
+        const usedDefenseCurl = document.getElementById('defenseCurlCheck')?.checked || false;
+        return calculateIceBallPower(turn, usedDefenseCurl);
+    }
+    else if (move.class === 'fury_cutter') {
+        const successCount = document.getElementById('furyCutterCount')?.value || 1;
+        return calculateFuryCutterPower(successCount);
     }
 
     return move.power || 0;
@@ -5494,6 +5553,7 @@ function calculateDamage(attack, defense, level, power, category, moveType, atta
   let finalAttack = attack;
   let finalDefense = defense;
   let finalPower = power;
+  let effectiveAtkRank = atkRank;
   
   
   // きしかいせい・じたばた
@@ -5515,6 +5575,11 @@ function calculateDamage(attack, defense, level, power, category, moveType, atta
     } else {
       finalPower = 200;
     }
+  }
+
+  if (currentMove && currentMove.class === 'rage') {
+    const rageHitCount = document.getElementById('rageHitCount')?.value || 0;
+    effectiveAtkRank = calculateRageAttackRank(atkRank, rageHitCount);
   }
 
   // 1. ちからもちorヨガパワー
@@ -5619,7 +5684,7 @@ function calculateDamage(attack, defense, level, power, category, moveType, atta
   }
   
   // ランク補正
-  const atkRankMultiplier = getRankMultiplier(atkRank);
+  const atkRankMultiplier = getRankMultiplier(effectiveAtkRank);
   const defRankMultiplier = getRankMultiplier(defRank);
 
   finalAttack = Math.floor(finalAttack * atkRankMultiplier);
@@ -5683,10 +5748,16 @@ function calculateDamage(attack, defense, level, power, category, moveType, atta
 
   // proc+2
   proc += 2;
-   
+
+  // はきだすは通常のダメージ計算後に、たくわえた回数を掛ける
+  if (currentMove && currentMove.class === 'spit_up') {
+      const stockpileCount = document.getElementById('stockpileCount')?.value || 1;
+      proc = calculateSpitUpDamage(proc, stockpileCount);
+  }
+
   // 急所
   const isCritical = document.getElementById('criticalCheck').checked;
-  if (isCritical) {
+  if (isCritical && (!currentMove || currentMove.class !== 'spit_up')) {
       proc = Math.floor(proc * 2);
   }
 
@@ -5869,7 +5940,7 @@ function performDamageCalculationEnhanced() {
             attackValue,
             defenseValue,
             attackerPokemon.level,
-            currentMove.power || 0,
+            calculatePower(currentMove),
             currentMove.category,
             currentMove.type,
             attackerPokemon.types,
@@ -5911,7 +5982,7 @@ function performDamageCalculationEnhanced() {
         attackValue,
         defenseValue,
         attackerPokemon.level,
-        currentMove.power || 0,
+        calculatePower(currentMove),
         currentMove.category,
         currentMove.type,
         attackerPokemon.types,
@@ -7366,7 +7437,7 @@ function performDamageCalculationEnhanced() {
             attackValue,
             defenseValue,
             attackerPokemon.level,
-            currentMove.power || 0,
+            calculatePower(currentMove),
             currentMove.category,
             currentMove.type,
             attackerPokemon.types,
@@ -7413,7 +7484,7 @@ function performDamageCalculationEnhanced() {
         attackValue,
         defenseValue,
         attackerPokemon.level,
-        currentMove.power || 0,
+        calculatePower(currentMove),
         currentMove.category,
         currentMove.type,
         attackerPokemon.types,
@@ -8143,10 +8214,7 @@ function calculateMoveDamageRange(move, turnIndex = 0) {
     const defRank = defRankElement ? defRankElement.value : '±0';
     
     // 威力計算
-    let movePower = move.power || 0;
-    if (move.class === 'pinch_up' || move.class === 'pinch_down' || move.class === 'weight_based') {
-        movePower = calculatePower(move);
-    }
+    const movePower = calculatePower(move);
 
     // ★修正: 防御側のアイテムのみを一時的に無効化
     const originalDefenderItem = defenderPokemon.item;
@@ -8338,10 +8406,7 @@ function calculateMoveDamageRangeWithItems(move, turnIndex = 0) {
     const defRank = defRankElement ? defRankElement.value : '±0';
     
     // 威力計算
-    let movePower = move.power || 0;
-    if (move.class === 'pinch_up' || move.class === 'pinch_down' || move.class === 'weight_based') {
-        movePower = calculatePower(move);
-    }
+    const movePower = calculatePower(move);
 
     // ★重要: アイテム効果を含めてダメージ計算
     const [baseDamageMin, baseDamageMax] = calculateDamage(
@@ -10451,10 +10516,7 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
     defenderPokemon.item = null; // 防御側アイテムのみ除外
     
     // 威力計算（weight_based技などに対応）
-    let displayPower = currentMove.power || 0;
-    if (currentMove.class === 'pinch_up' || currentMove.class === 'pinch_down' || currentMove.class === 'weight_based') {
-        displayPower = calculatePower(currentMove);
-    }
+    const displayPower = calculatePower(currentMove);
     
     const [baseDisplayMin, baseDisplayMax] = calculateDamage(
         attackerOffensiveStat,
@@ -10864,7 +10926,7 @@ function displayMultiTurnResults(totalHP, isSingleMove = false) {
         attackValue,
         defenseValue,
         attackerPokemon.level,
-        currentMove.power || 0,
+        calculatePower(currentMove),
         currentMove.category,
         currentMove.type,
         attackerPokemon.types,
@@ -11383,7 +11445,7 @@ function performDamageCalculationEnhancedUnified() {
         attackValue,
         defenseValue,
         attackerPokemon.level,
-        currentMove.power || 0,
+        calculatePower(currentMove),
         currentMove.category,
         currentMove.type,
         attackerPokemon.types,

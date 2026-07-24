@@ -28,7 +28,7 @@
     "power": 30,
 	  "accuracy":90,
     "category": "Special",
-    "class": "variable",
+    "class": "ice_ball",
     "target": 1
   },
   {
@@ -88,7 +88,7 @@
     "power": 20,
 	  "accuracy":100,
     "category": "Physical",
-    "class": "variable",
+    "class": "rage",
     "target": 1
   },
   {
@@ -1590,7 +1590,7 @@
     "power": 100,
 	  "accuracy":100,
     "category": "Physical",
-    "class": "special_case",
+    "class": "spit_up",
     "target": 1
   },
   {
@@ -2211,7 +2211,7 @@
     "power": 10,
 	  "accuracy":95,
     "category": "Physical",
-    "class": "standard",
+    "class": "fury_cutter",
     "target": 1
   },
   {

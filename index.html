@@ -232,6 +232,51 @@
                 <input type="number" id="pinchDown_maxHP" min="1" value="100">
               </div>
             </div>
+            <!-- アイスボール設定 -->
+            <div class="move-special-setting" id="iceBallSettings" style="display: none;">
+                <label for="iceBallTurn">連続ターン:</label>
+                <select id="iceBallTurn">
+                    <option value="1" selected>1ターン目</option>
+                    <option value="2">2ターン目</option>
+                    <option value="3">3ターン目</option>
+                    <option value="4">4ターン目</option>
+                    <option value="5">5ターン目</option>
+                </select>
+                <label><input type="checkbox" id="defenseCurlCheck"> まるくなる済み</label>
+            </div>
+            <!-- いかり設定 -->
+            <div class="move-special-setting" id="rageSettings" style="display: none;">
+                <label for="rageHitCount">被弾回数:</label>
+                <select id="rageHitCount">
+                    <option value="0" selected>0回</option>
+                    <option value="1">1回</option>
+                    <option value="2">2回</option>
+                    <option value="3">3回</option>
+                    <option value="4">4回</option>
+                    <option value="5">5回</option>
+                    <option value="6">6回</option>
+                </select>
+            </div>
+            <!-- はきだす設定 -->
+            <div class="move-special-setting" id="spitUpSettings" style="display: none;">
+                <label for="stockpileCount">たくわえた回数:</label>
+                <select id="stockpileCount">
+                    <option value="1" selected>1回</option>
+                    <option value="2">2回</option>
+                    <option value="3">3回</option>
+                </select>
+            </div>
+            <!-- れんぞくぎり設定 -->
+            <div class="move-special-setting" id="furyCutterSettings" style="display: none;">
+                <label for="furyCutterCount">連続成功:</label>
+                <select id="furyCutterCount">
+                    <option value="1" selected>1回目</option>
+                    <option value="2">2回目</option>
+                    <option value="3">3回目</option>
+                    <option value="4">4回目</option>
+                    <option value="5">5回目</option>
+                </select>
+            </div>
             <!-- 攻撃側の特性チェックボックス -->
             <div class="attackerAbilityContainer ability-container" style="display: none;">
               <label id="yogaPowerContainer" class="ability-checkbox">
