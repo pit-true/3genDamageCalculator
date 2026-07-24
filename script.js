@@ -2558,6 +2558,10 @@ function selectMove(moveName) {
         case 'present':
             document.getElementById('presentSettings').style.display = 'flex';
             break;
+
+        case 'beat_up':
+            document.getElementById('beatUpSettings').style.display = 'flex';
+            break;
     }
 }
 
@@ -5278,6 +5282,59 @@ function sumDamageRanges(ranges) {
     }, [0, 0]);
 }
 
+function parseBeatUpMembers(value, fallbackLevel, fallbackBaseAttack) {
+    const members = String(value || '')
+        .split(/[,、\n]/)
+        .map(entry => entry.trim())
+        .filter(Boolean)
+        .map(entry => {
+            const [levelText, baseAttackText] = entry.split(/[:：]/);
+            const level = parseInt(levelText);
+            const baseAttack = parseInt(baseAttackText);
+            if (!Number.isFinite(level) || level < 1 || level > 100 ||
+                !Number.isFinite(baseAttack) || baseAttack < 1 || baseAttack > 255) {
+                return null;
+            }
+            return { level, baseAttack };
+        })
+        .filter(Boolean)
+        .slice(0, 6);
+
+    if (members.length > 0) {
+        return members;
+    }
+
+    return [{
+        level: Math.max(1, Math.min(100, parseInt(fallbackLevel) || 50)),
+        baseAttack: Math.max(1, Math.min(255, parseInt(fallbackBaseAttack) || 1))
+    }];
+}
+
+function calculateBeatUpMemberDamage(level, baseAttack, defenderBaseDefense) {
+    const levelFactor = Math.floor(level * 2 / 5) + 2;
+    let damage = baseAttack * 10 * levelFactor;
+    damage = Math.floor(damage / Math.max(1, defenderBaseDefense));
+    damage = Math.floor(damage / 50);
+    return damage + 2;
+}
+
+function calculateBeatUpTotalDamage(members, defenderBaseDefense, helpingHand = false, critical = false) {
+    return members.reduce((total, member) => {
+        let damage = calculateBeatUpMemberDamage(
+            member.level,
+            member.baseAttack,
+            defenderBaseDefense
+        );
+        if (helpingHand) {
+            damage = Math.floor(damage * 1.5);
+        }
+        if (critical) {
+            damage *= 2;
+        }
+        return total + damage;
+    }, 0);
+}
+
 function calculatePower(move) {
     // きしかいせい・じたばた
     if (move.class === 'pinch_up') {
@@ -5607,6 +5664,22 @@ function calculateDamage(attack, defense, level, power, category, moveType, atta
   let finalDefense = defense;
   let finalPower = power;
   let effectiveAtkRank = atkRank;
+
+  if (move && move.class === 'beat_up') {
+      const memberInput = document.getElementById('beatUpMembers')?.value || '';
+      const members = parseBeatUpMembers(
+          memberInput,
+          attackerPokemon.level,
+          attackerPokemon.baseStats?.a
+      );
+      const damage = calculateBeatUpTotalDamage(
+          members,
+          defenderPokemon.baseStats?.b || 1,
+          document.getElementById('helpCheck')?.checked || false,
+          document.getElementById('criticalCheck')?.checked || false
+      );
+      return [damage, damage];
+  }
 
   if (move && move.class === 'triple_kick') {
       const singleHitMove = { ...move, class: 'triple_kick_hit' };
@@ -10612,9 +10685,12 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
     const defenderStats = calculateStats(defenderPokemon);
     
     // 技の分類に応じて実数値を取得
+    const isBeatUp = currentMove.class === 'beat_up';
     const isPhysical = currentMove.category === "Physical";
-    const attackerOffensiveStat = isPhysical ? attackerStats.a : attackerStats.c;
-    const defenderDefensiveStat = isPhysical ? defenderStats.b : defenderStats.d;
+    const attackerOffensiveStat = isBeatUp ? attackerPokemon.baseStats.a :
+        (isPhysical ? attackerStats.a : attackerStats.c);
+    const defenderDefensiveStat = isBeatUp ? defenderPokemon.baseStats.b :
+        (isPhysical ? defenderStats.b : defenderStats.d);
     
     // 現在HPを取得
     let currentHP = totalHP;
@@ -10840,8 +10916,8 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
     const damageRangeLabel = isMultiTurn ? '1発目のダメージ範囲' : 'ダメージ範囲';
     
     // ステータス表記の生成
-    const offenseStatLabel = isPhysical ? 'A' : 'C';
-    const defenseStatLabel = isPhysical ? 'B' : 'D';
+    const offenseStatLabel = isBeatUp ? '種族A' : (isPhysical ? 'A' : 'C');
+    const defenseStatLabel = isBeatUp ? '種族B' : (isPhysical ? 'B' : 'D');
     
     // 防御側HP表記の生成
     let defenderHPDisplay = '';
@@ -10857,6 +10933,13 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
     let moveDisplayText = '';
     if (currentMove && currentMove.class === 'psywave') {
         moveDisplayText = `${currentMove.name} (Lvの50～150%, ${currentMove.type}, 特殊${accuracyText})`;
+    } else if (currentMove && currentMove.class === 'beat_up') {
+        const members = parseBeatUpMembers(
+            document.getElementById('beatUpMembers')?.value || '',
+            attackerPokemon.level,
+            attackerPokemon.baseStats.a
+        );
+        moveDisplayText = `${currentMove.name} (威力10×${members.length}体, 各手持ちのLv・攻撃種族値を使用${accuracyText})`;
     } else if (currentMove && currentMove.class === 'triple_kick') {
         const probabilities = getTripleKickHitProbabilities(currentMove.accuracy || 100);
         moveDisplayText = `${currentMove.name} (威力10→20→30, 各段命中${currentMove.accuracy}, 3段命中${(probabilities[3] * 100).toFixed(1)}%, ${currentMove.type}, 物理)`;

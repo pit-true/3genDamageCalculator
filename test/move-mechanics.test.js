@@ -114,3 +114,41 @@ test('トリプルキックは威力10・20・30で、各段ごとに命中判�
     [46, 60]
   );
 });
+
+test('ふくろだたきは参加メンバーのLvと攻撃種族値を使う', () => {
+  const script = loadScript();
+  const members = JSON.parse(script.evaluate(
+    "JSON.stringify(parseBeatUpMembers('50:100, 25:80', 40, 70))"
+  ));
+
+  assert.deepEqual(members, [
+    { level: 50, baseAttack: 100 },
+    { level: 25, baseAttack: 80 }
+  ]);
+  assert.equal(
+    script.evaluate("JSON.stringify(parseBeatUpMembers('', 40, 70))"),
+    '[{"level":40,"baseAttack":70}]'
+  );
+  assert.equal(
+    script.evaluate(
+      'calculateBeatUpTotalDamage([{ level: 50, baseAttack: 100 }, { level: 25, baseAttack: 80 }], 100)'
+    ),
+    9
+  );
+  assert.equal(
+    script.evaluate(
+      'calculateBeatUpTotalDamage([{ level: 50, baseAttack: 100 }, { level: 25, baseAttack: 80 }], 100, true, true)'
+    ),
+    26
+  );
+});
+
+test('未対応技一覧を解消し、ふくろだたきを専用UIへ接続する', () => {
+  const moves = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'pokemon_moves.json'), 'utf8'));
+  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+
+  assert.equal(moves.find(move => move.name === 'ふくろだたき').class, 'beat_up');
+  assert.match(html, /id="beatUpSettings"/);
+  assert.match(html, /id="beatUpMembers"/);
+  assert.doesNotMatch(html, /<strong>未対応技:<\/strong>/);
+});

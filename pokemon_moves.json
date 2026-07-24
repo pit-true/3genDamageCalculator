@@ -1730,7 +1730,7 @@
     "power": 10,
 	  "accuracy":100,
     "category": "Special",
-    "class": "variable",
+    "class": "beat_up",
     "target": 1
   },
   {
