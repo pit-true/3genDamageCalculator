@@ -5658,6 +5658,10 @@ function getRankMultiplier(rankValue) {
     return mult ? mult.numerator / mult.denominator : 1.0;
 }
 
+function applyBadgeModifier(stat, enabled) {
+    return enabled ? Math.floor(stat * 110 / 100) : stat;
+}
+
 // ダメージ計算本体
 function calculateDamage(attack, defense, level, power, category, moveType, attackerTypes, defenderTypes, atkRank, defRank, move = currentMove) {
   let finalAttack = attack;
@@ -5742,7 +5746,15 @@ function calculateDamage(attack, defense, level, power, category, moveType, atta
   else if (document.getElementById('hugePowerCheck').checked && category === "Physical") {
     finalAttack = Math.floor(finalAttack * 2);
   }
-  // 2. バッジ補正 (今回はスキップ)
+  // 2. バッジ補正
+  finalAttack = applyBadgeModifier(
+      finalAttack,
+      document.getElementById('attackerBadgeCheck')?.checked || false
+  );
+  finalDefense = applyBadgeModifier(
+      finalDefense,
+      document.getElementById('defenderBadgeCheck')?.checked || false
+  );
 
   // 3. もちもの補正
   if (attackerPokemon.item) {
