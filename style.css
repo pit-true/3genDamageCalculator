@@ -1695,9 +1695,13 @@ input[type="number"]::-webkit-inner-spin-button {
    ======================== */
 .mobile-control-bar {
     position: fixed;
+    left: 20px;
+    right: 20px;
+    bottom: 30px;
     z-index: 1000;
     pointer-events: auto;
     transform: translateY(120px);
+    opacity: 0;
 }
 
 /* ★追加: 表示状態のスタイル */

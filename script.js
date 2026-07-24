@@ -11597,6 +11597,16 @@ function isTabletOrMobile() {
            (window.innerWidth >= 1100 && window.innerWidth <= 1199);
 }
 
+function isChromeBrowser() {
+    const userAgent = navigator.userAgent || '';
+    const isChrome = /Chrome\/|CriOS\//.test(userAgent);
+    const isOtherChromiumBrowser = /Edg\/|EdgiOS\/|OPR\/|Opera\/|SamsungBrowser\//.test(userAgent);
+    return isChrome && !isOtherChromiumBrowser;
+}
+
+function shouldUseSliderControls() {
+    return isTabletOrMobile() || isChromeBrowser();
+}
 /**
  * 数値入力欄のイベントリスナーを設定
  */
@@ -11642,7 +11652,7 @@ function setupMobileInputListeners() {
             // ★修正：判定関数を使用
             // モバイル専用のタッチイベント
             input.addEventListener('touchstart', function(e) {
-                if (isTabletOrMobile()) {
+                if (shouldUseSliderControls()) {
                     // タッチデバイスでは既存機能を無効化してモバイルコントロールを使用
                     e.preventDefault();
                     activateMobileControl(this);
@@ -11650,7 +11660,7 @@ function setupMobileInputListeners() {
             }, { passive: false });
             
             input.addEventListener('touchend', function(e) {
-                if (isTabletOrMobile()) {
+                if (shouldUseSliderControls()) {
                     e.preventDefault();
                     if (mobileControlState.activeInput !== this) {
                         activateMobileControl(this);
@@ -11660,7 +11670,7 @@ function setupMobileInputListeners() {
             
             // ★修正：フォーカスイベントも判定関数を使用
             const originalFocusHandler = function(e) {
-                if (isTabletOrMobile()) {
+                if (shouldUseSliderControls()) {
                     setTimeout(() => {
                         if (mobileControlState.activeInput !== this) {
                             activateMobileControl(this);
@@ -11672,7 +11682,7 @@ function setupMobileInputListeners() {
             
             // ★修正：クリック時も判定関数を使用
             input.addEventListener('click', function(e) {
-                if (isTabletOrMobile()) {
+                if (shouldUseSliderControls()) {
                     e.preventDefault();
                     if (mobileControlState.activeInput !== this) {
                         activateMobileControl(this);
@@ -11685,7 +11695,7 @@ function setupMobileInputListeners() {
     
     // ★修正：画面外タップ検知も判定関数を使用
     document.addEventListener('touchstart', function(e) {
-        if (isTabletOrMobile() && 
+        if (shouldUseSliderControls() &&
             mobileControlState.isActive &&
             !e.target.closest('.mobile-control-bar') && 
             !e.target.closest('.mobile-control-content') &&
@@ -12760,14 +12770,14 @@ function setValueAndTriggerEvents(input, value) {
 function setupSpinButtonHandlingFixed(input, config) {
     // キーボード操作（矢印キー）- デスクトップのみ
     input.addEventListener('keydown', function(e) {
-        if (!isTabletOrMobile() && e.key === 'ArrowDown') {
+        if (!shouldUseSliderControls() && e.key === 'ArrowDown') {
             setTimeout(() => handleSpinButtonDownFixed(config), 10);
         }
     });
 
     // マウス操作（スピンボタンクリック）- デスクトップのみ
     input.addEventListener('mousedown', function(e) {
-        if (!isTabletOrMobile() && isSpinButtonDownClickFixed(e, input)) {
+        if (!shouldUseSliderControls() && isSpinButtonDownClickFixed(e, input)) {
             setTimeout(() => handleSpinButtonDownFixed(config), 10);
         }
     });
@@ -12787,7 +12797,7 @@ function setupRealStatInputFixed({ id, side, stat, type }) {
         }
         
         // ★修正：判定関数を使用
-        if (!isTabletOrMobile()) {
+        if (!shouldUseSliderControls()) {
             const currentValue = parseInt(e.target.value) || 0;
             if (currentValue !== previousValue) {
                 if (realStatManager && realStatManager.isUpdating) {
@@ -12810,7 +12820,7 @@ function setupRealStatInputFixed({ id, side, stat, type }) {
 
 window.addEventListener('resize', function() {
     // リサイズ時に判定し直して必要に応じてモバイルコントロールを非表示
-    if (!isTabletOrMobile() && mobileControlState.isActive) {
+    if (!shouldUseSliderControls() && mobileControlState.isActive) {
         deactivateMobileControl();
     }
 });
