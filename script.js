@@ -257,10 +257,12 @@ function restoreLevels() {
     
     if (attackerLevel && attackerLevel.value) {
         attackerPokemon.level = parseInt(attackerLevel.value) || 50;
+        syncLevelPreset('attacker', attackerPokemon.level);
     }
-    
+
     if (defenderLevel && defenderLevel.value) {
         defenderPokemon.level = parseInt(defenderLevel.value) || 50;
+        syncLevelPreset('defender', defenderPokemon.level);
     }
 }
 
@@ -700,34 +702,67 @@ function initializeNatureButtons() {
     updateMainNatureButtons('defender', 'd', 1.0);
 }
 
+function getLevelPresets() {
+    return [5, 15, 20, 30, 50, 55, 100];
+}
+
+function normalizeLevel(value) {
+    return Math.max(1, Math.min(100, parseInt(value) || 50));
+}
+
+function syncLevelPreset(side, level) {
+    const preset = document.getElementById(`${side}LevelPreset`);
+    if (!preset) return;
+
+    const normalizedLevel = normalizeLevel(level);
+    preset.value = getLevelPresets().includes(normalizedLevel) ?
+        String(normalizedLevel) :
+        '';
+}
+
+function applyLevelChange(side, value) {
+    const target = side === 'attacker' ? attackerPokemon : defenderPokemon;
+    const level = normalizeLevel(value);
+    target.level = level;
+    syncLevelPreset(side, level);
+    updateStats(side);
+}
+
+function setLevelPreset(side, value) {
+    if (!value) return;
+
+    const level = normalizeLevel(value);
+    const levelInput = document.getElementById(`${side}Level`);
+    if (levelInput) {
+        levelInput.value = level;
+    }
+    applyLevelChange(side, level);
+}
+
 // イベントリスナーの設定
 function setupEventListeners() {
     // レベル変更時（修正：制限更新を追加）
     document.getElementById('attackerLevel').addEventListener('change', function() {
-        attackerPokemon.level = parseInt(this.value) || 50;
-        updateStats('attacker');
+        applyLevelChange('attacker', this.value);
         // 制限更新は updateStats 内で実行される
     });
-    
+
     document.getElementById('defenderLevel').addEventListener('change', function() {
-        defenderPokemon.level = parseInt(this.value) || 50;
-        updateStats('defender');
+        applyLevelChange('defender', this.value);
         // 制限更新は updateStats 内で実行される
     });
-    
+
     // inputイベントも追加（スピンボタン対応）（修正：制限更新を追加）
     document.getElementById('attackerLevel').addEventListener('input', function() {
-        attackerPokemon.level = parseInt(this.value) || 50;
-        updateStats('attacker');
+        applyLevelChange('attacker', this.value);
         // 制限更新は updateStats 内で実行される
     });
-    
+
     document.getElementById('defenderLevel').addEventListener('input', function() {
-        defenderPokemon.level = parseInt(this.value) || 50;
-        updateStats('defender');
+        applyLevelChange('defender', this.value);
         // 制限更新は updateStats 内で実行される
     });
-    
+
     // 性格変更時
     document.getElementById('attackerNature').addEventListener('change', () => selectNature('attacker'));
     document.getElementById('defenderNature').addEventListener('change', () => selectNature('defender'));
@@ -2100,6 +2135,8 @@ function swapPokemon() {
     document.getElementById('defenderLevel').value = tempInputs.level;
     document.getElementById('defenderNature').value = tempInputs.nature;
     document.getElementById('defenderItem').value = tempInputs.item;
+    syncLevelPreset('attacker', document.getElementById('attackerLevel').value);
+    syncLevelPreset('defender', document.getElementById('defenderLevel').value);
     
     // ★修正：詳細設定の値を入れ替え
     swapDetailSettings(tempInputs);

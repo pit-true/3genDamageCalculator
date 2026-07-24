@@ -237,6 +237,17 @@ button:hover {
     font-size: 14px;
 }
 
+.level-input {
+    min-width: 0;
+}
+
+.level-preset {
+    flex: 0 0 78px;
+    width: 78px;
+    margin-left: 5px;
+    padding: 6px 4px;
+}
+
 .stat-row {
     display: flex;
     align-items: center;

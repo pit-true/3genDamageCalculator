@@ -49,7 +49,19 @@
             <!-- レベル -->
             <div class="input-row">
                 <label class="inline-label">レベル:</label>
-                <input type="number" id="attackerLevel" value="50" min="1" max="100">
+                <input type="number" class="level-input" id="attackerLevel" value="50" min="1" max="100">
+                <select class="level-preset" id="attackerLevelPreset"
+                        aria-label="攻撃側レベルプリセット"
+                        onchange="setLevelPreset('attacker', this.value)">
+                    <option value="">任意</option>
+                    <option value="5">Lv5</option>
+                    <option value="15">Lv15</option>
+                    <option value="20">Lv20</option>
+                    <option value="30">Lv30</option>
+                    <option value="50" selected>Lv50</option>
+                    <option value="55">Lv55</option>
+                    <option value="100">Lv100</option>
+                </select>
             </div>
             
             <!-- A実数値・個体値・努力値・性格補正 -->
@@ -440,7 +452,19 @@
             <!-- レベル -->
             <div class="input-row">
                 <label class="inline-label">レベル:</label>
-                <input type="number" id="defenderLevel" value="50" min="1" max="100">
+                <input type="number" class="level-input" id="defenderLevel" value="50" min="1" max="100">
+                <select class="level-preset" id="defenderLevelPreset"
+                        aria-label="防御側レベルプリセット"
+                        onchange="setLevelPreset('defender', this.value)">
+                    <option value="">任意</option>
+                    <option value="5">Lv5</option>
+                    <option value="15">Lv15</option>
+                    <option value="20">Lv20</option>
+                    <option value="30">Lv30</option>
+                    <option value="50" selected>Lv50</option>
+                    <option value="55">Lv55</option>
+                    <option value="100">Lv100</option>
+                </select>
             </div>
             
             <!-- H実数値・個体値・努力値 -->
