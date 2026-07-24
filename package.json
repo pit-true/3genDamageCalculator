@@ -1,0 +1,7 @@
+{
+  "name": "3gen-damage-calculator",
+  "private": true,
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  }
+}

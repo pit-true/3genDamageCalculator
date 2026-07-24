@@ -5462,9 +5462,10 @@ function calculateLeechSeedDamage(maxHP) {
     return Math.floor(maxHP / 8);
 }
 
-// やどりぎ回復量計算（最大HPの1/8回復）
-function calculateLeechSeed2HealAmount(maxHP) {
-    return Math.floor(maxHP / 8);
+// やどりぎ回復量計算（相手＝攻撃側の最大HPの1/8回復）
+function calculateLeechSeed2HealAmount() {
+    const attackerMaxHP = calculateStats(attackerPokemon).hp;
+    return Math.floor(attackerMaxHP / 8);
 }
 
 function getRankMultiplier(rankValue) {
@@ -5982,7 +5983,7 @@ function createHPBar(minDamage, maxDamage, totalHP, keepDamage = false) {
     let leechSeedHeal = 0;
     const leechSeed2Select = document.getElementById('leechSeed2Select');
     if (leechSeed2Select && leechSeed2Select.value !== 'none') {
-        leechSeedHeal = calculateLeechSeed2HealAmount(totalHP);
+        leechSeedHeal = calculateLeechSeed2HealAmount();
     }
     
     if (defenderItem && !isSubstitute) {
@@ -7505,7 +7506,7 @@ function createHPBar(minDamage, maxDamage, totalHP, keepDamage = false) {
     let leechSeedHeal = 0;
     const leechSeed2Select = document.getElementById('leechSeed2Select');
     if (leechSeed2Select && leechSeed2Select.value !== 'none') {
-        leechSeedHeal = calculateLeechSeed2HealAmount(totalHP);
+        leechSeedHeal = calculateLeechSeed2HealAmount();
     }
     
     if (defenderItem && !isSubstitute) { // みがわりの場合はアイテム効果なし
@@ -8777,7 +8778,7 @@ function calculateKORateWithConstantDamage(currentHP, maxHP, moveDataList, turnI
         if (leechSeed2Select) {
             const leechSeed2StartTurn = parseInt(leechSeed2Select.value);
             if (!isNaN(leechSeed2StartTurn) && turnIndex + 1 >= leechSeed2StartTurn) {
-                healAmount = calculateLeechSeed2HealAmount(maxHP);
+                healAmount = calculateLeechSeed2HealAmount();
             }
         }
         
@@ -8818,7 +8819,7 @@ function calculateKORateWithConstantDamage(currentHP, maxHP, moveDataList, turnI
         if (leechSeed2Select) {
             const leechSeed2StartTurn = parseInt(leechSeed2Select.value);
             if (!isNaN(leechSeed2StartTurn) && turnIndex + 1 >= leechSeed2StartTurn) {
-                healAmount = calculateLeechSeed2HealAmount(maxHP);
+                healAmount = calculateLeechSeed2HealAmount();
             }
         }
         
@@ -8850,7 +8851,7 @@ function calculateKORateWithConstantDamage(currentHP, maxHP, moveDataList, turnI
             if (leechSeed2Select) {
                 const leechSeed2StartTurn = parseInt(leechSeed2Select.value);
                 if (!isNaN(leechSeed2StartTurn) && turnIndex + 1 >= leechSeed2StartTurn) {
-                    healAmount = calculateLeechSeed2HealAmount(maxHP);
+                    healAmount = calculateLeechSeed2HealAmount();
                 }
             }
             
@@ -8889,7 +8890,7 @@ function calculateKORateWithLeftovers(currentHP, maxHP, moveDataList, turnIndex,
         if (leechSeed2Select) {
             const leechSeed2StartTurn = parseInt(leechSeed2Select.value);
             if (!isNaN(leechSeed2StartTurn) && turnIndex + 1 >= leechSeed2StartTurn) {
-                healAmount += calculateLeechSeed2HealAmount(maxHP);
+                healAmount += calculateLeechSeed2HealAmount();
             }
         }
         
@@ -8933,7 +8934,7 @@ function calculateKORateWithLeftovers(currentHP, maxHP, moveDataList, turnIndex,
         if (leechSeed2Select) {
             const leechSeed2StartTurn = parseInt(leechSeed2Select.value);
             if (!isNaN(leechSeed2StartTurn) && turnIndex + 1 >= leechSeed2StartTurn) {
-                healAmount += calculateLeechSeed2HealAmount(maxHP);
+                healAmount += calculateLeechSeed2HealAmount();
             }
         }
         
@@ -8963,7 +8964,7 @@ function calculateKORateWithLeftovers(currentHP, maxHP, moveDataList, turnIndex,
             if (leechSeed2Select) {
                 const leechSeed2StartTurn = parseInt(leechSeed2Select.value);
                 if (!isNaN(leechSeed2StartTurn) && turnIndex + 1 >= leechSeed2StartTurn) {
-                    healAmount += calculateLeechSeed2HealAmount(maxHP);
+                    healAmount += calculateLeechSeed2HealAmount();
                 }
             }
             
@@ -9147,7 +9148,7 @@ function processPostDamageHealingDebugSuppressed(hpAfterDamage, maxHP, berryUsed
         if (leechSeed2Select) {
             const leechSeed2StartTurn = parseInt(leechSeed2Select.value);
             if (!isNaN(leechSeed2StartTurn) && turnIndex + 1 >= leechSeed2StartTurn) {
-                additionalHeal = calculateLeechSeed2HealAmount(maxHP);
+                additionalHeal = calculateLeechSeed2HealAmount();
                 healedHP = Math.min(healedHP + additionalHeal, maxHP);
             }
         }
@@ -9185,7 +9186,7 @@ function processPostDamageHealingDebugSuppressed(hpAfterDamage, maxHP, berryUsed
         if (leechSeed2Select) {
             const leechSeed2StartTurn = parseInt(leechSeed2Select.value);
             if (!isNaN(leechSeed2StartTurn) && turnIndex + 1 >= leechSeed2StartTurn) {
-                healAmount = calculateLeechSeed2HealAmount(maxHP);
+                healAmount = calculateLeechSeed2HealAmount();
             }
         }
         
@@ -10227,7 +10228,7 @@ function processPostDamageFigyHealingFixed(hpAfterDamage, maxHP, berryUsed, prob
         if (leechSeed2Select) {
             const leechSeed2StartTurn = parseInt(leechSeed2Select.value);
             if (!isNaN(leechSeed2StartTurn) && turnIndex + 1 >= leechSeed2StartTurn) {
-                additionalHeal = calculateLeechSeed2HealAmount(maxHP);
+                additionalHeal = calculateLeechSeed2HealAmount();
                 healedHP = Math.min(healedHP + additionalHeal, maxHP);
             }
         }
@@ -10260,7 +10261,7 @@ function processPostDamageFigyHealingFixed(hpAfterDamage, maxHP, berryUsed, prob
         if (leechSeed2Select) {
             const leechSeed2StartTurn = parseInt(leechSeed2Select.value);
             if (!isNaN(leechSeed2StartTurn) && turnIndex + 1 >= leechSeed2StartTurn) {
-                healAmount = calculateLeechSeed2HealAmount(maxHP);
+                healAmount = calculateLeechSeed2HealAmount();
             }
         }
         
@@ -11083,7 +11084,7 @@ function getConstantDamageNames() {
     // やどりぎ回復
     const leechSeed2Select = document.getElementById('leechSeed2Select');
     if (leechSeed2Select && leechSeed2Select.value !== 'none') {
-        const leechSeed2HealAmount = calculateLeechSeed2HealAmount(totalHP);
+        const leechSeed2HealAmount = calculateLeechSeed2HealAmount();
         damageDetails.push(`やどりぎ回復 +${leechSeed2HealAmount}`);
     }
 
