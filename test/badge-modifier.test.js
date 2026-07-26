@@ -17,8 +17,17 @@ test('攻撃側と防御側に独立したバッジ補正チェックを表示�
 
   assert.match(html, /id="attackerBadgeCheck"/);
   assert.match(html, /id="defenderBadgeCheck"/);
-  assert.match(html, /攻撃1\.1倍/);
-  assert.match(html, /防御1\.1倍/);
+  assert.match(html, /バッジ補正\(攻撃1\.1倍\)/);
+  assert.match(html, /バッジ補正\(防御1\.1倍\)/);
+});
+
+test('防御バッジ補正は防御側条件の見出しと同じ行に置く', () => {
+  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
+  const heading = html.match(/<div class="condition-heading">[\s\S]*?<\/div>/)?.[0];
+
+  assert.ok(heading);
+  assert.match(heading, /<h3>防御側条件<\/h3>/);
+  assert.match(heading, /id="defenderBadgeCheck"/);
 });
 
 test('防御側の持ち物補正は攻撃値ではなく防御値へ掛ける', () => {
