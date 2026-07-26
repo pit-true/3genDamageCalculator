@@ -3451,6 +3451,32 @@ function syncMainIV(side, stat) {
     }
 }
 
+function resolveIVForEVAdjustment(preferredValue, alternateValue, cachedValue) {
+    for (const value of [preferredValue, alternateValue, cachedValue]) {
+        if (value === '' || value === null || value === undefined) continue;
+        const parsed = parseInt(value);
+        if (!isNaN(parsed) && parsed >= 0 && parsed <= 31) {
+            return parsed;
+        }
+    }
+    return 31;
+}
+
+function getCurrentIVForEVAdjustment(side, stat, evInput) {
+    const mainInput = document.getElementById(`${side}Iv${stat.toUpperCase()}`);
+    const detailInput = document.getElementById(`${side}DetailIv${stat.toUpperCase()}`);
+    const pokemon = side === 'attacker' ? attackerPokemon : defenderPokemon;
+    const isDetailInput = evInput?.id?.includes('Detail') || false;
+    const preferredValue = isDetailInput ? detailInput?.value : mainInput?.value;
+    const alternateValue = isDetailInput ? mainInput?.value : detailInput?.value;
+
+    return resolveIVForEVAdjustment(
+        preferredValue,
+        alternateValue,
+        pokemon.ivValues[stat]
+    );
+}
+
 function handleEVInput(event) {
     const input = event.target;
     let value = parseInt(input.value) || 0;
@@ -3469,7 +3495,8 @@ function handleEVInput(event) {
     
     if (stat && side) {
         const pokemon = side === 'attacker' ? attackerPokemon : defenderPokemon;
-        const currentIV = pokemon.ivValues[stat];
+        const currentIV = getCurrentIVForEVAdjustment(side, stat, input);
+        pokemon.ivValues[stat] = currentIV;
         
         // 方向を検出
         const direction = value > previousValue ? 1 : (value < previousValue ? -1 : 0);
@@ -12497,7 +12524,12 @@ function updateEVValue(side, stat, value) {
 // 方向を考慮した努力値の更新関数
 function updateEVValueWithDirection(side, stat, currentValue, targetValue, direction) {
     const pokemon = side === 'attacker' ? attackerPokemon : defenderPokemon;
-    const currentIV = pokemon.ivValues[stat];
+    const currentIV = getCurrentIVForEVAdjustment(
+        side,
+        stat,
+        mobileControlState.activeInput
+    );
+    pokemon.ivValues[stat] = currentIV;
     
     
     let adjustedValue = targetValue;
