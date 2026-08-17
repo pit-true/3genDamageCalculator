@@ -41,6 +41,9 @@ let damageHistory = [];
 // 複数ターンの技を管理する配列（最初の技も含めて5つ）
 let multiTurnMoves = [null, null, null, null, null]; // 0: 1ターン目の技(通常の技欄), 1-4: 2-5ターン目
 
+// 各ターンの攻撃側上書き設定（nullなら攻撃側欄をそのままライブミラー）
+let turnAttackers = [null, null, null, null, null]; // 0: 未使用(1ターン目は常にメイン攻撃側), 1-4: 2-5ターン目
+
 // 性格データ
 const natureDataList = [
     { "name": "ひかえめ", "c": 1.1, "a": 0.9 },
@@ -182,6 +185,63 @@ function copyResult(button) {
         console.error('コピーに失敗しました: ', err);
         alert('コピーに失敗しました');
     });
+}
+
+// ========================
+// ダメージ計算結果のピン留め機能
+// ========================
+
+let pinnedTurns = [];
+let lastResultHtml = '';
+
+function pinResult(button) {
+    const block = button.closest('.damage-result');
+    const clone = block.cloneNode(true);
+
+    clone.querySelectorAll('.result-toolbar-btn').forEach(btn => btn.remove());
+
+    pinnedTurns.push(clone);
+    lastResultHtml = ''; // ピン留めした結果はボードに移動し、次の計算までライブ表示は空にする
+    renderResultsSection();
+}
+
+function unpinResult(index) {
+    pinnedTurns.splice(index, 1);
+    renderResultsSection();
+}
+
+function renderResultsSection() {
+    const resultDiv = document.getElementById('calculationResult');
+    if (!resultDiv) return;
+
+    const pinnedHtml = pinnedTurns.map((block, index) => {
+        const clone = block.cloneNode(true);
+        const header = clone.querySelector('.result-header');
+        if (header) {
+            const unpinBtn = document.createElement('button');
+            unpinBtn.className = 'result-toolbar-btn';
+            unpinBtn.setAttribute('onclick', `unpinResult(${index})`);
+            unpinBtn.textContent = 'ピン解除';
+
+            const copyBtn = document.createElement('button');
+            copyBtn.className = 'result-toolbar-btn';
+            copyBtn.setAttribute('onclick', 'copyResult(this)');
+            copyBtn.textContent = 'コピー';
+
+            header.insertBefore(unpinBtn, header.firstChild);
+            header.appendChild(copyBtn);
+        }
+        return clone.outerHTML;
+    }).join('');
+
+    resultDiv.innerHTML = pinnedHtml + lastResultHtml;
+}
+
+function scrollToResults() {
+    const target = document.getElementById('results-section');
+    if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }
 
 // ========================
@@ -3655,8 +3715,8 @@ function setNatureModifier(side, stat, value, button) {
 function toggleDetail(side) {
     const detail = document.getElementById(`${side}Detail`);
     const header = detail.previousElementSibling;
-    
-    if (detail.style.display === 'none') {
+
+    if (getComputedStyle(detail).display === 'none') {
         detail.style.display = 'block';
         header.textContent = '▼ 詳細設定を閉じる';
     } else {
@@ -3890,6 +3950,11 @@ function updateStats(side) {
     
     // めざパと合計努力値の表示を更新
     updateDetailSummary(side);
+
+    // 未編集のターン別攻撃側行を、メイン攻撃側の変更に追従させる
+    if (side === 'attacker') {
+        syncUnmaterializedTurnAttackerRows();
+    }
 }
 
 // めざパと合計努力値の表示を更新
@@ -6098,8 +6163,8 @@ function performDamageCalculationEnhanced() {
     // 行動制限チェック（まひ・こんらん）
     const paralysisSelect = document.getElementById('paralysisSelect');
     const confusionSelect = document.getElementById('confusionSelect');
-    const hasParalysis = paralysisSelect && paralysisSelect.value !== 'none';
-    const hasConfusion = confusionSelect && confusionSelect.value !== 'none';
+    const hasParalysis = paralysisSelect && paralysisSelect.value !== 'none' && paralysisSelect.value !== '';
+    const hasConfusion = confusionSelect && confusionSelect.value !== 'none' && confusionSelect.value !== '';
     const hasActionRestriction = hasParalysis || hasConfusion;
 
     // 複数ターン技が実際に設定されているかチェック
@@ -7593,8 +7658,8 @@ function performDamageCalculationEnhanced() {
     // 行動制限チェック（まひ・こんらん）
     const paralysisSelect = document.getElementById('paralysisSelect');
     const confusionSelect = document.getElementById('confusionSelect');
-    const hasParalysis = paralysisSelect && paralysisSelect.value !== 'none';
-    const hasConfusion = confusionSelect && confusionSelect.value !== 'none';
+    const hasParalysis = paralysisSelect && paralysisSelect.value !== 'none' && paralysisSelect.value !== '';
+    const hasConfusion = confusionSelect && confusionSelect.value !== 'none' && confusionSelect.value !== '';
     const hasActionRestriction = hasParalysis || hasConfusion;
 
     // 複数ターン技が実際に設定されているかチェック
@@ -8055,9 +8120,10 @@ function addMultiTurnMove() {
     const container = document.getElementById('multiTurnMovesContainer');
     const currentMoves = container.querySelectorAll('.multi-turn-move-row').length;
     const nextTurn = currentMoves + 2; // 1ターン目は通常の技欄なので+2
-    
+    const turnIndex = nextTurn - 1; // multiTurnMoves/turnAttackers配列のインデックス
+
     if (nextTurn > 5) return; // 最大5ターンまで
-    
+
     const moveRow = document.createElement('div');
     moveRow.className = 'multi-turn-move-row';
     moveRow.innerHTML = `
@@ -8065,13 +8131,84 @@ function addMultiTurnMove() {
             <label class="inline-label">${nextTurn}ターン目:</label>
             <input type="text" id="multiTurnMove${nextTurn}" placeholder="技を検索">
         </div>
+        <div class="turn-attacker-row">
+            <div class="turn-attacker-toggle" onclick="toggleTurnAttackerDetail(${turnIndex})">▶ このターンの攻撃側を変更</div>
+            <div class="turn-attacker-detail hidden" id="turnAttackerDetail${turnIndex}">
+                <div class="input-row">
+                    <label class="inline-label">ポケモン:</label>
+                    <input type="text" id="turnAttackerPokemon${turnIndex}" placeholder="ポケモン名を検索">
+                </div>
+                <div id="turnAttackerPokemonInfo${turnIndex}" class="pokemon-info hidden"></div>
+                <div class="input-row">
+                    <label class="inline-label">レベル:</label>
+                    <input type="number" class="level-input" id="turnAttackerLevel${turnIndex}" value="50" min="1" max="100"
+                           onchange="onTurnAttackerLevelChange(${turnIndex})">
+                </div>
+                <div class="rank-correction">
+                    <div class="rank-row">
+                        <label for="turnAttackerAtkRank${turnIndex}" class="rank-label">攻撃ランク:</label>
+                        <select id="turnAttackerAtkRank${turnIndex}" class="rank-select" onchange="setTurnAttackerRank(${turnIndex}, this.value)">
+                            <option value="+6">+6</option>
+                            <option value="+5">+5</option>
+                            <option value="+4">+4</option>
+                            <option value="+3">+3</option>
+                            <option value="+2">+2</option>
+                            <option value="+1">+1</option>
+                            <option value="±0" selected>±0</option>
+                            <option value="-1">-1</option>
+                            <option value="-2">-2</option>
+                            <option value="-3">-3</option>
+                            <option value="-4">-4</option>
+                            <option value="-5">-5</option>
+                            <option value="-6">-6</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="stat-row">
+                    <label class="stat-label">A:</label>
+                    <input type="number" class="stat-input" id="turnAttackerRealA${turnIndex}" readonly>
+                    <input type="number" class="iv-input" id="turnAttackerIvA${turnIndex}" value="31" min="0" max="31"
+                           onchange="onTurnAttackerIVChange(${turnIndex}, 'a')">
+                    <button class="iv-quick-btn" onclick="setTurnAttackerIV(${turnIndex}, 'a', 30)">30</button>
+                    <input type="number" class="ev-input" id="turnAttackerEvA${turnIndex}" value="0" min="0" max="252"
+                           onchange="onTurnAttackerEVChange(${turnIndex}, 'a')">
+                    <button class="ev-quick-btn" onclick="setTurnAttackerEV(${turnIndex}, 'a', 252)">252</button>
+                    <span class="stat-separator">|</span>
+                    <span class="nature-btn-group">
+                        <button class="nature-btn" data-side="turn${turnIndex}" data-stat="a" data-value="0.9" onclick="setTurnAttackerNature(${turnIndex}, 'a', 0.9, this)">0.9</button>
+                        <button class="nature-btn" data-side="turn${turnIndex}" data-stat="a" data-value="1.0" onclick="setTurnAttackerNature(${turnIndex}, 'a', 1.0, this)">1.0</button>
+                        <button class="nature-btn" data-side="turn${turnIndex}" data-stat="a" data-value="1.1" onclick="setTurnAttackerNature(${turnIndex}, 'a', 1.1, this)">1.1</button>
+                    </span>
+                </div>
+                <div class="stat-row">
+                    <label class="stat-label">C:</label>
+                    <input type="number" class="stat-input" id="turnAttackerRealC${turnIndex}" readonly>
+                    <input type="number" class="iv-input" id="turnAttackerIvC${turnIndex}" value="31" min="0" max="31"
+                           onchange="onTurnAttackerIVChange(${turnIndex}, 'c')">
+                    <button class="iv-quick-btn" onclick="setTurnAttackerIV(${turnIndex}, 'c', 30)">30</button>
+                    <input type="number" class="ev-input" id="turnAttackerEvC${turnIndex}" value="0" min="0" max="252"
+                           onchange="onTurnAttackerEVChange(${turnIndex}, 'c')">
+                    <button class="ev-quick-btn" onclick="setTurnAttackerEV(${turnIndex}, 'c', 252)">252</button>
+                    <span class="stat-separator">|</span>
+                    <span class="nature-btn-group">
+                        <button class="nature-btn" data-side="turn${turnIndex}" data-stat="c" data-value="0.9" onclick="setTurnAttackerNature(${turnIndex}, 'c', 0.9, this)">0.9</button>
+                        <button class="nature-btn" data-side="turn${turnIndex}" data-stat="c" data-value="1.0" onclick="setTurnAttackerNature(${turnIndex}, 'c', 1.0, this)">1.0</button>
+                        <button class="nature-btn" data-side="turn${turnIndex}" data-stat="c" data-value="1.1" onclick="setTurnAttackerNature(${turnIndex}, 'c', 1.1, this)">1.1</button>
+                    </span>
+                </div>
+            </div>
+        </div>
     `;
-    
+
     container.appendChild(moveRow);
-    
+
     // 新しい技入力欄のドロップダウンを設定
-    setupMultiTurnMoveDropdown(`multiTurnMove${nextTurn}`, nextTurn - 1);
-    
+    setupMultiTurnMoveDropdown(`multiTurnMove${nextTurn}`, turnIndex);
+
+    // 新しい攻撃側上書き行のドロップダウンを設定し、メイン攻撃側の現在値で初期描画
+    setupTurnAttackerDropdown(`turnAttackerPokemon${turnIndex}`, turnIndex);
+    paintTurnAttackerRow(turnIndex);
+
     // 5ターン目まで追加したら「＋技を追加する」ボタンを非表示
     if (nextTurn === 5) {
         document.getElementById('addMoveButton').style.display = 'none';
@@ -8080,22 +8217,23 @@ function addMultiTurnMove() {
 
 // 複数ターン技設定をクリア
 function clearMultiTurnMoves() {
-    
+
     // 配列をクリア
     multiTurnMoves = [null, null, null, null, null];
-    
+    turnAttackers = [null, null, null, null, null];
+
     // DOM要素もクリア
     const container = document.getElementById('multiTurnMovesContainer');
     if (container) {
         container.innerHTML = '';
     }
-    
+
     // 追加ボタンを再表示
     const addButton = document.getElementById('addMoveButton');
     if (addButton) {
         addButton.style.display = 'block';
     }
-    
+
 }
 
 // 複数ターン技の選択
@@ -8430,6 +8568,26 @@ function getAccuracyMultiplier(rank) {
     
     const mult = multipliers[rank.toString()];
     return mult ? mult.numerator / mult.denominator : 1.0;
+}
+
+// ターン別攻撃側が設定されていれば、その間だけグローバルattackerPokemonを差し替える
+function withTurnAttacker(turn, fn) {
+    const override = turnAttackers[turn];
+    if (!override) return fn();
+
+    const original = attackerPokemon;
+    attackerPokemon = override;
+
+    const atkRankSelect = document.getElementById('attackerAtkRank');
+    const originalAtkRank = atkRankSelect ? atkRankSelect.value : null;
+    if (atkRankSelect && override.atkRank) atkRankSelect.value = override.atkRank;
+
+    try {
+        return fn();
+    } finally {
+        attackerPokemon = original;
+        if (atkRankSelect) atkRankSelect.value = originalAtkRank;
+    }
 }
 
 // 技のダメージ範囲と確率を計算
@@ -9956,24 +10114,24 @@ function calculateMultiTurnBasicKORateUnified(defenderHP, maxTurns, suppressLogs
         if (!move) {
             const firstMove = currentMove;
             if (firstMove) {
-                const damageData = calculateMoveDamageRange(firstMove, turn);
+                const damageData = withTurnAttacker(turn, () => calculateMoveDamageRange(firstMove, turn));
                 moveDataList.push(damageData);
             } else {
                 moveDataList.push(null);
             }
             continue;
         }
-        
-        const damageData = calculateMoveDamageRange(move, turn);
+
+        const damageData = withTurnAttacker(turn, () => calculateMoveDamageRange(move, turn));
         moveDataList.push(damageData);
     }
-    
+
     // ★修正: 計算根拠（basis）を正しく設定
     for (let turn = 0; turn < maxTurns; turn++) {
         if (moveDataList[turn]) {
             const move = turn === 0 ? currentMove : multiTurnMoves[turn];
             const moveData = moveDataList[turn];
-            
+
             // ダメージ範囲を正確に取得
             const minDamage = moveData.minDamage || 0;
             const maxDamage = moveData.maxDamage || 0;
@@ -10063,7 +10221,8 @@ function calculateMultiTurnBasicKORateUnified(defenderHP, maxTurns, suppressLogs
     return {
         rates: results,
         basis: calculationBasis,
-        hpRanges: remainingHPRanges
+        hpRanges: remainingHPRanges,
+        moveDataList: moveDataList
     };
 }
 
@@ -10083,22 +10242,22 @@ function calculateMultiTurnKORateWithItems(defenderHP, turns) {
     const moveDataList = [];
     for (let turn = 0; turn < turns; turn++) {
         const move = turn === 0 ? currentMove : multiTurnMoves[turn];
-        
+
         if (!move) {
             const firstMove = currentMove;
             if (firstMove) {
-                const damageData = calculateMoveDamageRange(firstMove, turn);
+                const damageData = withTurnAttacker(turn, () => calculateMoveDamageRange(firstMove, turn));
                 moveDataList.push(damageData);
             } else {
                 moveDataList.push(null);
             }
             continue;
         }
-        
-        const damageData = calculateMoveDamageRange(move, turn);
+
+        const damageData = withTurnAttacker(turn, () => calculateMoveDamageRange(move, turn));
         moveDataList.push(damageData);
     }
-    
+
     // ★修正：基本瀕死率計算のログを抑制（2回目の呼び出しなので）
     const basicKOResult = calculateMultiTurnBasicKORateUnified(defenderHP, turns, true); // suppressLogs = true
     
@@ -10730,8 +10889,8 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
     // 状態異常がある場合は最低2ターン計算
     const paralysisSelect = document.getElementById('paralysisSelect');
     const confusionSelect = document.getElementById('confusionSelect');
-    const hasParalysis = paralysisSelect && paralysisSelect.value !== 'none';
-    const hasConfusion = confusionSelect && confusionSelect.value !== 'none';
+    const hasParalysis = paralysisSelect && paralysisSelect.value !== 'none' && paralysisSelect.value !== '';
+    const hasConfusion = confusionSelect && confusionSelect.value !== 'none' && confusionSelect.value !== '';
     const hasStatusAbnormality = hasParalysis || hasConfusion;
     
     if (isMultiTurn && hasStatusAbnormality && actualTurns < 2) {
@@ -10870,6 +11029,7 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
     // ★★★ 根本修正: 瀕死率計算を分離し、1ターン目は必ず基本瀕死率のみ使用 ★★★
     let basicRand;
     let koRates = null;
+    let multiTurnMoveDataList = null;
     
     // 1. 基本的な乱数計算（表示用）
     if (currentMove && currentMove.class === 'multi_hit' && !isMultiTurn) {
@@ -10890,7 +11050,8 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
     try {
         // ★修正: 基本瀕死率のみを計算
         const basicKOResult = calculateMultiTurnBasicKORateUnified(totalHP, koRatesTurns);
-        
+        multiTurnMoveDataList = basicKOResult.moveDataList;
+
         // アイテム効果を考慮した瀕死率を計算（2ターン目以降用）
         let itemKOResult = null;
         const defenderItem = defenderPokemon.item;
@@ -10963,7 +11124,23 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
             });
         }
     }
-    
+
+    // ターンごとの攻撃側情報（技を追加するで攻撃側が上書きされている場合、異なる攻撃側をすべて表示）
+    const turnAttackerInfoList = [];
+    for (let i = 0; i < actualTurns; i++) {
+        const turnPokemon = (i === 0) ? attackerPokemon : (turnAttackers[i] || attackerPokemon);
+        const turnStats = (i === 0) ? attackerStats : calculateStats(turnPokemon);
+        const turnMoveForStat = multiTurnMoves[i] || currentMove;
+        const turnIsPhysical = turnMoveForStat.category === 'Physical';
+        turnAttackerInfoList.push({
+            turn: i + 1,
+            name: turnPokemon.name,
+            label: turnIsPhysical ? 'A' : 'C',
+            stat: turnIsPhysical ? turnStats.a : turnStats.c
+        });
+    }
+    const attackersDiffer = isMultiTurn && turnAttackerInfoList.some(info => info.name !== attackerPokemon.name);
+
     // 1発目の確定/乱数表記を生成
     let koSummaryText = '';
     let targetInfo = '';
@@ -10994,6 +11171,57 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
     const evasionRank = document.getElementById('defenderEvasionRank')?.value || '±0';
     const evasionRankText = (evasionRank !== '±0' && evasionRank !== '0') ? ` / 回避ランク${evasionRank}` : '';
     
+    // 2発目以降のダメージ範囲・割合・HPゲージを生成
+    // （ダメージ範囲・割合・確定数は「そのターン開始時点のHP」基準、HPゲージは1発目からの累積ダメージで表示）
+    let additionalTurnsHtml = '';
+    if (isMultiTurn && actualTurns > 1 && koRates && koRates.basis) {
+        const currentHPInput = document.getElementById('defenderCurrentHP');
+        const originalCurrentHPValue = currentHPInput ? currentHPInput.value : null;
+        const originalDamageHistory = damageHistory;
+        let cumulativeAvgDamage = (displayMinDamage + displayMaxDamage) / 2; // 1発目の平均ダメージを起点にする
+
+        for (let t = 1; t < actualTurns; t++) {
+            const basis = koRates.basis[t];
+            if (!basis) continue;
+
+            const [turnMinDamage, turnMaxDamage] = basis.damageRange.split('~').map(Number);
+            const turnStartHP = Math.max(1, Math.round(currentHP - cumulativeAvgDamage));
+            const turnMove = multiTurnMoves[t] || currentMove;
+
+            // ダメージ範囲・割合・確定数はそのターン開始時点のHPを基準に計算
+            if (currentHPInput) currentHPInput.value = turnStartHP;
+            const turnRand = calculateRandText(turnMinDamage, turnMaxDamage, totalHP, turnMove);
+            const turnKoSummary = turnRand.percent
+                ? `${turnRand.randLevel}${turnRand.hits}発 (${turnRand.percent}%)`
+                : `${turnRand.randLevel}${turnRand.hits}発`;
+
+            // HPゲージは1発目からの累積ダメージ・元の現在HPを基準に表示
+            if (currentHPInput) currentHPInput.value = originalCurrentHPValue;
+            damageHistory = [{ minDamage: displayMinDamage, maxDamage: displayMaxDamage }];
+            for (let p = 1; p < t; p++) {
+                const priorBasis = koRates.basis[p];
+                if (!priorBasis) continue;
+                const [priorMin, priorMax] = priorBasis.damageRange.split('~').map(Number);
+                damageHistory.push({ minDamage: priorMin, maxDamage: priorMax });
+            }
+            const turnHpBarHtml = createHPBar(turnMinDamage, turnMaxDamage, totalHP, true);
+
+            additionalTurnsHtml += `
+            <div class="result-info2">
+                <p><strong>${t + 1}発目のダメージ範囲:</strong> ${turnMinDamage}～${turnMaxDamage}</p>
+                <p><strong>割合:</strong> ${(turnMinDamage / turnStartHP * 100).toFixed(1)}%～${(turnMaxDamage / turnStartHP * 100).toFixed(1)}%</p>
+                <p>${turnKoSummary}</p>
+            </div>
+            ${turnHpBarHtml}
+            `;
+
+            cumulativeAvgDamage += (turnMinDamage + turnMaxDamage) / 2;
+        }
+
+        damageHistory = originalDamageHistory;
+        if (currentHPInput) currentHPInput.value = originalCurrentHPValue;
+    }
+
     // 瀕死率表示のHTML生成
     const koRateHtml = generateUnifiedKORateHTML(koRates, actualTurns, moveInfo, evasionRankText, isMultiTurn);
     
@@ -11053,12 +11281,24 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
     
     let resultHtml = `
         <div class="damage-result">
-            <div style="position: relative; margin-bottom: 10px;">
-                <h3 style="margin: 0; text-align: center;">${title}</h3>
-                <button onclick="copyResult(this)" style="position: absolute; top: 0; right: 0; padding: 3px 6px; background-color: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 11px; min-width: auto; width: auto;">コピー</button>
+            <div class="result-header">
+                <button class="result-toolbar-btn" onclick="pinResult(this)">ピン留め</button>
+                <h3>${title}</h3>
+                <button class="result-toolbar-btn" onclick="copyResult(this)">コピー</button>
             </div>
             <div class="result-info">
+                ${attackersDiffer ? `
+                <div class="move-sequence">
+                    <strong>攻撃側:</strong>
+                    ${turnAttackerInfoList.map(info => `
+                        <div style="margin-left: 10px; font-size: 13px;">
+                            ${info.turn}: ${info.name} ${info.label}${info.stat}
+                        </div>
+                    `).join('')}
+                </div>
+                ` : `
                 <p><strong>攻撃側:</strong> ${attackerPokemon.name} ${offenseStatLabel}${attackerOffensiveStat}</p>
+                `}
                 <p><strong>防御側:</strong> ${defenderPokemon.name} ${defenderHPDisplay}-${defenseStatLabel}${defenderDefensiveStat}</p>
                 ${isMultiTurn ? `
                 <div class="move-sequence">
@@ -11083,10 +11323,14 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
             </div>
             ${hpBarHtml}
 
+            ${additionalTurnsHtml}
+
             ${koRateHtml}
         </div>
     `;
-    resultDiv.innerHTML = resultHtml;
+
+    lastResultHtml = resultHtml;
+    renderResultsSection();
 }
 
 function calculateSimpleRandText(minDamage, maxDamage, targetHP, isSubstitute, hitCount) {
@@ -11671,8 +11915,8 @@ function performDamageCalculationEnhancedUnified() {
     // 行動制限チェック（まひ・こんらん）
     const paralysisSelect = document.getElementById('paralysisSelect');
     const confusionSelect = document.getElementById('confusionSelect');
-    const hasParalysis = paralysisSelect && paralysisSelect.value !== 'none';
-    const hasConfusion = confusionSelect && confusionSelect.value !== 'none';
+    const hasParalysis = paralysisSelect && paralysisSelect.value !== 'none' && paralysisSelect.value !== '';
+    const hasConfusion = confusionSelect && confusionSelect.value !== 'none' && confusionSelect.value !== '';
     const hasActionRestriction = hasParalysis || hasConfusion;
 
     // 複数ターン技が実際に設定されているかチェック
@@ -11766,6 +12010,282 @@ function performDamageCalculationEnhancedUnified() {
 
 
 // 複数ターン技のドロップダウン設定
+// ========================
+// ターン別攻撃側（技を追加する機能の拡張）
+// ========================
+
+// 未編集ならnull（メイン攻撃側をライブミラー）。初めて編集された時点でattackerPokemonを複製して独立させる
+function ensureTurnAttackerMaterialized(turn) {
+    if (!turnAttackers[turn]) {
+        turnAttackers[turn] = JSON.parse(JSON.stringify(attackerPokemon));
+        const mainAtkRank = document.getElementById('attackerAtkRank');
+        turnAttackers[turn].atkRank = mainAtkRank ? mainAtkRank.value : '±0';
+    }
+    return turnAttackers[turn];
+}
+
+// ターン攻撃側行を、現在のソース（独立していればturnAttackers[turn]、なければattackerPokemon）で再描画
+function paintTurnAttackerRow(turn) {
+    const row = document.getElementById(`turnAttackerDetail${turn}`);
+    if (!row) return;
+    const source = turnAttackers[turn] || attackerPokemon;
+
+    const nameInput = document.getElementById(`turnAttackerPokemon${turn}`);
+    const levelInput = document.getElementById(`turnAttackerLevel${turn}`);
+    if (nameInput) nameInput.value = source.name || '';
+    if (levelInput) levelInput.value = source.level || 50;
+
+    const rankSelect = document.getElementById(`turnAttackerAtkRank${turn}`);
+    if (rankSelect) {
+        const mainAtkRank = document.getElementById('attackerAtkRank');
+        rankSelect.value = turnAttackers[turn]
+            ? turnAttackers[turn].atkRank
+            : (mainAtkRank ? mainAtkRank.value : '±0');
+    }
+
+    ['a', 'c'].forEach(stat => {
+        const ivInput = document.getElementById(`turnAttackerIv${stat.toUpperCase()}${turn}`);
+        const evInput = document.getElementById(`turnAttackerEv${stat.toUpperCase()}${turn}`);
+        if (ivInput) ivInput.value = source.ivValues[stat];
+        if (evInput) evInput.value = source.evValues[stat];
+
+        const buttons = document.querySelectorAll(`.nature-btn[data-side="turn${turn}"][data-stat="${stat}"]`);
+        buttons.forEach(btn => {
+            btn.classList.toggle('selected', parseFloat(btn.dataset.value) === source.natureModifiers[stat]);
+        });
+    });
+
+    const stats = source.name ? calculateStats(source) : { a: 0, c: 0 };
+    const realA = document.getElementById(`turnAttackerRealA${turn}`);
+    const realC = document.getElementById(`turnAttackerRealC${turn}`);
+    if (realA) realA.value = stats.a;
+    if (realC) realC.value = stats.c;
+
+    const info = document.getElementById(`turnAttackerPokemonInfo${turn}`);
+    if (info) {
+        if (source.name) {
+            const typeText = (source.types || []).join('/');
+            info.textContent = `${typeText} H${source.baseStats.hp} A${source.baseStats.a} B${source.baseStats.b} C${source.baseStats.c} D${source.baseStats.d} S${source.baseStats.s}`;
+            info.style.display = 'block';
+        } else {
+            info.style.display = 'none';
+        }
+    }
+}
+
+// メイン攻撃側が変わるたびに、まだ独立化されていないターン行を再ミラー
+function syncUnmaterializedTurnAttackerRows() {
+    for (let turn = 1; turn <= 4; turn++) {
+        if (!turnAttackers[turn] && document.getElementById(`turnAttackerDetail${turn}`)) {
+            paintTurnAttackerRow(turn);
+        }
+    }
+}
+
+function toggleTurnAttackerDetail(turn) {
+    const detail = document.getElementById(`turnAttackerDetail${turn}`);
+    if (!detail) return;
+    const header = detail.previousElementSibling;
+    const opening = getComputedStyle(detail).display === 'none';
+    detail.style.display = opening ? 'block' : 'none';
+    if (header) {
+        header.textContent = opening ? '▼ このターンの攻撃側を変更（閉じる）' : '▶ このターンの攻撃側を変更';
+    }
+}
+
+function selectTurnAttackerPokemon(turn, pokemonName) {
+    const target = ensureTurnAttackerMaterialized(turn);
+    if (!pokemonName) {
+        target.name = "";
+        target.baseStats = { hp: 0, a: 0, b: 0, c: 0, d: 0, s: 0 };
+        target.types = [];
+        paintTurnAttackerRow(turn);
+        return;
+    }
+    const pokemon = allPokemonData.find(p => p.name === pokemonName);
+    if (!pokemon) return;
+    target.name = pokemon.name;
+    target.baseStats = {
+        hp: pokemon.basestats[0],
+        a: pokemon.basestats[1],
+        b: pokemon.basestats[2],
+        c: pokemon.basestats[3],
+        d: pokemon.basestats[4],
+        s: pokemon.basestats[5]
+    };
+    target.types = pokemonName === 'ポワルン'
+        ? getCastformTypeByWeather()
+        : (Array.isArray(pokemon.type) ? pokemon.type : [pokemon.type]);
+    paintTurnAttackerRow(turn);
+}
+
+function onTurnAttackerLevelChange(turn) {
+    const target = ensureTurnAttackerMaterialized(turn);
+    const input = document.getElementById(`turnAttackerLevel${turn}`);
+    target.level = parseInt(input.value) || 50;
+    paintTurnAttackerRow(turn);
+}
+
+function setTurnAttackerIV(turn, stat, value) {
+    const target = ensureTurnAttackerMaterialized(turn);
+    target.ivValues[stat] = value;
+    paintTurnAttackerRow(turn);
+}
+
+function onTurnAttackerIVChange(turn, stat) {
+    const target = ensureTurnAttackerMaterialized(turn);
+    const input = document.getElementById(`turnAttackerIv${stat.toUpperCase()}${turn}`);
+    const v = parseInt(input.value);
+    if (!isNaN(v) && v >= 0 && v <= 31) target.ivValues[stat] = v;
+    paintTurnAttackerRow(turn);
+}
+
+function setTurnAttackerEV(turn, stat, value) {
+    const target = ensureTurnAttackerMaterialized(turn);
+    target.evValues[stat] = value;
+    paintTurnAttackerRow(turn);
+}
+
+function onTurnAttackerEVChange(turn, stat) {
+    const target = ensureTurnAttackerMaterialized(turn);
+    const input = document.getElementById(`turnAttackerEv${stat.toUpperCase()}${turn}`);
+    const v = parseInt(input.value);
+    if (!isNaN(v) && v >= 0 && v <= 252) target.evValues[stat] = Math.floor(v / 4) * 4;
+    paintTurnAttackerRow(turn);
+}
+
+function setTurnAttackerNature(turn, stat, value, button) {
+    const target = ensureTurnAttackerMaterialized(turn);
+    target.natureModifiers[stat] = value;
+    paintTurnAttackerRow(turn);
+}
+
+function setTurnAttackerRank(turn, value) {
+    const target = ensureTurnAttackerMaterialized(turn);
+    target.atkRank = value;
+    paintTurnAttackerRow(turn);
+}
+
+// ポケモン名オートコンプリート（setupMultiTurnMoveDropdownと同型。multiTurnMovesの代わりにturnAttackersを操作）
+function setupTurnAttackerDropdown(inputId, turn) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+
+    const dropdown = document.createElement('div');
+    dropdown.className = 'pokemon-dropdown';
+    dropdown.style.display = 'none';
+    document.body.appendChild(dropdown);
+
+    input.addEventListener('click', function(e) {
+        e.stopPropagation();
+        this.value = '';
+        showTurnAttackerPokemonList(dropdown, input, turn);
+    });
+
+    input.addEventListener('input', function() {
+        filterTurnAttackerPokemonList(this.value, dropdown, input, turn);
+    });
+
+    input.addEventListener('blur', function() {
+        checkExactMatchForTurnAttacker(this.value, turn);
+    });
+
+    document.addEventListener('click', function(e) {
+        if (!dropdown.contains(e.target) && e.target !== input) {
+            dropdown.style.display = 'none';
+        }
+    });
+}
+
+function showTurnAttackerPokemonList(dropdown, input, turn) {
+    dropdown.innerHTML = '';
+
+    const rect = input.getBoundingClientRect();
+    dropdown.style.top = (rect.bottom + window.scrollY) + 'px';
+    dropdown.style.left = (rect.left + window.scrollX) + 'px';
+    dropdown.style.width = rect.width + 'px';
+
+    allPokemonData.forEach(pokemon => {
+        const item = createDropdownItem(pokemon.name, () => {
+            input.value = pokemon.name;
+            dropdown.style.display = 'none';
+            selectTurnAttackerPokemon(turn, pokemon.name);
+        });
+        dropdown.appendChild(item);
+    });
+
+    dropdown.style.display = 'block';
+}
+
+// ターン攻撃側用のポケモンフィルタリング（filterPokemonListと同ロジック）
+function filterTurnAttackerPokemonList(searchText, dropdown, input, turn) {
+    if (!searchText) {
+        dropdown.style.display = 'none';
+        return;
+    }
+
+    dropdown.innerHTML = '';
+
+    const search = searchText.toLowerCase();
+
+    const toHiragana = (text) => {
+        return text.replace(/[ァ-ヶ]/g, function(match) {
+            return String.fromCharCode(match.charCodeAt(0) - 0x60);
+        });
+    };
+
+    const toKatakana = (text) => {
+        return text.replace(/[ぁ-ゖ]/g, function(match) {
+            return String.fromCharCode(match.charCodeAt(0) + 0x60);
+        });
+    };
+
+    const hiraganaSearch = toHiragana(search);
+    const katakanaSearch = toKatakana(search);
+
+    const filtered = allPokemonData.filter(pokemon => {
+        const name = pokemon.name ? pokemon.name.toLowerCase() : '';
+        const hiragana = pokemon.hiragana ? pokemon.hiragana.toLowerCase() : '';
+        const romaji = pokemon.romaji ? pokemon.romaji.toLowerCase() : '';
+
+        return name.startsWith(search) ||
+               name.startsWith(hiraganaSearch) ||
+               name.startsWith(katakanaSearch) ||
+               hiragana.startsWith(search) ||
+               hiragana.startsWith(hiraganaSearch) ||
+               romaji.startsWith(search);
+    });
+
+    filtered.forEach(pokemon => {
+        const item = createDropdownItem(pokemon.name, () => {
+            input.value = pokemon.name;
+            dropdown.style.display = 'none';
+            selectTurnAttackerPokemon(turn, pokemon.name);
+        });
+        dropdown.appendChild(item);
+    });
+
+    const rect = input.getBoundingClientRect();
+    dropdown.style.top = (rect.bottom + window.scrollY) + 'px';
+    dropdown.style.left = (rect.left + window.scrollX) + 'px';
+    dropdown.style.width = rect.width + 'px';
+
+    dropdown.style.display = filtered.length > 0 ? 'block' : 'none';
+}
+
+function checkExactMatchForTurnAttacker(inputText, turn) {
+    if (!inputText) {
+        selectTurnAttackerPokemon(turn, "");
+        return;
+    }
+    const exactMatch = allPokemonData.find(p =>
+        p.name === inputText ||
+        p.hiragana === inputText ||
+        (p.romaji && p.romaji.toLowerCase() === inputText.toLowerCase())
+    );
+    selectTurnAttackerPokemon(turn, exactMatch ? exactMatch.name : "");
+}
+
 function setupMultiTurnMoveDropdown(inputId, turn) {
     const input = document.getElementById(inputId);
     if (!input) return;
@@ -11957,9 +12477,8 @@ function initializeMobileControls() {
 }
 
 function isTabletOrMobile() {
-    // 768px以下、または1100px-1199pxの場合にタブレット/モバイル機能を有効化
-    return window.innerWidth <= 768 || 
-           (window.innerWidth >= 1100 && window.innerWidth <= 1199);
+    // 1199px以下の場合にタブレット/モバイル機能を有効化
+    return window.innerWidth <= 1199;
 }
 
 function isChromeBrowser() {

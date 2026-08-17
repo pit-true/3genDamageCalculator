@@ -13,11 +13,19 @@ input, select, textarea, button {
     font-family: Arial, sans-serif !important;
 }
 
+html, body {
+    height: 100%;
+}
+
 body {
     font-family: Arial, sans-serif;
     background-color: #f8f9fa;
     margin: 0;
     padding: 10px;
+}
+
+#statusDamageStartTurn {
+    margin-left: 5px;
 }
 
 h1 {
@@ -199,6 +207,7 @@ select {
     border-radius: 4px;
     font-size: 14px;
     flex: 1;
+    min-width: 0;
 }
 
 button {
@@ -298,7 +307,7 @@ button:hover {
     color: #666;
     font-weight: bold;
     flex-shrink: 0;
-    margin: 0 2px;
+    margin: 0 auto;
 }
 
 #defenderIvHP, #defenderEvHP,
@@ -512,6 +521,12 @@ input[type="number"]::-webkit-inner-spin-button {
 
 .nature-btn.selected:hover {
     background-color: #0056b3;
+}
+
+.nature-btn-group {
+    display: flex;
+    gap: 3px;
+    flex-shrink: 0;
 }
 
 /* ========================
@@ -983,6 +998,24 @@ input[type="number"]::-webkit-inner-spin-button {
     margin-bottom: 6px;
 }
 
+.turn-attacker-row {
+    margin-top: 4px;
+}
+
+.turn-attacker-toggle {
+    font-size: 12px;
+    color: #007bff;
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 4px;
+}
+
+.turn-attacker-detail {
+    margin-left: 8px;
+    padding-left: 8px;
+    border-left: 2px solid #e0e0e0;
+}
+
 #multiTurnMovesContainer {
     margin-top: 8px;
 }
@@ -1078,6 +1111,11 @@ input[type="number"]::-webkit-inner-spin-button {
 /* ========================
    17. 結果表示
    ======================== */
+#calculationResult {
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
 .damage-result {
     background-color: #f0f8ff;
     border: 1px solid #add8e6;
@@ -1092,6 +1130,42 @@ input[type="number"]::-webkit-inner-spin-button {
     text-align: center;
     border-bottom: 1px solid #add8e6;
     padding-bottom: 8px;
+}
+
+.result-header {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: start;
+    column-gap: 8px;
+}
+
+.result-header h3 {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.result-toolbar-btn {
+    grid-row: 1;
+    padding: 3px 6px;
+    background-color: #007bff;
+    color: white;
+    white-space: nowrap;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 11px;
+    min-width: auto;
+    width: auto;
+}
+
+.result-toolbar-btn:first-child {
+    grid-column: 1;
+    justify-self: start;
+}
+
+.result-toolbar-btn:last-child {
+    grid-column: 3;
+    justify-self: end;
 }
 
 .result-info {
@@ -1413,10 +1487,44 @@ input[type="number"]::-webkit-inner-spin-button {
         min-width: 300px;
         margin-bottom: 20px;
     }
-    
+
+    .results-section {
+        flex-basis: 100%;
+    }
+
     .swap-button-container {
         top: 10px;
         left: 10px;
+    }
+}
+
+/* 1920x1080 150%表示（実効幅約1280px）対応 */
+@media (min-width: 1201px) and (max-width: 1400px) {
+    .battle-container {
+        gap: 12px;
+    }
+
+    .section {
+        min-width: 360px;
+    }
+
+    .stat-row {
+        margin-left: -10px;
+    }
+
+    .current-hp-label {
+        margin-left: 2px;
+        margin-right: 2px;
+    }
+
+    .current-hp-input {
+        width: 40px;
+    }
+
+    .iv-quick-btn,
+    .ev-quick-btn {
+        min-width: 32px !important;
+        max-width: 32px !important;
     }
 }
 
@@ -1487,6 +1595,7 @@ input[type="number"]::-webkit-inner-spin-button {
     /* ステータス行のレスポンシブ改善 */
     .stat-row {
         gap: 2px;
+        flex-wrap: wrap;
     }
     
     .stat-input {
@@ -2171,10 +2280,10 @@ body.mobile-control-active {
     }
 }
 
-/* iPad横幅1194px対応の修正CSS */
+/* 769px〜1199px（1024px等の中間幅）対応の修正CSS */
 
 /* 1. stat-rowの崩れを修正 */
-@media (min-width: 1100px) and (max-width: 1199px) {
+@media (min-width: 769px) and (max-width: 1199px) {
     .stat-row {
         display: flex;
         gap: 1px;
@@ -2191,26 +2300,46 @@ body.mobile-control-active {
     }
     
     .stat-row .stat-input {
-        width: 50px;
+        width: 38px !important;
+        min-width: 38px !important;
+        max-width: 38px !important;
         min-height: 30px;
         font-size: 14px;
         padding: 3px;
     }
-    
+
     .stat-row .iv-input {
-        width: 40px;
+        width: 26px !important;
         min-height: 30px;
         font-size: 12px;
         padding: 2px;
     }
-    
+
     .stat-row .ev-input {
-        width: 45px;
+        width: 32px;
         min-height: 30px;
         font-size: 12px;
         padding: 2px;
     }
-    
+
+    #defenderRealHP, #defenderRealB, #defenderRealD {
+        width: 38px !important;
+        min-width: 38px !important;
+        max-width: 38px !important;
+    }
+
+    #defenderIvHP, #defenderIvB, #defenderIvD {
+        width: 26px !important;
+        min-width: 26px !important;
+        max-width: 26px !important;
+    }
+
+    #defenderEvHP, #defenderEvB, #defenderEvD {
+        width: 32px !important;
+        min-width: 32px !important;
+        max-width: 32px !important;
+    }
+
     .stat-row .iv-quick-btn,
     .stat-row .ev-quick-btn {
         min-width: 30px !important;
@@ -2219,7 +2348,19 @@ body.mobile-control-active {
         font-size: 12px;
         padding: 0;
     }
-    
+
+    .stat-row .nature-btn {
+        min-width: 26px;
+    }
+
+    .stat-row .nature-btn-group {
+        gap: 1px;
+    }
+
+    .current-hp-input {
+        width: 32px;
+    }
+
     .stat-row .nature-checkbox-container {
         gap: 1px;
     }
@@ -2239,20 +2380,25 @@ body.mobile-control-active {
     }
 
     input[type="number"] {
-        min-width: 45px;
+        min-width: 26px;
         min-height: 16px;
     }
 }
 
 /* 2. スライダー表示の調整 */
-@media (min-width: 1100px) and (max-width: 1199px) {
-    /* スピンボタンを無効化してスライダーを表示 */
+@media (min-width: 769px) and (max-width: 1199px) {
+    /* スピンボタンを無効化してスライダーを表示（この幅ではモバイルスライダーが数値操作を担うため不要） */
     input[type="number"]::-webkit-outer-spin-button,
     input[type="number"]::-webkit-inner-spin-button {
         -webkit-appearance: none;
         margin: 0;
         display: none;
     }
+
+    input[type="number"] {
+        -moz-appearance: textfield;
+    }
+
     /* モバイルコントロール機能を有効化 */
     .mobile-control-bar {
         display: block;
@@ -2299,7 +2445,7 @@ body.mobile-control-active {
 }
 
 /* 3. 詳細ステータス行の調整 */
-@media (min-width: 1100px) and (max-width: 1199px) {
+@media (min-width: 769px) and (max-width: 1199px) {
     .detail-stat-row {
         display: flex;
         flex-wrap: nowrap;
@@ -2351,7 +2497,7 @@ body.mobile-control-active {
 }
 
 /* 4. コンテナの幅調整 */
-@media (min-width: 1100px) and (max-width: 1199px) {
+@media (min-width: 769px) and (max-width: 1199px) {
     .pokemon-container {
         max-width: 580px;
         padding: 10px;
@@ -2368,7 +2514,7 @@ body.mobile-control-active {
 }
 
 /* 5. レスポンシブ判定の調整 */
-@media (min-width: 1100px) and (max-width: 1199px) {
+@media (min-width: 769px) and (max-width: 1199px) {
     /* JavaScriptでの判定用：この画面サイズでもモバイル機能を有効化 */
     body::before {
         content: "tablet-mode";
@@ -2433,4 +2579,9 @@ body.mobile-control-active {
         width: 30px !important;
         height: 30px !important;
     }
+}
+
+/* 初期非表示ユーティリティ（他のクラスのdisplay指定より後に置き、カスケード順で確実に勝たせる） */
+.hidden {
+    display: none;
 }

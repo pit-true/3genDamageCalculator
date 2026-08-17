@@ -13,7 +13,7 @@
         <button class="mobile-swap-button" onclick="swapPokemon()" title="攻撃側と防御側を入れ替え">
             ⇄
         </button>
-        <button class="mobile-damage-calc-button" onclick="performDamageCalculationEnhanced()">
+        <button class="mobile-damage-calc-button" onclick="performDamageCalculationEnhanced(); scrollToResults();">
             ダメージ計算
         </button>
     </div>
@@ -45,7 +45,7 @@
                 <label class="inline-label">ポケモン:</label>
                 <input type="text" id="attackerPokemon" placeholder="ポケモン名を検索">
             </div>
-            <div id="attackerPokemonInfo" class="pokemon-info" style="display: none;"></div>
+            <div id="attackerPokemonInfo" class="pokemon-info hidden"></div>
             <!-- レベル -->
             <div class="input-row">
                 <label class="inline-label">レベル:</label>
@@ -73,9 +73,11 @@
                 <input type="number" class="ev-input" id="attackerEvA" value="0" min="0" max="252" onchange="updateStats('attacker')">
                 <button class="ev-quick-btn" onclick="setEV('attacker', 'a', 252)">252</button>
                 <span class="stat-separator">|</span>
+                <span class="nature-btn-group">
                 <button class="nature-btn" data-side="attacker" data-stat="a" data-value="0.9" onclick="setNatureModifier('attacker', 'a', 0.9, this)">0.9</button>
                 <button class="nature-btn selected" data-side="attacker" data-stat="a" data-value="1.0" onclick="setNatureModifier('attacker', 'a', 1.0, this)">1.0</button>
                 <button class="nature-btn" data-side="attacker" data-stat="a" data-value="1.1" onclick="setNatureModifier('attacker', 'a', 1.1, this)">1.1</button>
+                </span>
             </div>
             
             <!-- C実数値・個体値・努力値・性格補正 -->
@@ -87,9 +89,11 @@
                 <input type="number" class="ev-input" id="attackerEvC" value="0" min="0" max="252" onchange="updateStats('attacker')">
                 <button class="ev-quick-btn" onclick="setEV('attacker', 'c', 252)">252</button>
                 <span class="stat-separator">|</span>
+                <span class="nature-btn-group">
                 <button class="nature-btn" data-side="attacker" data-stat="c" data-value="0.9" onclick="setNatureModifier('attacker', 'c', 0.9, this)">0.9</button>
                 <button class="nature-btn selected" data-side="attacker" data-stat="c" data-value="1.0" onclick="setNatureModifier('attacker', 'c', 1.0, this)">1.0</button>
                 <button class="nature-btn" data-side="attacker" data-stat="c" data-value="1.1" onclick="setNatureModifier('attacker', 'c', 1.1, this)">1.1</button>
+                </span>
             </div>
             
             <!-- 詳細設定 -->
@@ -97,7 +101,7 @@
                 <div class="detail-header" onclick="toggleDetail('attacker')">
                     ▶ 詳細設定を開く
                 </div>
-                <div class="detail-content" id="attackerDetail" style="display: none;">
+                <div class="detail-content hidden" id="attackerDetail">
                     <!-- 性格選択 -->
                     <div class="input-row">
                         <label class="inline-label">性格:</label>
@@ -203,7 +207,7 @@
                 <input type="text" id="attackMove" placeholder="技を検索">
             </div>
             <!-- 連続技設定 -->
-            <div class="multi-hit-settings" id="multiHitContainer" style="display: none;">
+            <div class="multi-hit-settings hidden" id="multiHitContainer">
                 <div class="input-row">
                     <label for="multiHitCount" class="inline-label">連続技回数:</label>
                     <select id="multiHitCount">
@@ -223,7 +227,7 @@
                 </button>
             </div>
             <!-- きしかいせい・じたばた用HP入力 -->
-            <div class="pinchUpContainer" style="display: none;">
+            <div class="pinchUpContainer hidden">
               <div class="hp-input-group">
                 <label for="pinchUp_currentHP">現在HP:</label>
                 <input type="number" id="pinchUp_currentHP" min="1" value="1">
@@ -234,7 +238,7 @@
               </div>
             </div>
             <!-- しおふき・ふんか用HP入力 -->
-            <div class="pinchDownContainer" style="display: none;">
+            <div class="pinchDownContainer hidden">
               <div class="hp-input-group">
                 <label for="pinchDown_currentHP">現在HP:</label>
                 <input type="number" id="pinchDown_currentHP" min="1" value="1">
@@ -245,7 +249,7 @@
               </div>
             </div>
             <!-- アイスボール設定 -->
-            <div class="move-special-setting" id="iceBallSettings" style="display: none;">
+            <div class="move-special-setting hidden" id="iceBallSettings">
                 <label for="iceBallTurn">連続ターン:</label>
                 <select id="iceBallTurn">
                     <option value="1" selected>1ターン目</option>
@@ -257,7 +261,7 @@
                 <label><input type="checkbox" id="defenseCurlCheck"> まるくなる済み</label>
             </div>
             <!-- いかり設定 -->
-            <div class="move-special-setting" id="rageSettings" style="display: none;">
+            <div class="move-special-setting hidden" id="rageSettings">
                 <label for="rageHitCount">被弾回数:</label>
                 <select id="rageHitCount">
                     <option value="0" selected>0回</option>
@@ -270,7 +274,7 @@
                 </select>
             </div>
             <!-- はきだす設定 -->
-            <div class="move-special-setting" id="spitUpSettings" style="display: none;">
+            <div class="move-special-setting hidden" id="spitUpSettings">
                 <label for="stockpileCount">たくわえた回数:</label>
                 <select id="stockpileCount">
                     <option value="1" selected>1回</option>
@@ -279,7 +283,7 @@
                 </select>
             </div>
             <!-- れんぞくぎり設定 -->
-            <div class="move-special-setting" id="furyCutterSettings" style="display: none;">
+            <div class="move-special-setting hidden" id="furyCutterSettings">
                 <label for="furyCutterCount">連続成功:</label>
                 <select id="furyCutterCount">
                     <option value="1" selected>1回目</option>
@@ -290,7 +294,7 @@
                 </select>
             </div>
             <!-- プレゼント設定 -->
-            <div class="move-special-setting" id="presentSettings" style="display: none;">
+            <div class="move-special-setting hidden" id="presentSettings">
                 <label for="presentOutcome">結果:</label>
                 <select id="presentOutcome">
                     <option value="40" selected>威力40 (40%)</option>
@@ -300,7 +304,7 @@
                 </select>
             </div>
             <!-- トリプルキック設定 -->
-            <div class="move-special-setting" id="tripleKickSettings" style="display: none;">
+            <div class="move-special-setting hidden" id="tripleKickSettings">
                 <label for="tripleKickHits">命中段数:</label>
                 <select id="tripleKickHits">
                     <option value="1">1段 (9%)</option>
@@ -309,13 +313,13 @@
                 </select>
             </div>
             <!-- ふくろだたき設定 -->
-            <div class="move-special-setting" id="beatUpSettings" style="display: none;">
+            <div class="move-special-setting hidden" id="beatUpSettings">
                 <label for="beatUpMembers">参加手持ち:</label>
                 <input type="text" id="beatUpMembers" placeholder="Lv:攻撃種族値 例 50:100, 25:80"
                        title="状態異常・ひんし・タマゴを除く手持ちを、Lv:攻撃種族値の順で最大6体入力">
             </div>
             <!-- 攻撃側の特性チェックボックス -->
-            <div class="attackerAbilityContainer ability-container" style="display: none;">
+            <div class="attackerAbilityContainer ability-container hidden">
               <label id="yogaPowerContainer" class="ability-checkbox">
                 <input type="checkbox" id="yogaPowerCheck">
                 <span>ヨガパワー</span>
@@ -457,7 +461,7 @@
                 <label class="inline-label">ポケモン:</label>
                 <input type="text" id="defenderPokemon" placeholder="ポケモン名を検索">
             </div>
-            <div id="defenderPokemonInfo" class="pokemon-info" style="display: none;"></div>
+            <div id="defenderPokemonInfo" class="pokemon-info hidden"></div>
             <!-- レベル -->
             <div class="input-row">
                 <label class="inline-label">レベル:</label>
@@ -497,9 +501,11 @@
                 <input type="number" class="ev-input" id="defenderEvB" value="0" min="0" max="252" onchange="updateStats('defender')">
                 <button class="ev-quick-btn" onclick="setEV('defender', 'b', 252)">252</button>
                 <span class="stat-separator">|</span>
+                <span class="nature-btn-group">
                 <button class="nature-btn" data-side="defender" data-stat="b" data-value="0.9" onclick="setNatureModifier('defender', 'b', 0.9, this)">0.9</button>
                 <button class="nature-btn selected" data-side="defender" data-stat="b" data-value="1.0" onclick="setNatureModifier('defender', 'b', 1.0, this)">1.0</button>
                 <button class="nature-btn" data-side="defender" data-stat="b" data-value="1.1" onclick="setNatureModifier('defender', 'b', 1.1, this)">1.1</button>
+                </span>
             </div>
             
             <!-- D実数値・個体値・努力値・性格補正 -->
@@ -511,9 +517,11 @@
                 <input type="number" class="ev-input" id="defenderEvD" value="0" min="0" max="252" onchange="updateStats('defender')">
                 <button class="ev-quick-btn" onclick="setEV('defender', 'd', 252)">252</button>
                 <span class="stat-separator">|</span>
+                <span class="nature-btn-group">
                 <button class="nature-btn" data-side="defender" data-stat="d" data-value="0.9" onclick="setNatureModifier('defender', 'd', 0.9, this)">0.9</button>
                 <button class="nature-btn selected" data-side="defender" data-stat="d" data-value="1.0" onclick="setNatureModifier('defender', 'd', 1.0, this)">1.0</button>
                 <button class="nature-btn" data-side="defender" data-stat="d" data-value="1.1" onclick="setNatureModifier('defender', 'd', 1.1, this)">1.1</button>
+                </span>
             </div>
             
             <!-- 詳細設定 -->
@@ -521,7 +529,7 @@
                 <div class="detail-header" onclick="toggleDetail('defender')">
                     ▶ 詳細設定を開く
                 </div>
-                <div class="detail-content" id="defenderDetail" style="display: none;">
+                <div class="detail-content hidden" id="defenderDetail">
                     <!-- 性格選択 -->
                     <div class="input-row">
                         <label class="inline-label">性格:</label>
@@ -621,7 +629,7 @@
                 </div>
             </div>
             <!-- 防御側の特性チェックボックス -->
-            <div class="defenderAbilityContainer ability-container" style="display: none;">
+            <div class="defenderAbilityContainer ability-container hidden">
               <label id="atsuishibouContainer" class="ability-checkbox">
                 <input type="checkbox" id="atsuishibouCheck">
                 <span>あついしぼう</span>
@@ -696,7 +704,7 @@
                         <option value="poison">どく</option>
                         <option value="badlypoison">もうどく</option>
                     </select>
-                    <select id="statusDamageStartTurn" style="margin-left: 5px;">
+                    <select id="statusDamageStartTurn">
                         <option value="1" selected>1ターン目から</option>
                         <option value="2">2ターン目から</option>
                         <option value="3">3ターン目から</option>
@@ -762,7 +770,7 @@
             </div>
 
             <!-- ダメージ計算ボタン -->
-            <button class="damage-calc-button" onclick="performDamageCalculationEnhanced()">ダメージ計算</button>
+            <button class="damage-calc-button" onclick="performDamageCalculationEnhanced(); scrollToResults();">ダメージ計算</button>
             </div>
         </div>
         
