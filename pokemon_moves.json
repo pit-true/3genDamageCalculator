@@ -4,39 +4,48 @@
     "romaji": "10manboruto",
     "type": "でんき",
     "power": 95,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
     "target": 1,
     "additional_effect": "まひ",
-    "effect_rate":10
+    "effect_rate": 10,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "アイアンテール",
     "romaji": "aiante-ru",
     "type": "はがね",
     "power": 100,
-	  "accuracy":75,
+    "accuracy": 75,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 30,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "アイスボール",
     "romaji": "aisubo-ru",
     "type": "こおり",
     "power": 30,
-	  "accuracy":90,
+    "accuracy": 90,
     "category": "Special",
     "class": "ice_ball",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "あてみなげ",
     "romaji": "ateminage",
     "type": "かくとう",
     "power": 70,
-	  "accuracy":0,
+    "accuracy": 0,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -46,17 +55,20 @@
     "romaji": "anaohoru",
     "type": "じめん",
     "power": 60,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "あばれる",
     "romaji": "abareru",
     "type": "ノーマル",
     "power": 90,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -66,27 +78,33 @@
     "romaji": "awa",
     "type": "みず",
     "power": 20,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "いあいぎり",
     "romaji": "iaigiri",
     "type": "ノーマル",
     "power": 50,
-	  "accuracy":95,
+    "accuracy": 95,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "いかり",
     "romaji": "ikari",
     "type": "ノーマル",
     "power": 20,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "rage",
     "target": 1
@@ -95,7 +113,7 @@
     "name": "いかりのまえば",
     "romaji": "ikarinomaeba",
     "type": "ノーマル",
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "harf",
     "target": 1
@@ -104,7 +122,7 @@
     "name": "いたみわけ",
     "romaji": "itamiwake",
     "type": "ノーマル",
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Status",
     "class": "itamiwake",
     "target": 1
@@ -114,7 +132,7 @@
     "romaji": "ibiki",
     "type": "ノーマル",
     "power": 40,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -124,37 +142,46 @@
     "romaji": "iwaotosi",
     "type": "いわ",
     "power": 50,
-	  "accuracy":90,
+    "accuracy": 90,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "いわくだき",
     "romaji": "iwakudaki",
     "type": "かくとう",
     "power": 20,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 50,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "いわなだれ",
     "romaji": "iwanadare",
     "type": "いわ",
     "power": 75,
-	  "accuracy":90,
+    "accuracy": 90,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 30,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "ウェザーボール",
     "romaji": "weza-bo-ru",
     "type": "ノーマル",
     "power": 50,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "weather_ball",
     "target": 1
@@ -164,37 +191,46 @@
     "romaji": "uzusio",
     "type": "みず",
     "power": 15,
-	  "accuracy":70,
+    "accuracy": 70,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 100,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "エアカッター",
     "romaji": "eakatta-",
     "type": "ひこう",
     "power": 55,
-	  "accuracy":95,
+    "accuracy": 95,
     "category": "Physical",
     "class": "standard",
-    "target": 2
+    "target": 2,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "エアロブラスト",
     "romaji": "earoburasuto",
     "type": "ひこう",
     "power": 100,
-	  "accuracy":95,
+    "accuracy": 95,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "おいうち",
     "romaji": "oiuchi",
     "type": "あく",
     "power": 40,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "two_fold",
     "target": 1
@@ -204,7 +240,7 @@
     "romaji": "oufukubinta",
     "type": "ノーマル",
     "power": 15,
-	  "accuracy":85,
+    "accuracy": 85,
     "category": "Physical",
     "class": "multi_hit",
     "target": 1
@@ -214,47 +250,59 @@
     "romaji": "o-ba-hi-to",
     "type": "ほのお",
     "power": 140,
-	  "accuracy":90,
+    "accuracy": 90,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 100,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "オーロラビーム",
     "romaji": "o-rorabi-mu",
     "type": "こおり",
     "power": 65,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "オクタンほう",
     "romaji": "okutanhou",
     "type": "みず",
     "power": 65,
-	  "accuracy":85,
+    "accuracy": 85,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 50,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "おどろかす",
     "romaji": "odorokasu",
     "type": "ゴースト",
     "power": 30,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 30,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "おんがえし",
     "romaji": "ongaesi",
     "type": "ノーマル",
     "power": 102,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -264,7 +312,7 @@
     "romaji": "kairiki",
     "type": "ノーマル",
     "power": 80,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -274,37 +322,46 @@
     "romaji": "kaenguruma",
     "type": "ほのお",
     "power": 60,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "かえんほうしゃ",
     "romaji": "kaenhousya",
     "type": "ほのお",
     "power": 95,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "かぜおこし",
     "romaji": "kazeokosi",
     "type": "ひこう",
     "power": 40,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "two_fold",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "かまいたち",
     "romaji": "kamaitachi",
     "type": "ノーマル",
     "power": 80,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -314,7 +371,7 @@
     "romaji": "gaman",
     "type": "ノーマル",
     "power": 1,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -324,49 +381,61 @@
     "romaji": "kamikudaku",
     "type": "あく",
     "power": 80,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 20,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "かみつく",
     "romaji": "kamituku",
     "type": "あく",
     "power": 60,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 30,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "かみなり",
     "romaji": "kaminari",
     "type": "でんき",
     "power": 120,
-	  "accuracy":70,
+    "accuracy": 70,
     "category": "Special",
     "class": "standard",
     "target": 1,
     "additional_effect": "まひ",
-    "effect_rate":30
+    "effect_rate": 30,
+    "secondary_effect_chance_percent": 30,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "かみなりパンチ",
     "romaji": "kaminaripanchi",
     "type": "でんき",
     "power": 75,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "がむしゃら",
     "romaji": "gamusyara",
     "type": "ノーマル",
     "power": 1,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "variable",
     "target": 1
@@ -376,7 +445,7 @@
     "romaji": "karagenki",
     "type": "ノーマル",
     "power": 70,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "two_fold",
     "target": 1
@@ -386,7 +455,7 @@
     "romaji": "karatechoppu",
     "type": "かくとう",
     "power": 50,
-	  "accuracy":75,
+    "accuracy": 75,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -396,57 +465,72 @@
     "romaji": "karadehasamu",
     "type": "みず",
     "power": 35,
-	  "accuracy":75,
+    "accuracy": 75,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 100,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "からみつく",
     "romaji": "karamituku",
     "type": "ノーマル",
     "power": 10,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "かわらわり",
     "romaji": "kawarawari",
     "type": "かくとう",
     "power": 75,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "がんせきふうじ",
     "romaji": "gansekifuuji",
     "type": "いわ",
     "power": 50,
-	  "accuracy":80,
+    "accuracy": 80,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 100,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "きあいパンチ",
     "romaji": "kiaipanchi",
     "type": "かくとう",
     "power": 150,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "ギガドレイン",
     "romaji": "gigadorein",
     "type": "くさ",
     "power": 60,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
     "target": 1
@@ -456,7 +540,7 @@
     "romaji": "kisikaisei",
     "type": "かくとう",
     "power": 1,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "pinch_up",
     "target": 1
@@ -466,27 +550,33 @@
     "romaji": "kituke",
     "type": "ノーマル",
     "power": 60,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "two_fold",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "きゅうけつ",
     "romaji": "kyuuketu",
     "type": "むし",
     "power": 20,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "きりさく",
     "romaji": "kirisaku",
     "type": "ノーマル",
     "power": 70,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -496,27 +586,33 @@
     "romaji": "ginironokaze",
     "type": "むし",
     "power": 60,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "クラブハンマー",
     "romaji": "kurabuhanma-",
     "type": "みず",
     "power": 90,
-	  "accuracy":85,
+    "accuracy": 85,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "クロスチョップ",
     "romaji": "kurosuchoppu",
     "type": "かくとう",
     "power": 100,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -526,17 +622,20 @@
     "romaji": "gekirin",
     "type": "ドラゴン",
     "power": 90,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 100,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "けたぐり",
     "romaji": "ketaguri",
     "type": "かくとう",
     "power": 1,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -546,17 +645,20 @@
     "romaji": "gensinochikara",
     "type": "いわ",
     "power": 60,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "こうそくスピン",
     "romaji": "kousokusupin",
     "type": "ノーマル",
     "power": 20,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -566,17 +668,20 @@
     "romaji": "kogoerukaze",
     "type": "こおり",
     "power": 55,
-	  "accuracy":95,
+    "accuracy": 95,
     "category": "Special",
     "class": "standard",
-    "target": 2
+    "target": 2,
+    "secondary_effect_chance_percent": 100,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "ゴッドバード",
     "romaji": "goddoba-do",
     "type": "ひこう",
     "power": 140,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -586,77 +691,98 @@
     "romaji": "konayuki",
     "type": "こおり",
     "power": 40,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 2
+    "target": 2,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "コメットパンチ",
     "romaji": "komettopanchi",
     "type": "はがね",
     "power": 100,
-	  "accuracy":85,
+    "accuracy": 85,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 20,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "ころがる",
     "romaji": "korogaru",
     "type": "いわ",
     "power": 30,
-	  "accuracy":90,
+    "accuracy": 90,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "サイケこうせん",
     "romaji": "saikekousen",
     "type": "エスパー",
     "power": 65,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "サイコウェーブ",
     "romaji": "saikowe-bu",
     "type": "エスパー",
     "power": 1,
-	  "accuracy":80,
+    "accuracy": 80,
     "category": "Special",
     "class": "psywave",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "サイコキネシス",
     "romaji": "saikokinesisu",
     "type": "エスパー",
     "power": 90,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "サイコブースト",
     "romaji": "saikobu-suto",
     "type": "エスパー",
     "power": 140,
-	  "accuracy":90,
+    "accuracy": 90,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 100,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "さわぐ",
     "romaji": "sawagu",
     "type": "ノーマル",
     "power": 50,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -666,57 +792,72 @@
     "romaji": "siofuki",
     "type": "みず",
     "power": 150,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "pinch_down",
-    "target": 2
+    "target": 2,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "シグナルビーム",
     "romaji": "sigunarubi-mu",
     "type": "むし",
     "power": 75,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "じごくぐるま",
     "romaji": "jigokuguruma",
     "type": "かくとう",
     "power": 80,
-	  "accuracy":80,
+    "accuracy": 80,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "じしん",
     "romaji": "jisin",
     "type": "じめん",
     "power": 100,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "したでなめる",
     "romaji": "sitadenameru",
     "type": "ゴースト",
     "power": 20,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 30,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "じたばた",
     "romaji": "jitabata",
     "type": "ノーマル",
     "power": 1,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "pinch_up",
     "target": 1
@@ -726,47 +867,59 @@
     "romaji": "jibaku",
     "type": "ノーマル",
     "power": 200,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "jibaku",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "しめつける",
     "romaji": "simetukeru",
     "type": "ノーマル",
     "power": 15,
-	  "accuracy":75,
+    "accuracy": 75,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 100,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "シャドーパンチ",
     "romaji": "syado-panchi",
     "type": "ゴースト",
     "power": 60,
-	  "accuracy":0,
+    "accuracy": 0,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "シャドーボール",
     "romaji": "syado-bo-ru",
     "type": "ゴースト",
     "power": 80,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 20,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "しんそく",
     "romaji": "sinsoku",
     "type": "ノーマル",
     "power": 80,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -776,27 +929,33 @@
     "romaji": "jintuuriki",
     "type": "エスパー",
     "power": 80,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "すいとる",
     "romaji": "suitoru",
     "type": "くさ",
     "power": 20,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "スカイアッパー",
     "romaji": "sukaiappa-",
     "type": "かくとう",
     "power": 85,
-	  "accuracy":90,
+    "accuracy": 90,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -806,7 +965,7 @@
     "romaji": "zutuki",
     "type": "ノーマル",
     "power": 70,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -816,77 +975,98 @@
     "romaji": "sutemitakkuru",
     "type": "ノーマル",
     "power": 120,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "すなじごく",
     "romaji": "sunajigoku",
     "type": "じめん",
     "power": 15,
-	  "accuracy":70,
+    "accuracy": 70,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 100,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "スパーク",
     "romaji": "supa-ku",
     "type": "でんき",
     "power": 65,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 30,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "スピードスター",
     "romaji": "supi-dosuta-",
     "type": "ノーマル",
     "power": 60,
-	  "accuracy":0,
+    "accuracy": 0,
     "category": "Physical",
     "class": "standard",
-    "target": 2
+    "target": 2,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "スモッグ",
     "romaji": "sumoggu",
     "type": "どく",
     "power": 20,
-	  "accuracy":70,
+    "accuracy": 70,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 40,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "せいなるほのお",
     "romaji": "seinaruhonoo",
     "type": "ほのお",
     "power": 100,
-	  "accuracy":95,
+    "accuracy": 95,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 50,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "ソーラービーム",
     "romaji": "so-ra-bi-mu",
     "type": "くさ",
     "power": 120,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "solarbeam",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "ソニックブーム",
     "romaji": "sonikkubu-mu",
     "type": "ノーマル",
     "power": null,
-	  "accuracy":90,
+    "accuracy": 90,
     "category": "Physical",
     "class": "fixed",
     "target": 1,
@@ -897,17 +1077,20 @@
     "romaji": "soraotobu",
     "type": "ひこう",
     "power": 70,
-	  "accuracy":95,
+    "accuracy": 95,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "ダークアタック",
     "romaji": "da-kuatakku",
     "type": "ダーク",
     "power": 35,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -917,7 +1100,7 @@
     "romaji": "da-kuwe-bu",
     "type": "ダーク",
     "power": 50,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
     "target": 2
@@ -927,7 +1110,7 @@
     "romaji": "da-kuendo",
     "type": "ダーク",
     "power": 120,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -937,7 +1120,7 @@
     "romaji": "da-kusanda-",
     "type": "ダーク",
     "power": 75,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
     "target": 1
@@ -947,7 +1130,7 @@
     "romaji": "da-kusuto-mu",
     "type": "ダーク",
     "power": 95,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
     "target": 2
@@ -956,7 +1139,7 @@
     "name": "ダークハーフ",
     "romaji": "da-kuha-fu",
     "type": "ダーク",
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "harf",
     "target": 1
@@ -966,7 +1149,7 @@
     "romaji": "da-kufaia",
     "type": "ダーク",
     "power": 75,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
     "target": 1
@@ -976,7 +1159,7 @@
     "romaji": "da-kuburasuto",
     "type": "ダーク",
     "power": 80,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -986,7 +1169,7 @@
     "romaji": "da-kufuri-zu",
     "type": "ダーク",
     "power": 75,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
     "target": 1
@@ -996,7 +1179,7 @@
     "romaji": "da-kubureiku",
     "type": "ダーク",
     "power": 75,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -1006,7 +1189,7 @@
     "romaji": "da-kurassyu(co)",
     "type": "なし",
     "power": 90,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -1016,7 +1199,7 @@
     "romaji": "da-kurassyu(xd)",
     "type": "ダーク",
     "power": 55,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -1026,7 +1209,7 @@
     "romaji": "da-kureibu",
     "type": "ダーク",
     "power": 70,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
     "target": 2
@@ -1036,27 +1219,33 @@
     "romaji": "taiatari",
     "type": "ノーマル",
     "power": 35,
-	  "accuracy":95,
+    "accuracy": 95,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "だいばくはつ",
     "romaji": "daibakuhatu",
     "type": "ノーマル",
     "power": 250,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "b_harf",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "ダイビング",
     "romaji": "daibingu",
     "type": "みず",
     "power": 60,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
     "target": 1
@@ -1066,77 +1255,98 @@
     "romaji": "daimonji",
     "type": "ほのお",
     "power": 120,
-	  "accuracy":85,
+    "accuracy": 85,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "たきのぼり",
     "romaji": "takinobori",
     "type": "みず",
     "power": 80,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "だくりゅう",
     "romaji": "dakuryuu",
     "type": "みず",
     "power": 95,
-	  "accuracy":85,
+    "accuracy": 85,
     "category": "Special",
     "class": "standard",
-    "target": 2
+    "target": 2,
+    "secondary_effect_chance_percent": 30,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "たたきつける",
     "romaji": "tatakitukeru",
     "type": "ノーマル",
     "power": 80,
-	  "accuracy":75,
+    "accuracy": 75,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "たつまき",
     "romaji": "tatumaki",
     "type": "ドラゴン",
     "power": 40,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "two_fold",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 20,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "タネマシンガン",
     "romaji": "tanemasingan",
     "type": "くさ",
     "power": 10,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "multi_hit",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "ダブルニードル",
     "romaji": "daburuni-doru",
     "type": "むし",
     "power": 25,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "two_hit",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 20,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "タマゴばくだん",
     "romaji": "tamagobakudan",
     "type": "ノーマル",
     "power": 100,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -1146,17 +1356,20 @@
     "romaji": "damasiuchi",
     "type": "あく",
     "power": 60,
-	  "accuracy":0,
+    "accuracy": 0,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "たまなげ",
     "romaji": "tamanage",
     "type": "ノーマル",
     "power": 15,
-	  "accuracy":85,
+    "accuracy": 85,
     "category": "Physical",
     "class": "multi_hit",
     "target": 1
@@ -1166,7 +1379,7 @@
     "romaji": "chikyuunage",
     "type": "かくとう",
     "power": null,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "fixed",
     "target": 1,
@@ -1177,27 +1390,33 @@
     "romaji": "tutuku",
     "type": "ひこう",
     "power": 35,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "つっぱり",
     "romaji": "tuppari",
     "type": "かくとう",
     "power": 15,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "multi_hit",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "つのでつく",
     "romaji": "tunodetuku",
     "type": "ノーマル",
     "power": 65,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -1207,67 +1426,85 @@
     "romaji": "tubasadeutu",
     "type": "ひこう",
     "power": 60,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "つばめがえし",
     "romaji": "tubamegaesi",
     "type": "ひこう",
     "power": 60,
-	  "accuracy":0,
+    "accuracy": 0,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "つららばり",
     "romaji": "turarabari",
     "type": "こおり",
     "power": 10,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "multi_hit",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "つるのムチ",
     "romaji": "turunomuchi",
     "type": "くさ",
     "power": 35,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "でんきショック",
     "romaji": "denkisiyokku",
     "type": "でんき",
     "power": 40,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "でんげきは",
     "romaji": "dengekiha",
     "type": "でんき",
     "power": 60,
-	  "accuracy":0,
+    "accuracy": 0,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "でんこうせっか",
     "romaji": "denkousekka",
     "type": "ノーマル",
     "power": 40,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -1277,17 +1514,20 @@
     "romaji": "denjihou",
     "type": "でんき",
     "power": 100,
-	  "accuracy":50,
+    "accuracy": 50,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 100,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "どくどくのキバ",
     "romaji": "dokudokunokiba",
     "type": "どく",
     "power": 50,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -1297,17 +1537,20 @@
     "romaji": "dokubari",
     "type": "どく",
     "power": 15,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 30,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "とげキャノン",
     "romaji": "togekiyanon",
     "type": "ノーマル",
     "power": 20,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "multi_hit",
     "target": 1
@@ -1317,37 +1560,46 @@
     "romaji": "tossin",
     "type": "ノーマル",
     "power": 90,
-	  "accuracy":85,
+    "accuracy": 85,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "とびげり",
     "romaji": "tobigeri",
     "type": "かくとう",
     "power": 70,
-	  "accuracy":95,
+    "accuracy": 95,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "とびはねる",
     "romaji": "tobihaneru",
     "type": "ひこう",
     "power": 85,
-	  "accuracy":85,
+    "accuracy": 85,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 30,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "とびひざげり",
     "romaji": "tobihizageri",
     "type": "かくとう",
     "power": 85,
-	  "accuracy":90,
+    "accuracy": 90,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -1357,7 +1609,7 @@
     "romaji": "toraiatakku",
     "type": "ノーマル",
     "power": 80,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -1367,47 +1619,59 @@
     "romaji": "doragonkuro-",
     "type": "ドラゴン",
     "power": 80,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "トリプルキック",
     "romaji": "toripurukikku",
     "type": "かくとう",
     "power": 10,
-	  "accuracy":90,
+    "accuracy": 90,
     "category": "Physical",
     "class": "triple_kick",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "ドリルくちばし",
     "romaji": "dorirukuchibasi",
     "type": "ひこう",
     "power": 80,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "どろかけ",
     "romaji": "dorokake",
     "type": "じめん",
     "power": 20,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 100,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "どろぼう",
     "romaji": "dorobou",
     "type": "あく",
     "power": 40,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
     "target": 1
@@ -1417,7 +1681,7 @@
     "romaji": "naitoheddo",
     "type": "ゴースト",
     "power": null,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "fixed",
     "target": 1,
@@ -1428,17 +1692,20 @@
     "romaji": "naminori",
     "type": "みず",
     "power": 95,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "two_fold",
-    "target": 2
+    "target": 2,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "ニードルアーム",
     "romaji": "ni-dorua-mu",
     "type": "くさ",
     "power": 60,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
     "target": 1
@@ -1448,17 +1715,20 @@
     "romaji": "nidogeri",
     "type": "かくとう",
     "power": 30,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "two_hit",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "ねこだまし",
     "romaji": "nekodamasi",
     "type": "ノーマル",
     "power": 40,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -1468,7 +1738,7 @@
     "romaji": "nekonikoban",
     "type": "ノーマル",
     "power": 40,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -1478,37 +1748,46 @@
     "romaji": "neppuu",
     "type": "ほのお",
     "power": 100,
-	  "accuracy":90,
+    "accuracy": 90,
     "category": "Special",
     "class": "standard",
-    "target": 2
+    "target": 2,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "ねんりき",
     "romaji": "nenriki",
     "type": "エスパー",
     "power": 50,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "のしかかり",
     "romaji": "nosikakari",
     "type": "ノーマル",
     "power": 85,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 30,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "のろい",
     "romaji": "noroi",
     "type": "ゴースト",
     "power": null,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Status",
     "class": "noroi",
     "target": 1
@@ -1518,37 +1797,46 @@
     "romaji": "ha-dopuranto",
     "type": "くさ",
     "power": 150,
-	  "accuracy":90,
+    "accuracy": 90,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "ハイドロカノン",
     "romaji": "haidorokanon",
     "type": "みず",
     "power": 150,
-	  "accuracy":90,
+    "accuracy": 90,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "ハイドロポンプ",
     "romaji": "haidoroponpu",
     "type": "みず",
     "power": 120,
-	  "accuracy":80,
+    "accuracy": 80,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "ハイパーボイス",
     "romaji": "haipa-boisu",
     "type": "ノーマル",
     "power": 90,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -1558,37 +1846,46 @@
     "romaji": "hakaikousen",
     "type": "ノーマル",
     "power": 150,
-	  "accuracy":90,
+    "accuracy": 90,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "ばかぢから",
     "romaji": "bakajikara",
     "type": "かくとう",
     "power": 120,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "はがねのつばさ",
     "romaji": "haganenotubasa",
     "type": "はがね",
     "power": 70,
-	  "accuracy":90,
+    "accuracy": 90,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "はきだす",
     "romaji": "hakidasu",
     "type": "ノーマル",
     "power": 100,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "spit_up",
     "target": 1
@@ -1598,37 +1895,46 @@
     "romaji": "bakuretupanchi",
     "type": "かくとう",
     "power": 100,
-	  "accuracy":50,
+    "accuracy": 50,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 100,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "はさむ",
     "romaji": "hasamu",
     "type": "ノーマル",
     "power": 55,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "はたきおとす",
     "romaji": "hatakiotosu",
     "type": "あく",
     "power": 20,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 100,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "はたく",
     "romaji": "hataku",
     "type": "ノーマル",
     "power": 40,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -1638,17 +1944,20 @@
     "romaji": "happakatta-",
     "type": "くさ",
     "power": 55,
-	  "accuracy":95,
+    "accuracy": 95,
     "category": "Special",
     "class": "standard",
-    "target": 2
+    "target": 2,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "はなびらのまい",
     "romaji": "hanabiranomai",
     "type": "くさ",
     "power": 70,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
     "target": 1
@@ -1658,27 +1967,33 @@
     "romaji": "baburukousen",
     "type": "みず",
     "power": 65,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "はめつのねがい",
     "romaji": "hametunonegai",
     "type": "はがね",
     "power": 120,
-	  "accuracy":85,
+    "accuracy": 85,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "ひっかく",
     "romaji": "hikkaku",
     "type": "ノーマル",
     "power": 40,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -1688,27 +2003,33 @@
     "romaji": "hissatumaeba",
     "type": "ノーマル",
     "power": 80,
-	  "accuracy":90,
+    "accuracy": 90,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "ひのこ",
     "romaji": "hinoko",
     "type": "ほのお",
     "power": 40,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "ひみつのちから",
     "romaji": "himitunochikara",
     "type": "ノーマル",
     "power": 70,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -1718,7 +2039,7 @@
     "romaji": "piyopiyopanchi",
     "type": "ノーマル",
     "power": 70,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -1728,27 +2049,33 @@
     "romaji": "fukurodataki",
     "type": "あく",
     "power": 10,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "beat_up",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "ふぶき",
     "romaji": "fubuki",
     "type": "こおり",
     "power": 120,
-	  "accuracy":70,
+    "accuracy": 70,
     "category": "Special",
     "class": "standard",
-    "target": 2
+    "target": 2,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "ふみつけ",
     "romaji": "fumituke",
     "type": "ノーマル",
     "power": 65,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "two_fold",
     "target": 1
@@ -1758,37 +2085,46 @@
     "romaji": "burasutoba-n",
     "type": "ほのお",
     "power": 150,
-	  "accuracy":90,
+    "accuracy": 90,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "ブレイククロー",
     "romaji": "bureikukuro-",
     "type": "ノーマル",
     "power": 75,
-	  "accuracy":95,
+    "accuracy": 95,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 50,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "ブレイズキック",
     "romaji": "bureizukikku",
     "type": "ほのお",
     "power": 85,
-	  "accuracy":90,
+    "accuracy": 90,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "プレゼント",
     "romaji": "purezento",
     "type": "ノーマル",
     "power": 120,
-	  "accuracy":90,
+    "accuracy": 90,
     "category": "Physical",
     "class": "present",
     "target": 1
@@ -1798,37 +2134,46 @@
     "romaji": "funka",
     "type": "ほのお",
     "power": 150,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "pinch_down",
-    "target": 2
+    "target": 2,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "ヘドロこうげき",
     "romaji": "hedorokougeki",
     "type": "どく",
     "power": 65,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 30,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "ヘドロばくだん",
     "romaji": "hedorobakudan",
     "type": "どく",
     "power": 90,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 30,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "ポイズンテール",
     "romaji": "poizunte-ru",
     "type": "どく",
     "power": 50,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -1838,17 +2183,20 @@
     "romaji": "bo-nrassyu",
     "type": "じめん",
     "power": 25,
-	  "accuracy":80,
+    "accuracy": 80,
     "category": "Physical",
     "class": "multi_hit",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "ほしがる",
     "romaji": "hosigaru",
     "type": "ノーマル",
     "power": 40,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -1858,57 +2206,72 @@
     "romaji": "honekonbou",
     "type": "じめん",
     "power": 65,
-	  "accuracy":85,
+    "accuracy": 85,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "ホネブーメラン",
     "romaji": "honebu-meran",
     "type": "じめん",
     "power": 50,
-	  "accuracy":90,
+    "accuracy": 90,
     "category": "Physical",
     "class": "two_hit",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "ほのおのうず",
     "romaji": "honoonouzu",
     "type": "ほのお",
     "power": 15,
-	  "accuracy":70,
+    "accuracy": 70,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 100,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "ほのおのパンチ",
     "romaji": "honoonopanchi",
     "type": "ほのお",
     "power": 75,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "ボルテッカー",
     "romaji": "boruteka-",
     "type": "でんき",
     "power": 120,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "まきつく",
     "romaji": "makituku",
     "type": "ノーマル",
     "power": 15,
-	  "accuracy":85,
+    "accuracy": 85,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -1918,7 +2281,7 @@
     "romaji": "magunichu-do",
     "type": "じめん",
     "power": 150,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -1928,67 +2291,85 @@
     "romaji": "majikaruri-fu",
     "type": "くさ",
     "power": 60,
-	  "accuracy":0,
+    "accuracy": 0,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "マッドショット",
     "romaji": "maddosiyotto",
     "type": "じめん",
     "power": 55,
-	  "accuracy":95,
+    "accuracy": 95,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 100,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "マッハパンチ",
     "romaji": "mahhapanchi",
     "type": "かくとう",
     "power": 40,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "まわしげり",
     "romaji": "mawasigeri",
     "type": "かくとう",
     "power": 60,
-	  "accuracy":85,
+    "accuracy": 85,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 30,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "ミサイルばり",
     "romaji": "misairubari",
     "type": "むし",
     "power": 14,
-	  "accuracy":85,
+    "accuracy": 85,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "みずでっぽう",
     "romaji": "mizudeppou",
     "type": "みず",
     "power": 40,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "ミストボール",
     "romaji": "misutobo-ru",
     "type": "エスパー",
     "power": 70,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
     "target": 1
@@ -1998,7 +2379,7 @@
     "romaji": "mizunohadou",
     "type": "みず",
     "power": 60,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
     "target": 1
@@ -2008,7 +2389,7 @@
     "romaji": "midarezuki",
     "type": "ノーマル",
     "power": 15,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "multi_hit",
     "target": 1
@@ -2018,17 +2399,20 @@
     "romaji": "midarehikkaki",
     "type": "ノーマル",
     "power": 18,
-	  "accuracy":80,
+    "accuracy": 80,
     "category": "Physical",
     "class": "multi_hit",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "みねうち",
     "romaji": "mineuchi",
     "type": "ノーマル",
     "power": 40,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -2038,7 +2422,7 @@
     "romaji": "miraiyochi",
     "type": "なし",
     "power": 80,
-	  "accuracy":90,
+    "accuracy": 90,
     "category": "Special",
     "class": "absolute",
     "target": 1
@@ -2048,47 +2432,59 @@
     "romaji": "megadorein",
     "type": "くさ",
     "power": 40,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "メガトンキック",
     "romaji": "megatonkikku",
     "type": "ノーマル",
     "power": 120,
-	  "accuracy":75,
+    "accuracy": 75,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "メガトンパンチ",
     "romaji": "megatonpanchi",
     "type": "ノーマル",
     "power": 80,
-	  "accuracy":75,
+    "accuracy": 75,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "メガホーン",
     "romaji": "megaho-n",
     "type": "むし",
     "power": 120,
-	  "accuracy":85,
+    "accuracy": 85,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "めざめるパワー",
     "romaji": "mezamerupawa-",
     "type": "ノーマル",
     "power": 70,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "awaken_power",
     "target": 1
@@ -2098,17 +2494,20 @@
     "romaji": "metarukuro-",
     "type": "はがね",
     "power": 50,
-	  "accuracy":95,
+    "accuracy": 95,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "やつあたり",
     "romaji": "yatuatari",
     "type": "ノーマル",
     "power": 102,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -2118,27 +2517,33 @@
     "romaji": "yumekui",
     "type": "エスパー",
     "power": 100,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "ようかいえき",
     "romaji": "youkaieki",
     "type": "どく",
     "power": 40,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "ラスターパージ",
     "romaji": "rasuta-pa-ji",
     "type": "エスパー",
     "power": 70,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
     "target": 1
@@ -2148,7 +2553,7 @@
     "romaji": "ri-fubure-do",
     "type": "くさ",
     "power": 70,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
     "target": 1
@@ -2158,17 +2563,20 @@
     "romaji": "ribenji",
     "type": "かくとう",
     "power": 60,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "variable",
     "class": "two_fold",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "りゅうのいかり",
     "romaji": "ryuunoikari",
     "type": "ドラゴン",
     "power": null,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "fixed",
     "target": 1,
@@ -2179,57 +2587,72 @@
     "romaji": "ryuunoibuki",
     "type": "ドラゴン",
     "power": 60,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 30,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "れいとうパンチ",
     "romaji": "reitoupanchi",
     "type": "こおり",
     "power": 75,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "れいとうビーム",
     "romaji": "reitoubi-mu",
     "type": "こおり",
     "power": 95,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Special",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 10,
+    "has_secondary_effect": true,
+    "rom_verified": true
   },
   {
     "name": "れんぞくぎり",
     "romaji": "renzokugiri",
     "type": "むし",
     "power": 10,
-	  "accuracy":95,
+    "accuracy": 95,
     "category": "Physical",
     "class": "fury_cutter",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "れんぞくパンチ",
     "romaji": "renzokupanchi",
     "type": "ノーマル",
     "power": 18,
-	  "accuracy":85,
+    "accuracy": 85,
     "category": "multi_hit",
     "class": "standard",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "ロケットずつき",
     "romaji": "rokettozutuki",
     "type": "ノーマル",
     "power": 100,
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "class": "standard",
     "target": 1
@@ -2239,24 +2662,27 @@
     "romaji": "rokkuburasuto",
     "type": "いわ",
     "power": 25,
-	  "accuracy":80,
+    "accuracy": 80,
     "category": "Physical",
     "class": "multi_hit",
-    "target": 1
+    "target": 1,
+    "secondary_effect_chance_percent": 0,
+    "has_secondary_effect": false,
+    "rom_verified": true
   },
   {
     "name": "わるあがき",
     "romaji": "waruagaki",
     "type": "ノーマル",
     "power": 50,
-	  "accuracy":0,
+    "accuracy": 0,
     "category": "Physical"
   },
   {
     "name": "ダークラッシュ(自傷)",
     "romaji": "da-kurassyu",
     "type": "なし",
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Status",
     "power": 0,
     "class": "self_damage",
@@ -2266,7 +2692,7 @@
     "name": "ダークエンド(自傷)",
     "romaji": "da-kuendo",
     "type": "なし",
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Status",
     "power": 0,
     "class": "harf",
@@ -2276,7 +2702,7 @@
     "name": "とびひざげり(自傷)",
     "romaji": "tobihizagerijisyo",
     "type": "なし",
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Status",
     "power": 0,
     "class": "harf_damage",
@@ -2286,7 +2712,7 @@
     "name": "すてみタックル(反動)",
     "romaji": "sutemitakkuruhandou",
     "type": "なし",
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Status",
     "power": 0,
     "class": "recoil",
@@ -2296,7 +2722,7 @@
     "name": "こんらん",
     "romaji": "konran",
     "type": "なし",
-	  "accuracy":100,
+    "accuracy": 100,
     "category": "Physical",
     "power": 40,
     "class": "self_damage2",
