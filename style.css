@@ -307,17 +307,18 @@ button:hover {
     color: #666;
     font-weight: bold;
     flex-shrink: 0;
-    margin: 0 auto;
+    margin: 0 4px;
 }
 
 #defenderIvHP, #defenderEvHP,
 #defenderIvB, #defenderEvB,
 #defenderIvD, #defenderEvD {
-    width: 60px !important;
-    min-width: 60px !important;
-    max-width: 60px !important;
+    width: 54px !important;
+    min-width: 54px !important;
+    max-width: 54px !important;
     box-sizing: border-box !important;
     flex-shrink: 0 !important;
+    flex-grow: 0 !important;
 }
 
 #defenderRealHP, #defenderDetailRealHP,
@@ -344,8 +345,8 @@ input[type="number"]::-webkit-inner-spin-button {
    6. 現在HP入力欄（修正版）
    ======================== */
 .current-hp-label {
-    margin-left: 5px;
-    margin-right: 3px;
+    margin-left: auto;
+    margin-right: 1px;
     font-size: 11px;
     color: #666;
     flex-shrink: 0;
@@ -353,12 +354,14 @@ input[type="number"]::-webkit-inner-spin-button {
 }
 
 .current-hp-input {
-    width: 45px;
-    padding: 4px;
+    width: 42px;
+    max-width: 42px;
+    padding: 4px 2px;
     border: 1px solid #ccc;
     border-radius: 4px;
     font-size: 13px;
     flex-shrink: 0;
+    flex-grow: 0;
 }
 
 .pinchUpContainer, .pinchDownContainer, .move-special-setting {
@@ -2299,45 +2302,84 @@ body.mobile-control-active {
         margin-right: -6px;
     }
     
+    /* 元々はwidth=min-width=max-widthで完全固定していたため、.sectionはflex:1で幅に余裕があっても
+       行の右側に空白が残るだけで数値入力欄自体は広がらなかった。
+       ・flexだけでなくwidth/min-width/max-widthも明示的に揃える（古いwidth!important指定が
+         flex-basisと競合し、想定通りに伸びなかったため）
+       ・伸びる幅には上限を付ける（無制限に伸ばすと現在HP欄側の余白が無くなりmargin-left:autoが
+         効かなくなるため、上限以降の余りを現在HP欄側に残す）
+       ・フォントサイズは実数値欄14px・個体値/努力値欄12pxとバラバラだったのを13pxに統一する
+       ・実数値欄はグローバル指定で元々box-sizing: border-boxなのに対し、個体値/努力値欄はどこにも
+         box-sizingの指定が無く既定のcontent-boxのままだった。同じheight:30pxでも、border-boxは
+         paddingを含めて30px・content-boxはpaddingを足して30pxになるため、実際の見た目の高さが
+         実数値欄30pxに対し個体値/努力値欄約36.2pxとズレていた。border-boxに揃えて解消する。 */
     .stat-row .stat-input {
+        flex: 1 1 38px !important;
         width: 38px !important;
         min-width: 38px !important;
-        max-width: 38px !important;
-        min-height: 30px;
-        font-size: 14px;
+        max-width: 55px !important;
+        height: 30px !important;
+        box-sizing: border-box !important;
+        font-size: 13px;
         padding: 3px;
     }
 
     .stat-row .iv-input {
+        flex: 1 1 26px !important;
         width: 26px !important;
-        min-height: 30px;
-        font-size: 12px;
+        min-width: 26px !important;
+        max-width: 40px !important;
+        height: 30px !important;
+        box-sizing: border-box !important;
+        font-size: 13px;
         padding: 2px;
     }
 
     .stat-row .ev-input {
-        width: 32px;
-        min-height: 30px;
-        font-size: 12px;
+        flex: 1 1 32px !important;
+        width: 32px !important;
+        min-width: 32px !important;
+        max-width: 82px !important;
+        height: 30px !important;
+        box-sizing: border-box !important;
+        font-size: 13px;
         padding: 2px;
     }
 
+    /* 防御側の幅はグローバル指定（#defenderIvHP等）のbox-sizing: border-box !importantが
+       常時効いたままでよい（content-boxに変えると防御側だけ縦幅が広がってしまうため元に戻した）。
+       flex/width系だけ攻撃側と同じ考え方で上書きする。 */
     #defenderRealHP, #defenderRealB, #defenderRealD {
+        flex: 1 1 38px !important;
         width: 38px !important;
         min-width: 38px !important;
-        max-width: 38px !important;
+        max-width: 55px !important;
     }
 
     #defenderIvHP, #defenderIvB, #defenderIvD {
+        flex: 1 1 26px !important;
         width: 26px !important;
         min-width: 26px !important;
-        max-width: 26px !important;
+        max-width: 40px !important;
     }
 
-    #defenderEvHP, #defenderEvB, #defenderEvD {
+    /* H行には「｜」が無いので、B/D側の｜の余白調整とは無関係。H行だけ「現在HP:」欄がある分
+       伸びられる余地が少ないので、B/D行より小さい固定幅(72px)のままにする（3欄の幅を無理に
+       揃える必要はない）。 */
+    #defenderEvHP {
+        flex: 0 0 72px !important;
+        width: 72px !important;
+        min-width: 72px !important;
+        max-width: 72px !important;
+    }
+
+    /* B/D行は｜の左右の余白が非対称（左4.7〜9.7px・右1px）だったので、｜の手前の余白が0に
+       近づくまで努力値欄を伸ばす（実測: 82pxまで広げると左右ともほぼ1pxで揃う）。 */
+    #defenderEvB, #defenderEvD {
+        flex: 1 1 32px !important;
         width: 32px !important;
         min-width: 32px !important;
-        max-width: 32px !important;
+        max-width: 82px !important;
     }
 
     .stat-row .iv-quick-btn,
@@ -2355,6 +2397,14 @@ body.mobile-control-active {
 
     .stat-row .nature-btn-group {
         gap: 1px;
+    }
+
+    /* 「｜＋0.9/1.0/1.1」のかたまりを行の右端にまとめる（1200px以上向けの同種の修正と同じ考え方）。
+       実数値/個体値/努力値欄をmax-widthで頭打ちにしてあるので、余った分がここに残る。
+       ベースの.stat-separatorにmargin: 0 4pxが指定されていて右マージンだけ残ってしまい、
+       ｜の左右の間隔が非対称（左1px・右5px）になっていたので、右も含めて明示的に0にする。 */
+    .stat-row .stat-separator {
+        margin: 0 0 0 auto;
     }
 
     .current-hp-input {
@@ -2375,8 +2425,11 @@ body.mobile-control-active {
         height: 12px;
     }
 
+    /* margin:0だと基本ルール（.current-hp-label { margin-left: auto }）の右寄せが打ち消されて
+       しまい、「現在HP:」とその入力欄が右端に寄らずH行の途中に埋もれていた。左だけautoに戻し、
+       ラベルと入力欄のかたまりを行の右端にまとめて配置する。 */
     .current-hp-label {
-        margin: 0;
+        margin: 0 0 0 auto;
     }
 
     input[type="number"] {
@@ -2584,4 +2637,38 @@ body.mobile-control-active {
 /* 初期非表示ユーティリティ（他のクラスのdisplay指定より後に置き、カスケード順で確実に勝たせる） */
 .hidden {
     display: none;
+}
+
+/* デスクトップ幅でのH行レイアウト調整（769px〜1199pxの中間幅は専用の調整値が別途あるため対象外）:
+   現在HP欄を3桁+スピンボタン表示に必要な最小幅に固定し、余白でH行だけ間延びしないようにする。
+   あわせてH/B/D努力値欄の幅を攻撃側の努力値欄に近づける（詳細は下のコメント参照）。 */
+@media (min-width: 1200px) {
+    #defenderCurrentHP {
+        width: 56px !important;
+        min-width: 56px !important;
+        max-width: 56px !important;
+        padding: 4px 2px !important;
+    }
+
+    #defenderCurrentHP::-webkit-outer-spin-button,
+    #defenderCurrentHP::-webkit-inner-spin-button {
+        -webkit-appearance: auto !important;
+        appearance: auto !important;
+        opacity: 1 !important;
+        margin: 0 !important;
+    }
+
+    /* H/B/D努力値欄を、固定pxのゴリ押しではなくflex-growで自然に埋まるようにする。
+       ・flex-basis:45pxを基準に、行内の余ったスペースをこの欄自身が吸収する（flex-grow:1）
+       ・ただし攻撃側の努力値欄（実測描画幅72.5px。box-sizing未指定=content-boxでpaddingが
+         幅に加算されるため見た目はwidth指定の45pxより広くなる）を超えて伸びないようmax-widthで
+         上限だけ揃える
+       ・margin-left: autoでは「｜」だけを右端に寄せる形だったため、努力値欄が伸びるほど左右で
+         余白が非対称になり、ウィンドウ幅が変わるたびにズレも変わってしまっていた。flex-growなら
+         欄自体が伸びるので左右の余白は常に対称のまま、ウィンドウ幅が変わっても崩れにくい。 */
+    #defenderEvHP, #defenderEvB, #defenderEvD {
+        flex: 1 0 45px !important;
+        max-width: 72.5px !important;
+        box-sizing: content-box !important;
+    }
 }
