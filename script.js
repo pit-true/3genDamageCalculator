@@ -5775,6 +5775,21 @@ function calculateLeechSeed2HealAmount() {
     return Math.floor(attackerMaxHP / 8);
 }
 
+function parseRankValue(rankValue) {
+    return rankValue === '±0' ? 0 : parseInt(rankValue) || 0;
+}
+
+// 急所時は自分に不利なランク補正を無視する
+// (実機pm_eme_ose WazaDamageCalcの仕様: 攻撃側は下降ランク、防御側は上昇ランクを急所時に無効化する)
+function getCriticalAdjustedRankMultiplier(rankValue, isCritical, isAttackerStat) {
+    if (isCritical) {
+        const rank = parseRankValue(rankValue);
+        if (isAttackerStat && rank < 0) return 1.0;
+        if (!isAttackerStat && rank > 0) return 1.0;
+    }
+    return getRankMultiplier(rankValue);
+}
+
 function getRankMultiplier(rankValue) {
     const multipliers = {
         '-6': { numerator: 10, denominator: 40 },
@@ -5987,9 +6002,13 @@ function calculateDamage(attack, defense, level, power, category, moveType, atta
     finalDefense = Math.floor(finalDefense / 2);
   }
   
+  // 急所（ランク補正・壁の無効化判定で使うため先に取得する）
+  const isCritical = document.getElementById('criticalCheck').checked;
+
   // ランク補正
-  const atkRankMultiplier = getRankMultiplier(effectiveAtkRank);
-  const defRankMultiplier = getRankMultiplier(defRank);
+  // 急所時は攻撃側の下降ランク・防御側の上昇ランクを無視する
+  const atkRankMultiplier = getCriticalAdjustedRankMultiplier(effectiveAtkRank, isCritical, true);
+  const defRankMultiplier = getCriticalAdjustedRankMultiplier(defRank, isCritical, false);
 
   finalAttack = Math.floor(finalAttack * atkRankMultiplier);
   finalDefense = Math.floor(finalDefense * defRankMultiplier);
@@ -6010,8 +6029,8 @@ function calculateDamage(attack, defense, level, power, category, moveType, atta
   // ダブルかチェック
   const isDouble = document.getElementById('doubleCheck').checked;
 
-  // ひかりのかべ・リフレクター
-  const hasWall = document.getElementById('wallCheck').checked;
+  // ひかりのかべ・リフレクター（急所時は貫通するため無効）
+  const hasWall = document.getElementById('wallCheck').checked && !isCritical;
   if (hasWall && !isDouble) {
     proc = Math.floor(proc / 2);
   }
@@ -6059,8 +6078,7 @@ function calculateDamage(attack, defense, level, power, category, moveType, atta
       proc = calculateSpitUpDamage(proc, stockpileCount);
   }
 
-  // 急所
-  const isCritical = document.getElementById('criticalCheck').checked;
+  // 急所ダメージ2倍
   if (isCritical && (!move || move.class !== 'spit_up')) {
       proc = Math.floor(proc * 2);
   }
