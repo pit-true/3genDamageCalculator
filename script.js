@@ -5930,6 +5930,11 @@ function calculateDamage(attack, defense, level, power, category, moveType, atta
           isItemValid = exclusiveItems[item.name].includes(attackerPokemon.name);
       }
       
+      // タイプ一致補正系アイテム（type指定あり）は技タイプが一致するときのみ適用
+      if (isItemValid && item.type && item.type !== moveType) {
+          isItemValid = false;
+      }
+
       if (isItemValid && item.timing === "attackMod") {
           const modifier = category === "Physical" ? (item.a || 1.0) : (item.c || 1.0);
           finalAttack = Math.floor(finalAttack * modifier);

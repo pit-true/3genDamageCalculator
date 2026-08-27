@@ -171,7 +171,7 @@
     "accuracy": 90,
     "category": "Physical",
     "class": "standard",
-    "target": 1,
+    "target": 2,
     "secondary_effect_chance_percent": 30,
     "has_secondary_effect": true,
     "rom_verified": true
