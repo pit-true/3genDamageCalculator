@@ -11195,7 +11195,7 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
     const evasionRankText = (evasionRank !== '±0' && evasionRank !== '0') ? ` / 回避ランク${evasionRank}` : '';
     
     // 2発目以降のダメージ範囲・割合・HPゲージを生成
-    // （ダメージ範囲・割合・確定数は「そのターン開始時点のHP」基準、HPゲージは1発目からの累積ダメージで表示）
+    // （割合は1発目と同じHP基準、確定数は「そのターン開始時点のHP」基準、HPゲージは1発目からの累積ダメージで表示）
     let additionalTurnsHtml = '';
     if (isMultiTurn && actualTurns > 1 && koRates && koRates.basis) {
         const currentHPInput = document.getElementById('defenderCurrentHP');
@@ -11211,7 +11211,7 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
             const turnStartHP = Math.max(1, Math.round(currentHP - cumulativeAvgDamage));
             const turnMove = multiTurnMoves[t] || currentMove;
 
-            // ダメージ範囲・割合・確定数はそのターン開始時点のHPを基準に計算
+            // 確定数はそのターン開始時点のHPを基準に計算
             if (currentHPInput) currentHPInput.value = turnStartHP;
             const turnRand = calculateRandText(turnMinDamage, turnMaxDamage, totalHP, turnMove);
             const turnKoSummary = turnRand.percent
@@ -11232,7 +11232,7 @@ function displayUnifiedResults(minDamage, maxDamage, totalHP, isMultiTurn = fals
             additionalTurnsHtml += `
             <div class="result-info2">
                 <p><strong>${t + 1}発目のダメージ範囲:</strong> ${turnMinDamage}～${turnMaxDamage}</p>
-                <p><strong>割合:</strong> ${(turnMinDamage / turnStartHP * 100).toFixed(1)}%～${(turnMaxDamage / turnStartHP * 100).toFixed(1)}%</p>
+                <p><strong>割合:</strong> ${(turnMinDamage / currentHP * 100).toFixed(1)}%～${(turnMaxDamage / currentHP * 100).toFixed(1)}%</p>
                 <p>${turnKoSummary}</p>
             </div>
             ${turnHpBarHtml}
