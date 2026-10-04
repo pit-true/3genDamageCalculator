@@ -1472,6 +1472,14 @@ input[type="number"]::-webkit-inner-spin-button {
     text-align: center;
 }
 
+.hidden-power-preset {
+    font-size: 12px;
+    padding: 2px 4px;
+    border: 1px solid #b3d9ff;
+    border-radius: 4px;
+    background-color: #ffffff;
+}
+
 .total-ev-info span:last-child.ev-over {
     color: #dc3545;
     background-color: #fff5f5;

@@ -193,6 +193,9 @@
                             <span>めざパ:</span>
                             <span id="attackerHiddenPowerDisplay">ノーマル 30</span>
                         </div>
+                        <select id="attackerHiddenPowerPreset" class="hidden-power-preset" onchange="applyHiddenPowerPreset('attacker', this.value)">
+                            <option value="">タイプ指定</option>
+                        </select>
                         <div class="total-ev-info">
                             <span>合計努力値:</span>
                             <span id="attackerTotalEVDisplay">0</span>
@@ -621,6 +624,9 @@
                             <span>めざパ:</span>
                             <span id="defenderHiddenPowerDisplay">ノーマル 30</span>
                         </div>
+                        <select id="defenderHiddenPowerPreset" class="hidden-power-preset" onchange="applyHiddenPowerPreset('defender', this.value)">
+                            <option value="">タイプ指定</option>
+                        </select>
                         <div class="total-ev-info">
                             <span>合計努力値:</span>
                             <span id="defenderTotalEVDisplay">0</span>

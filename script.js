@@ -78,6 +78,7 @@ const natureDataList = [
 // ========================
 
 document.addEventListener('DOMContentLoaded', function() {
+    populateHiddenPowerPresetSelects();
     initializePageWithRestore();
 });
 
@@ -3947,6 +3948,12 @@ function updateDetailSummary(side) {
     if (hiddenPowerDisplay) {
         hiddenPowerDisplay.textContent = `${hiddenPowerType} ${hiddenPowerPower}`;
     }
+
+    const hiddenPowerPresetSelect = document.getElementById(`${side}HiddenPowerPreset`);
+    if (hiddenPowerPresetSelect) {
+        const preset = findHiddenPowerPreset(readDetailIVs(side));
+        hiddenPowerPresetSelect.value = preset ? preset.label : '';
+    }
     
     if (totalEVDisplay) {
         if (totalEV > 508) {
@@ -5462,6 +5469,27 @@ const HIDDEN_POWER_TYPES = [
     'ほのお', 'みず', 'くさ', 'でんき', 'エスパー', 'こおり', 'ドラゴン', 'あく'
 ];
 
+// 威力70になる個体値の並び（H-A-B-C-D-S）。物理タイプはA、特殊タイプはCを優先して31にする
+const HIDDEN_POWER_PRESETS = [
+    { label: 'ほのお', type: 'ほのお', ivs: { hp: 31, a: 30, b: 31, c: 30, d: 31, s: 30 } },
+    { label: 'みず', type: 'みず', ivs: { hp: 31, a: 30, b: 30, c: 30, d: 31, s: 31 } },
+    { label: 'でんき', type: 'でんき', ivs: { hp: 31, a: 30, b: 30, c: 31, d: 31, s: 30 } },
+    { label: 'くさ', type: 'くさ', ivs: { hp: 31, a: 30, b: 31, c: 30, d: 31, s: 31 } },
+    { label: 'こおり', type: 'こおり', ivs: { hp: 31, a: 30, b: 30, c: 31, d: 31, s: 31 } },
+    { label: 'かくとう', type: 'かくとう', ivs: { hp: 31, a: 31, b: 30, c: 30, d: 30, s: 30 } },
+    { label: 'どく', type: 'どく', ivs: { hp: 31, a: 31, b: 30, c: 30, d: 30, s: 31 } },
+    { label: 'じめん', type: 'じめん', ivs: { hp: 31, a: 31, b: 31, c: 30, d: 30, s: 31 } },
+    { label: 'ひこう (S31)', type: 'ひこう', ivs: { hp: 30, a: 30, b: 30, c: 30, d: 30, s: 31 } },
+    { label: 'ひこう (A31)', type: 'ひこう', ivs: { hp: 31, a: 31, b: 31, c: 30, d: 30, s: 30 } },
+    { label: 'エスパー', type: 'エスパー', ivs: { hp: 31, a: 30, b: 31, c: 31, d: 31, s: 30 } },
+    { label: 'むし', type: 'むし', ivs: { hp: 31, a: 31, b: 31, c: 31, d: 30, s: 30 } },
+    { label: 'いわ', type: 'いわ', ivs: { hp: 31, a: 31, b: 30, c: 31, d: 30, s: 30 } },
+    { label: 'ゴースト', type: 'ゴースト', ivs: { hp: 31, a: 31, b: 30, c: 31, d: 30, s: 31 } },
+    { label: 'ドラゴン', type: 'ドラゴン', ivs: { hp: 31, a: 30, b: 31, c: 31, d: 31, s: 31 } },
+    { label: 'あく', type: 'あく', ivs: { hp: 31, a: 31, b: 31, c: 31, d: 31, s: 31 } },
+    { label: 'はがね', type: 'はがね', ivs: { hp: 31, a: 31, b: 31, c: 31, d: 30, s: 31 } }
+];
+
 // 各個体値の最下位ビットでタイプ、下から2ビット目で威力が決まる（ビット順はH-A-B-S-C-D）
 function hiddenPowerFromIVs(ivs) {
     const order = ['hp', 'a', 'b', 's', 'c', 'd'];
@@ -5475,6 +5503,12 @@ function hiddenPowerFromIVs(ivs) {
         type: HIDDEN_POWER_TYPES[Math.floor(typeSum * 15 / 63)],
         power: Math.floor(powerSum * 40 / 63) + 30
     };
+}
+
+function findHiddenPowerPreset(ivs) {
+    return HIDDEN_POWER_PRESETS.find(preset =>
+        Object.keys(preset.ivs).every(stat => preset.ivs[stat] === ivs[stat])
+    ) || null;
 }
 
 function readDetailIVs(side) {
@@ -5507,6 +5541,42 @@ function resolveDynamicMove(move, ivs) {
         return { ...move, type: weatherData.type, category: weatherData.category };
     }
     return move;
+}
+
+function populateHiddenPowerPresetSelects() {
+    ['attacker', 'defender'].forEach(side => {
+        const select = document.getElementById(`${side}HiddenPowerPreset`);
+        if (!select) return;
+        HIDDEN_POWER_PRESETS.forEach(preset => {
+            const option = document.createElement('option');
+            option.value = preset.label;
+            option.textContent = preset.label;
+            select.appendChild(option);
+        });
+    });
+}
+
+function applyHiddenPowerPreset(side, label) {
+    const preset = HIDDEN_POWER_PRESETS.find(p => p.label === label);
+    if (!preset) return;
+
+    const target = side === 'attacker' ? attackerPokemon : defenderPokemon;
+    Object.entries(preset.ivs).forEach(([stat, value]) => {
+        const suffix = stat === 'hp' ? 'HP' : stat.toUpperCase();
+        target.ivValues[stat] = value;
+        const detailInput = document.getElementById(`${side}DetailIv${suffix}`);
+        if (detailInput) {
+            detailInput.value = value;
+            updateDetailIVButton(detailInput);
+        }
+        const mainInput = document.getElementById(`${side}Iv${suffix}`);
+        if (mainInput) {
+            mainInput.value = value;
+            updateIVButton(mainInput);
+        }
+    });
+
+    updateStats(side);
 }
 
 // 3世代のタイプから物理/特殊を判定
