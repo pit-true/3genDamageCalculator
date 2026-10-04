@@ -1483,8 +1483,8 @@ function selectMoveForTurn(moveName, turn) {
     if (!moveData_found) return;
     
     // 複数ターン技の配列に保存
-    multiTurnMoves[turn] = moveData_found;
-    
+    multiTurnMoves[turn] = resolveDynamicMove(moveData_found);
+
     //console.log(`${turn + 1}ターン目に技を設定: ${moveName} (class: ${moveData_found.class})`);
     
     // HP入力欄の表示/非表示を制御
@@ -2569,20 +2569,6 @@ function updateCastformTypeIfNeeded() {
 
 // 技選択
 function selectMove(moveName) {
-    
-    // めざめるパワーの場合、タイプと分類を動的に更新
-    if (currentMove && currentMove.class === 'awaken_power') {
-        const newType = calculateHiddenPowerType();
-        currentMove.type = newType;
-        currentMove.category = getGen3CategoryByType(newType);
-    }
-    // ウェザーボールの場合、天候に応じてタイプと分類を更新
-    if (currentMove && currentMove.class === 'weather_ball') {
-        const weatherData = getWeatherBallTypeAndCategory();
-        currentMove.type = weatherData.type;
-        currentMove.category = weatherData.category;
-    }
-    
     // 全ての特殊設定を一旦非表示に
     const multiHitContainer = document.getElementById('multiHitContainer');
     const pinchUpContainer = document.querySelector('.pinchUpContainer');
@@ -2598,7 +2584,7 @@ function selectMove(moveName) {
         setting.style.display = 'none';
     });
     
-    currentMove = moveData.find(m => m.name === moveName);
+    currentMove = resolveDynamicMove(moveData.find(m => m.name === moveName));
 
     // 技のクラスに応じて表示
     switch (currentMove.class) {
@@ -2932,30 +2918,7 @@ function selectMultiTurnMove(turn, moveName) {
     }
     
     const move = moveData.find(m => m.name === moveName);
-    if (move) {
-        multiTurnMoves[turn] = move;
-        
-        // めざめるパワーの場合、タイプと分類を動的に更新
-        if (move && move.class === 'awaken_power') {
-            const newType = calculateHiddenPowerType();
-            multiTurnMoves[turn] = { 
-                ...move, 
-                type: newType,
-                category: getGen3CategoryByType(newType)
-            };
-        }
-        // ウェザーボールの場合、天候に応じてタイプと分類を更新
-        if (move && move.class === 'weather_ball') {
-            const weatherData = getWeatherBallTypeAndCategory();
-            multiTurnMoves[turn] = {
-                ...move,
-                type: weatherData.type,
-                category: weatherData.category
-            };
-        }
-    } else {
-        multiTurnMoves[turn] = null;
-    }
+    multiTurnMoves[turn] = move ? resolveDynamicMove(move) : null;
 }
 
 // 特性チェックボックスの表示制御
@@ -4000,61 +3963,12 @@ function updateDetailSummary(side) {
 }
 
 
-// 防御側専用のめざめるパワータイプ計算
 function calculateDefenderHiddenPowerType() {
-    // 防御側ポケモンの個体値を取得
-    const ivs = {
-        hp: parseInt(document.getElementById('defenderDetailIvHP').value),
-        a: parseInt(document.getElementById('defenderDetailIvA').value),
-        b: parseInt(document.getElementById('defenderDetailIvB').value),
-        c: parseInt(document.getElementById('defenderDetailIvC').value),
-        d: parseInt(document.getElementById('defenderDetailIvD').value),
-        s: parseInt(document.getElementById('defenderDetailIvS').value)
-    };
-    
-    // タイプ計算 (各個体値が奇数かどうか)
-    let typeSum = 0;
-    if (ivs.hp % 2 === 1) typeSum += 1;
-    if (ivs.a % 2 === 1) typeSum += 2;
-    if (ivs.b % 2 === 1) typeSum += 4;
-    if (ivs.s % 2 === 1) typeSum += 8;
-    if (ivs.c % 2 === 1) typeSum += 16;
-    if (ivs.d % 2 === 1) typeSum += 32;
-    
-    const typeIndex = Math.floor(typeSum * 15 / 63);
-    
-    // タイプの対応表
-    const typeTable = [
-        'かくとう', 'ひこう', 'どく', 'じめん', 'いわ', 'むし', 'ゴースト', 'はがね',
-        'ほのお', 'みず', 'くさ', 'でんき', 'エスパー', 'こおり', 'ドラゴン', 'あく'
-    ];
-    
-    return typeTable[typeIndex];
+    return hiddenPowerFromIVs(readDetailIVs('defender')).type;
 }
 
-// 防御側専用のめざめるパワー威力計算
 function calculateDefenderHiddenPowerBP() {
-    // 防御側ポケモンの個体値を取得
-    const ivs = {
-        hp: parseInt(document.getElementById('defenderDetailIvHP').value),
-        a: parseInt(document.getElementById('defenderDetailIvA').value),
-        b: parseInt(document.getElementById('defenderDetailIvB').value),
-        c: parseInt(document.getElementById('defenderDetailIvC').value),
-        d: parseInt(document.getElementById('defenderDetailIvD').value),
-        s: parseInt(document.getElementById('defenderDetailIvS').value)
-    };
-    
-    // 威力計算 (各個体値を4で割った余りが2以上かどうか)
-    let powerSum = 0;
-    if (ivs.hp % 4 >= 2) powerSum += 1;
-    if (ivs.a % 4 >= 2) powerSum += 2;
-    if (ivs.b % 4 >= 2) powerSum += 4;
-    if (ivs.s % 4 >= 2) powerSum += 8;
-    if (ivs.c % 4 >= 2) powerSum += 16;
-    if (ivs.d % 4 >= 2) powerSum += 32;
-    
-    const power = Math.floor(powerSum * 40 / 63) + 30;
-    return power;
+    return hiddenPowerFromIVs(readDetailIVs('defender')).power;
 }
 
 // 実数値計算
@@ -5543,76 +5457,56 @@ function getDefenderWeight() {
     return pokemonData.weight;
 }
 
-// めざめるパワーの威力計算
-function calculateHiddenPowerBP() {
-    // 攻撃側ポケモンの個体値を取得（正しい順序：H-A-B-C-D-S）
-    const ivs = {
-        hp: parseInt(document.getElementById('attackerDetailIvHP').value),
-        a: parseInt(document.getElementById('attackerDetailIvA').value),
-        b: parseInt(document.getElementById('attackerDetailIvB').value),
-        c: parseInt(document.getElementById('attackerDetailIvC').value),
-        d: parseInt(document.getElementById('attackerDetailIvD').value),
-        s: parseInt(document.getElementById('attackerDetailIvS').value)
-    };
-    
-    // 威力計算 (各個体値を4で割った余りが2以上かどうか)
+const HIDDEN_POWER_TYPES = [
+    'かくとう', 'ひこう', 'どく', 'じめん', 'いわ', 'むし', 'ゴースト', 'はがね',
+    'ほのお', 'みず', 'くさ', 'でんき', 'エスパー', 'こおり', 'ドラゴン', 'あく'
+];
+
+// 各個体値の最下位ビットでタイプ、下から2ビット目で威力が決まる（ビット順はH-A-B-S-C-D）
+function hiddenPowerFromIVs(ivs) {
+    const order = ['hp', 'a', 'b', 's', 'c', 'd'];
+    let typeSum = 0;
     let powerSum = 0;
-    if (ivs.hp % 4 >= 2) powerSum += 1;
-    if (ivs.a % 4 >= 2) powerSum += 2;
-    if (ivs.b % 4 >= 2) powerSum += 4;
-    if (ivs.s % 4 >= 2) powerSum += 8;   // SとCの順序を修正
-    if (ivs.c % 4 >= 2) powerSum += 16;  // SとCの順序を修正
-    if (ivs.d % 4 >= 2) powerSum += 32;
-    
-    const power = Math.floor(powerSum * 40 / 63) + 30;
-    return power;
+    order.forEach((stat, i) => {
+        if (ivs[stat] & 1) typeSum += 1 << i;
+        if (ivs[stat] & 2) powerSum += 1 << i;
+    });
+    return {
+        type: HIDDEN_POWER_TYPES[Math.floor(typeSum * 15 / 63)],
+        power: Math.floor(powerSum * 40 / 63) + 30
+    };
 }
 
+function readDetailIVs(side) {
+    const read = stat => parseInt(document.getElementById(`${side}DetailIv${stat}`).value);
+    return { hp: read('HP'), a: read('A'), b: read('B'), c: read('C'), d: read('D'), s: read('S') };
+}
 
-// めざめるパワーのタイプ計算
+function calculateHiddenPowerBP() {
+    return hiddenPowerFromIVs(readDetailIVs('attacker')).power;
+}
+
 function calculateHiddenPowerType() {
-    // 攻撃側ポケモンの個体値を取得（正しい順序：H-A-B-C-D-S）
-    const ivs = {
-        hp: parseInt(document.getElementById('attackerDetailIvHP').value),
-        a: parseInt(document.getElementById('attackerDetailIvA').value),
-        b: parseInt(document.getElementById('attackerDetailIvB').value),
-        c: parseInt(document.getElementById('attackerDetailIvC').value),
-        d: parseInt(document.getElementById('attackerDetailIvD').value),
-        s: parseInt(document.getElementById('attackerDetailIvS').value)
-    };
-    
-    // タイプ計算 (各個体値が奇数かどうか)
-    let typeSum = 0;
-    if (ivs.hp % 2 === 1) typeSum += 1;
-    if (ivs.a % 2 === 1) typeSum += 2;
-    if (ivs.b % 2 === 1) typeSum += 4;
-    if (ivs.s % 2 === 1) typeSum += 8;
-    if (ivs.c % 2 === 1) typeSum += 16;
-    if (ivs.d % 2 === 1) typeSum += 32;
-    
-    const typeIndex = Math.floor(typeSum * 15 / 63);
-    
-    // タイプの対応表
-    const typeTable = [
-        'かくとう', // 0
-        'ひこう',   // 1
-        'どく',     // 2
-        'じめん',   // 3
-        'いわ',     // 4
-        'むし',     // 5
-        'ゴースト', // 6
-        'はがね',   // 7
-        'ほのお',   // 8
-        'みず',     // 9
-        'くさ',     // 10
-        'でんき',   // 11
-        'エスパー', // 12
-        'こおり',   // 13
-        'ドラゴン', // 14
-        'あく'      // 15
-    ];
-    
-    return typeTable[typeIndex];
+    return hiddenPowerFromIVs(readDetailIVs('attacker')).type;
+}
+
+// めざめるパワー・ウェザーボールのタイプと分類を現在の状態で確定させたコピーを返す（moveData本体は書き換えない）
+function resolveDynamicMove(move, ivs) {
+    if (!move) return move;
+    if (move.class === 'awaken_power') {
+        const hiddenPower = hiddenPowerFromIVs(ivs || readDetailIVs('attacker'));
+        return {
+            ...move,
+            type: hiddenPower.type,
+            category: getGen3CategoryByType(hiddenPower.type),
+            power: hiddenPower.power
+        };
+    }
+    if (move.class === 'weather_ball') {
+        const weatherData = getWeatherBallTypeAndCategory();
+        return { ...move, type: weatherData.type, category: weatherData.category };
+    }
+    return move;
 }
 
 // 3世代のタイプから物理/特殊を判定
@@ -7662,6 +7556,8 @@ function performDamageCalculationEnhanced() {
     document.querySelector('.tool-info').style.display = 'none';
     // ポワルンのタイプを最新の天候に更新
     updateCastformTypeIfNeeded();
+    updateHiddenPowerIfNeeded();
+    updateWeatherBallIfNeeded();
 
     // 入力チェック
     if (!attackerPokemon.name || !defenderPokemon.name) {
