@@ -5775,6 +5775,11 @@ function getRankMultiplier(rankValue) {
     return mult ? mult.numerator / mult.denominator : 1.0;
 }
 
+// じばく(class: jibaku)・だいばくはつ(class: b_harf)は相手の防御を半分にして計算する
+function isDefenseHalvingMove(move) {
+    return !!move && (move.class === 'b_harf' || move.class === 'jibaku');
+}
+
 function applyBadgeModifier(stat, enabled) {
     return enabled ? Math.floor(stat * 110 / 100) : stat;
 }
@@ -5967,7 +5972,7 @@ function calculateDamage(attack, defense, level, power, category, moveType, atta
   }
   
   // じばく・だいばくはつの防御半減
-  if (currentMove && currentMove.class === "b_harf") {
+  if (isDefenseHalvingMove(currentMove)) {
     finalDefense = Math.floor(finalDefense / 2);
   }
   

@@ -162,3 +162,17 @@ test('未対応技一覧を解消し、ふくろだたきを専用UIへ接続す
   assert.match(html, /id="beatUpMembers"/);
   assert.doesNotMatch(html, /<strong>未対応技:<\/strong>/);
 });
+
+test('じばくとだいばくはつはどちらも防御半減の対象になる', () => {
+  const script = loadScript();
+  const moves = JSON.parse(
+    fs.readFileSync(path.join(__dirname, '..', 'pokemon_moves.json'), 'utf8')
+  );
+
+  for (const name of ['じばく', 'だいばくはつ']) {
+    const moveClass = moves.find(move => move.name === name)?.class;
+    assert.equal(script.evaluate(`isDefenseHalvingMove({ class: '${moveClass}' })`), true, name);
+  }
+  assert.equal(script.evaluate("isDefenseHalvingMove({ class: 'standard' })"), false);
+  assert.equal(script.evaluate('isDefenseHalvingMove(null)'), false);
+});
